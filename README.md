@@ -1,0 +1,303 @@
+# 🏘️ Smart-RT
+
+<div align="center">
+
+![Smart-RT](https://img.shields.io/badge/Smart--RT-Platform%20Digital%20RT-blue?style=for-the-badge)
+![Django](https://img.shields.io/badge/Django-5.x-092E20?style=for-the-badge&logo=django&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-6.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-Supported-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
+
+**Platform digital modern untuk pengelolaan Rukun Tetangga (RT).**
+
+[Fitur](#-fitur) • [Tech Stack](#-tech-stack) • [Instalasi](#-instalasi) • [Dokumentasi](#-dokumentasi) • [Kontribusi](#-kontribusi)
+
+</div>
+
+---
+
+## 📋 Daftar Isi
+
+- [Tentang Proyek](#-tentang-proyek)
+- [Fitur](#-fitur)
+- [Tech Stack](#-tech-stack)
+- [Arsitektur](#-arsitektur)
+- [Instalasi](#-instalasi)
+- [Dokumentasi](#-dokumentasi)
+- [Roadmap](#-roadmap)
+- [Kontribusi](#-kontribusi)
+- [Lisensi](#-lisensi)
+- [Author](#-author)
+
+---
+
+## 🎯 Tentang Proyek
+
+**Smart-RT** adalah platform digital berbasis web yang dirancang untuk memodernisasi pengelolaan Rukun Tetangga (RT). Aplikasi ini menggantikan catatan manual, grup WhatsApp yang berantakan, dan proses administrasi tradisional menjadi satu platform terintegrasi yang mudah diakses oleh pengurus maupun warga.
+
+Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui desktop/laptop oleh pengurus RT dan melalui HP oleh warga — dengan pengalaman yang optimal di kedua platform.
+
+### ✨ Mengapa Smart-RT?
+
+| Masalah | Solusi |
+|---------|--------|
+| Catatan kertas mudah hilang | Semua data tersimpan digital & aman |
+| Iuran tidak transparan | Dashboard keuangan real-time |
+| Pengumuman tersebar di grup WA | Push notification langsung ke HP |
+| Data warga tidak terstruktur | Database lengkap & terorganisir |
+| Pengaduan tidak tertracking | Status tracking real-time |
+| Partisipasi warga rendah | Forum diskusi & polling digital |
+
+---
+
+## 🚀 Fitur
+
+### 👤 Multi-Role Authentication
+- Register & login dengan email/no. HP
+- 3 role: **Admin** (Ketua RT), **Pengurus**, **Warga**
+- Verifikasi warga oleh pengurus
+- JWT-based authentication
+
+### 📋 Data Warga
+- Data lengkap: NIK, nama, TTL, jenis kelamin, agama, status perkawinan, pendidikan, pekerjaan, no. HP, email, foto
+- Data keluarga: No. KK, hubungan, alamat lengkap
+- Import dari Excel, export ke Excel/PDF
+- Kartu keluarga digital
+- Audit log perubahan data
+
+### 💰 Keuangan RT
+- Pencatatan pemasukan & pengeluaran
+- Upload bukti transfer + konfirmasi manual
+- Dashboard saldo real-time
+- Laporan keuangan otomatis (PDF)
+- Grafik pemasukan vs pengeluaran
+
+### 📢 Pengumuman & Notifikasi
+- Buat pengumuman dengan kategori
+- Push notification ke warga (Web Push PWA)
+- Penjadwalan pengumuman
+- Riwayat pengumuman
+
+### 💬 Forum Diskusi
+- Thread per topik dengan kategori
+- Komentar & balasan
+- Voting/polling dalam thread
+- Moderasi oleh pengurus
+
+### 📝 Pengaduan Warga
+- Form pengaduan dengan upload foto
+- Tracking status: Diterima → Diproses → Selesai
+- Notifikasi perubahan status
+- Riwayat pengaduan
+
+### 📅 Kegiatan & Kalender
+- Kalender kegiatan RT
+- RSVP/tanda hadir
+- Notifikasi reminder
+- Dokumentasi foto
+
+### 📊 Polling & Voting
+- Buat poling dengan deadline
+- 1 warga = 1 suara
+- Hasil real-time dengan grafik
+
+### 📈 Dashboard & Laporan
+- Dashboard pengurus: statistik warga, keuangan, pengaduan aktif
+- Dashboard warga: status iuran, pengumuman terbaru
+- Laporan otomatis (PDF)
+
+---
+
+## 🛠 Tech Stack
+
+### Backend
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| **Django** | 5.x | Web framework |
+| **Django REST Framework** | 3.x | API development |
+| **Python** | 3.12 | Programming language |
+| **PostgreSQL** | 16 | Database |
+| **Django ORM** | built-in | Object-relational mapping |
+| **SimpleJWT** | 5.x | JWT authentication |
+| **WeasyPrint** | 60.x | PDF generation |
+
+### Frontend
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| **React** | 19.x | UI library |
+| **Vite** | 8.x | Build tool |
+| **TypeScript** | 6.x | Type-safe JavaScript |
+| **Tailwind CSS** | 4.x | Utility-first CSS |
+| **Zustand** | 5.x | State management |
+| **Vite PWA** | latest | Progressive Web App |
+
+### DevOps
+| Technology | Purpose |
+|-----------|---------|
+| **Docker** | Containerization |
+| **Docker Compose** | Multi-service orchestration |
+| **Nginx** | Reverse proxy |
+
+---
+
+## 🏗 Arsitektur
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        CLIENT LAYER                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Desktop    │  │   Tablet     │  │   Mobile     │      │
+│  │   Browser    │  │   Browser    │  │   PWA        │      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
+│         └─────────────────┼──────────────────┘               │
+└───────────────────────────┼──────────────────────────────────┘
+                            │ HTTPS
+┌───────────────────────────┼──────────────────────────────────┐
+│                      DJANGO + DRF                            │
+│  ┌────────────────────────┴─────────────────────────┐        │
+│  │  Auth │ RBAC │ Rate Limit │ CORS │ Validation    │        │
+│  └────────────────────────┬─────────────────────────┘        │
+│  ┌────────────────────────┴─────────────────────────┐        │
+│  │  /api/v1/auth │ /api/v1/warga │ /api/v1/keuangan  │        │
+│  │  /api/v1/pengumuman │ /api/v1/forum │ ...         │        │
+│  └────────────────────────┬─────────────────────────┘        │
+└───────────────────────────┼──────────────────────────────────┘
+                            │
+┌───────────────────────────┼──────────────────────────────────┐
+│                      DATA LAYER                              │
+│  ┌────────────────────────┴─────────────────────────┐        │
+│  │              Django ORM (bawaan)                  │        │
+│  └────────────────────────┬─────────────────────────┘        │
+│  ┌────────────────────────┴─────────────────────────┐        │
+│  │           PostgreSQL Database                     │        │
+│  └──────────────────────────────────────────────────┘        │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📦 Instalasi
+
+### Prerequisites
+- Python 3.12+
+- Node.js 20+
+- PostgreSQL 16+
+- Docker & Docker Compose (opsional)
+
+### Quick Start
+
+**1. Clone repository**
+```bash
+git clone https://github.com/bocahlinux/smart-rt.git
+cd smart-rt
+```
+
+**2. Setup Backend**
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+pip install -r requirements/dev.txt
+cp .env.example .env
+# Edit .env dengan konfigurasi database kamu
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+# → http://localhost:8000
+```
+
+**3. Setup Frontend**
+```bash
+cd frontend
+npm install
+cp .env.example .env
+# Edit .env dengan URL backend
+npm run dev
+# → http://localhost:5173
+```
+
+**4. Docker (Alternative)**
+```bash
+docker compose up --build
+# → http://localhost (Nginx proxy)
+```
+
+---
+
+## 📚 Dokumen
+
+| Dokumen | Deskripsi |
+|---------|-----------|
+| [01-PRD.md](docs/01-PRD.md) | Product Requirements Document |
+| [02-SRS.md](docs/02-SRS.md) | Software Requirements Specification |
+| [03-UIUX-Flow.md](docs/03-UIUX-Flow.md) | UI/UX Flow & Design |
+| [04-SDD.md](docs/04-SDD.md) | System Design Document |
+| [05-DATABASE.md](docs/05-DATABASE.md) | Database Design & Django Models |
+| [06-API-CONTRACT.md](docs/06-API-CONTRACT.md) | API Contract Specification |
+| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | Task Breakdown & Estimation |
+| [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | Coding Standard & Conventions |
+| [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | Test Plan & Coverage |
+| [10-AI-RULES.md](docs/10-AI-RULES.md) | AI Development Rules |
+
+---
+
+## 🗺 Roadmap
+
+| Phase | Fokus | Status |
+|-------|-------|--------|
+| 0 | Project Setup | ⬜ Pending |
+| 1 | Authentication & Role System | ⬜ Pending |
+| 2 | Data Warga | ⬜ Pending |
+| 3 | Keuangan RT | ⬜ Pending |
+| 4 | Pengumuman & Notifikasi | ⬜ Pending |
+| 5 | Forum Diskusi | ⬜ Pending |
+| 6 | Pengaduan Warga | ⬜ Pending |
+| 7 | Kegiatan & Polling | ⬜ Pending |
+| 8 | Dashboard & Laporan | ⬜ Pending |
+| 9 | Polish, Testing & Deployment | ⬜ Pending |
+
+---
+
+## 🤝 Kontribusi
+
+Kontribusi sangat diterima! Silakan buka [Issue](https://github.com/bocahlinux/smart-rt/issues) atau buat [Pull Request](https://github.com/bocahlinux/smart-rt/pulls).
+
+1. Fork repository
+2. Buat branch fitur (`git checkout -b feature/nama-fitur`)
+3. Commit perubahan (`git commit -m "feat: tambah fitur X"`)
+4. Push ke branch (`git push origin feature/nama-fitur`)
+5. Buat Pull Request
+
+---
+
+## 📄 Lisensi
+
+Proyek ini dilisensikan di bawah [MIT License](LICENSE).
+
+---
+
+## 👤 Author
+
+<div align="center">
+
+### BocahLinux
+
+[![GitHub](https://img.shields.io/badge/GitHub-bocahlinux-181717?style=for-the-badge&logo=github)](https://github.com/bocahlinux)
+[![Telegram](https://img.shields.io/badge/Telegram-@bocahlinux-2CA5E0?style=for-the-badge&logo=telegram)](https://t.me/bocahlinux)
+
+**Platform Digital untuk Kemajuan Komunitas**
+
+</div>
+
+---
+
+<div align="center">
+
+**⭐ Star repository ini jika kamu menemukannya berguna!**
+
+Dibuat dengan ❤️ oleh **BocahLinux**
+
+</div>
