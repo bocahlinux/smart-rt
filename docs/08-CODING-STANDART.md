@@ -788,7 +788,8 @@ interface WargaTableProps {
 export function WargaTable({ onEdit, onDelete }: WargaTableProps) {
   const { user } = useAuthStore();
   const { data, isLoading } = useWargaList();
-  const isPengurus = user?.role === 'admin' || user?.role === 'pengurus';
+  const canViewWargaList = ['admin', 'sekretaris', 'bendahara', 'pengurus'].includes(user?.role ?? '');
+  const canManageWarga = ['admin', 'sekretaris'].includes(user?.role ?? '');
   
   if (isLoading) return <SkeletonTable />;
   
@@ -798,10 +799,10 @@ export function WargaTable({ onEdit, onDelete }: WargaTableProps) {
         <tr>
           <th>Nama</th>
           <th>Blok</th>
-          {isPengurus && <th>NIK</th>}
-          {isPengurus && <th>No. HP</th>}
+          {canViewWargaList && <th>NIK</th>}
+          {canViewWargaList && <th>No. HP</th>}
           <th>Status</th>
-          {isPengurus && <th>Aksi</th>}
+          {canManageWarga && <th>Aksi</th>}
         </tr>
       </thead>
       <tbody>
@@ -810,10 +811,10 @@ export function WargaTable({ onEdit, onDelete }: WargaTableProps) {
             <td>{warga.namaLengkap}</td>
             <td>{warga.blok}</td>
             {/* ✅ Field visibility di frontend sesuai role */}
-            {isPengurus && <td>{warga.nik}</td>}
-            {isPengurus && <td>{warga.phone || warga.phoneMasked}</td>}
+            {canViewWargaList && <td>{warga.nik ?? warga.nikMasked}</td>}
+            {canViewWargaList && <td>{warga.phone ?? warga.phoneMasked}</td>}
             <td><StatusBadge status={warga.status} /></td>
-            {isPengurus && (
+            {canManageWarga && (
               <td>
                 <Button onClick={() => onEdit(warga.id)}>Edit</Button>
               </td>
