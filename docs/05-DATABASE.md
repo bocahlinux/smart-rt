@@ -663,7 +663,7 @@ class Comment(models.Model):
 
 ```python
 # pengaduan/models.py
-from uuid
+import uuid
 from django.db import models
 from accounts.models import User
 
@@ -704,7 +704,7 @@ class Pengaduan(models.Model):
 
 ```python
 # kegiatan/models.py
-from uuid
+import uuid
 from django.db import models
 from accounts.models import User
 
@@ -742,7 +742,7 @@ class RSVP(models.Model):
 
 ```python
 # polling/models.py
-from uuid
+import uuid
 from django.db import models
 from accounts.models import User
 
@@ -772,7 +772,7 @@ class Vote(models.Model):
 
 ```python
 # audit/models.py
-from uuid
+import uuid
 from django.db import models
 from accounts.models import User
 
@@ -807,7 +807,7 @@ class AuditLog(models.Model):
 
 ```python
 # notifications/models.py
-from uuid
+import uuid
 from django.db import models
 from accounts.models import User
 
