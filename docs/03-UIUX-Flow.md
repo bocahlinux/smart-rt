@@ -250,7 +250,7 @@
 
 ## 5. Navigation Structure
 
-### 4.1 Desktop (Sidebar)
+### 5.1 Desktop (Sidebar)
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  [Logo] Smart-RT                    [🔔] [👤 Nama ▼]       │
@@ -272,7 +272,7 @@
 └──────────────┴──────────────────────────────────────────────┘
 ```
 
-### 4.2 Mobile (Bottom Navigation)
+### 5.2 Mobile (Bottom Navigation)
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  [Logo] Smart-RT                    [🔔] [👤]               │
@@ -307,7 +307,7 @@
 
 ## 7. Component Library
 
-### 6.1 Common Components
+### 7.1 Common Components
 - **Button**: Primary, Secondary, Danger, Ghost, sizes (sm, md, lg)
 - **Input**: Text, Email, Password, Number, Date, Textarea, Select
 - **Card**: Container dengan shadow dan padding
@@ -322,7 +322,7 @@
 - **Filter**: Dropdown filter
 - **Pagination**: Navigasi halaman
 
-### 6.2 Layout Components
+### 7.2 Layout Components
 - **Header**: Top bar dengan logo, notifikasi, profil
 - **Sidebar**: Navigation menu (desktop)
 - **Bottom Nav**: Navigation bar (mobile)
