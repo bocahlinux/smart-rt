@@ -35,31 +35,31 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| 2.1 | Database schema: users table (Django AbstractUser extended) | 30m | ⬜ |
-| 2.2 | Register endpoint + validation (DRF Serializer) | 45m | ⬜ |
-| 2.3 | Login endpoint + JWT generation (access + refresh token) | 45m | ⬜ |
-| 2.4 | Auth classes (SimpleJWT authentication + custom permission) | 30m | ⬜ |
-| 2.5 | RBAC permission classes (IsAdmin, IsSekretaris, IsBendahara, IsPengurus, IsOwnerOrSekretaris, IsOwnerOrBendahara) | 45m | ⬜ |
-| 2.5a | Role-based serializer variants (Admin, Sekretaris, Bendahara, Pengurus, Warga) | 30m | ⬜ |
-| 2.5b | Field masking per role (NIK, KK, phone, email) | 20m | ⬜ |
-| 2.6 | Token refresh endpoint + rotation | 20m | ⬜ |
-| 2.7 | Logout + token blacklist | 20m | ⬜ |
-| 2.8 | Get current user endpoint | 15m | ⬜ |
-| 2.9 | Change password endpoint | 20m | ⬜ |
-| 2.10 | **Security:** Configure SimpleJWT access lifetime (15-30 min) + refresh lifetime (7-14 days) | 15m | ⬜ |
-| 2.11 | **Security:** Implement token blacklist/rotation via SimpleJWT OutstandingToken | 20m | ⬜ |
-| 2.12 | **Security:** Add login rate limit (10 attempts / 5 min per IP) | 20m | ⬜ |
-| 2.13 | **Security:** Add password strength validation (min 8 chars, uppercase, lowercase, digit) | 15m | ⬜ |
-| 2.14 | **Security:** Configure Django password hasher (Argon2 default) | 10m | ⬜ |
-| 2.15 | Frontend: Login page UI | 45m | ⬜ |
-| 2.16 | Frontend: Register page UI | 45m | ⬜ |
-| 2.17 | Frontend: Auth store (Zustand — access token in-memory only) | 30m | ⬜ |
-| 2.18 | Frontend: Protected route component | 20m | ⬜ |
-| 2.19 | Frontend: API client (axios + interceptors + refresh token flow) | 45m | ⬜ |
-| 2.20 | **Security Tests:** Auth flow testing (register → login → access → refresh → logout) | 30m | ⬜ |
-| 2.21 | **Security Tests:** Expired token → 401, invalid token → 401, reused refresh token → 401 | 20m | ⬜ |
-| 2.22 | **Security Tests:** Rate limit test (11th login attempt → 429) | 15m | ⬜ |
-| 2.23 | **Security Tests:** Password strength validation test | 15m | ⬜ |
+| 2.1 | Database schema: users table (Django AbstractUser extended) | 30m | ✅ |
+| 2.2 | Register endpoint + validation (DRF Serializer) | 45m | ✅ |
+| 2.3 | Login endpoint + JWT generation (access + refresh token) | 45m | ✅ |
+| 2.4 | Auth classes (SimpleJWT authentication + custom permission) | 30m | ✅ |
+| 2.5 | RBAC permission classes (IsAdmin, IsSekretaris, IsBendahara, IsPengurus, IsOwnerOrSekretaris, IsOwnerOrBendahara) | 45m | ✅ |
+| 2.5a | Role-based serializer variants (Admin, Sekretaris, Bendahara, Pengurus, Warga) | 30m | ✅ |
+| 2.5b | Field masking per role (NIK, KK, phone, email) | 20m | ✅ |
+| 2.6 | Token refresh endpoint + rotation | 20m | ✅ |
+| 2.7 | Logout + token blacklist | 20m | ✅ |
+| 2.8 | Get current user endpoint | 15m | ✅ |
+| 2.9 | Change password endpoint | 20m | ✅ |
+| 2.10 | **Security:** Configure SimpleJWT access lifetime (15-30 min) + refresh lifetime (7-14 days) | 15m | ✅ |
+| 2.11 | **Security:** Implement token blacklist/rotation via SimpleJWT OutstandingToken | 20m | ✅ |
+| 2.12 | **Security:** Add login rate limit (10 attempts / 5 min per IP) | 20m | ✅ |
+| 2.13 | **Security:** Add password strength validation (min 8 chars, uppercase, lowercase, digit) | 15m | ✅ |
+| 2.14 | **Security:** Configure Django password hasher (Argon2 default) | 10m | ✅ |
+| 2.15 | Frontend: Login page UI | 45m | ✅ |
+| 2.16 | Frontend: Register page UI | 45m | ✅ |
+| 2.17 | Frontend: Auth store (Zustand — access token in-memory only) | 30m | ✅ |
+| 2.18 | Frontend: Protected route component | 20m | ✅ |
+| 2.19 | Frontend: API client (axios + interceptors + refresh token flow) | 45m | ✅ |
+| 2.20 | **Security Tests:** Auth flow testing (register → login → access → refresh → logout) | 30m | ✅ |
+| 2.21 | **Security Tests:** Expired token → 401, invalid token → 401, reused refresh token → 401 | 20m | ✅ |
+| 2.22 | **Security Tests:** Rate limit test (11th login attempt → 429) | 15m | ✅ |
+| 2.23 | **Security Tests:** Password strength validation test | 15m | ✅ |
 
 ---
 
@@ -378,3 +378,4 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 | 1.2.0 | 2026-06-08 | Fixed duplicate task IDs in Phase 2 (2.15) and Phase 3 (3.2, 3.9). Renumbered affected tasks. Normalized all table rows to use 2 pipes (|). Updated phase count from 9 to 10. Adjusted total tasks from 169 to 170 and estimated days to ~16. |
 | 1.3.0 | 2026-06-08 | Renumbered all phases from 0-9 to 1-10. Updated phase headers, task IDs, summary table, security checklist, and execution order accordingly. |
 | 1.3.1 | 2026-06-08 | Marked all Phase 1 (Project Setup) tasks 1.1-1.13 as completed (✅). |
+| 1.4.0 | 2026-06-07 | Marked all Phase 2 (Authentication & Role System) tasks 2.1-2.23 as completed (✅). |

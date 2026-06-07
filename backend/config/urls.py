@@ -10,9 +10,9 @@ from .views import healthz
 
 api_v1_patterns = [
     path("healthz/", healthz, name="healthz"),
-    # Routing per modul (auth, warga, keuangan, dst.) ditambahkan pada phase terkait
-    # mengikuti docs/06-API-CONTRACT.md, mis.:
-    # path("auth/", include("accounts.urls")),
+    path("auth/", include("accounts.urls")),
+    # Routing modul lain (warga, keuangan, dst.) ditambahkan pada phase terkait
+    # mengikuti docs/06-API-CONTRACT.md.
 ]
 
 urlpatterns = [
