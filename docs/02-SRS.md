@@ -140,7 +140,7 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 - Support hingga 50 concurrent users
 
 ### 3.2 Security
-- Semua password di-hash dengan bcrypt (min. 12 rounds)
+- Semua password di-hash menggunakan Django password hasher (default production: Argon2, fallback: PBKDF2-SHA256)
 - JWT token expiration: 24 jam
 - Role-based access control (RBAC) di setiap endpoint
 - Input validation & sanitization di semua form
@@ -153,12 +153,12 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | SEC-01 | Sistem harus melakukan masking NIK dan no KK pada list view untuk role warga. | High |
-| SEC-02 | Sistem hanya boleh menampilkan data lengkap warga kepada admin/pengurus yang berwenang. | High |
+| SEC-02 | Sistem hanya boleh menampilkan data lengkap warga kepada admin/sekretaris yang berwenang; bendahara/pengurus hanya menerima field terbatas/masked. | High |
 | SEC-03 | Warga hanya boleh melihat data profil miliknya sendiri kecuali data publik yang memang disetujui. | High |
 | SEC-04 | Semua perubahan pada data warga wajib tercatat di audit log. | High |
 | SEC-05 | Semua file upload wajib divalidasi MIME type, extension, ukuran, dan disimpan dengan nama random. | High |
-| SEC-06 | Bukti transfer hanya boleh dilihat oleh pemilik, bendahara, pengurus berwenang, dan admin. | High |
-| SEC-07 | Pengaduan pribadi hanya boleh dilihat oleh pelapor dan pengurus berwenang. | High |
+| SEC-06 | Bukti transfer hanya boleh dilihat oleh pemilik, bendahara, dan admin. | High |
+| SEC-07 | Pengaduan pribadi hanya boleh dilihat oleh pelapor, admin, serta sekretaris/pengurus yang ditugaskan. | High |
 | SEC-08 | Backup database wajib terenkripsi. | High |
 | SEC-09 | Secret key, JWT signing key, database password, dan credential lain wajib berasal dari environment variable. | High |
 | SEC-10 | API harus mencegah IDOR dengan object-level permission. | High |
@@ -192,7 +192,7 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 | email | VARCHAR(255) | UNIQUE, NOT NULL |
 | phone | VARCHAR(20) | UNIQUE, NOT NULL |
 | password | VARCHAR(255) | NOT NULL (hashed) |
-| role | ENUM (admin, pengurus, warga) | NOT NULL |
+| role | ENUM (admin, sekretaris, bendahara, pengurus, warga) | NOT NULL |
 | status | ENUM (pending, active, rejected) | DEFAULT pending |
 | created_at | TIMESTAMP | DEFAULT now() |
 | updated_at | TIMESTAMP | AUTO UPDATE |
