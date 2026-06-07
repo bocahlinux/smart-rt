@@ -1,6 +1,6 @@
 # Smart-RT — Security & Privacy Policy
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Date:** June 8, 2026
 **Status:** Active
 **Author:** BocahLinux
@@ -44,15 +44,15 @@ Data pribadi warga. Akses terbatas berdasarkan role + object-level permission. *
 
 | Data | Lokasi DB | Aturan Akses | Masking |
 |------|-----------|-------------|---------|
-| NIK | `warga_profiles.nik` | Pemilik, pengurus, admin | `3201********0001` |
-| No. KK | `warga_profiles.no_kk` | Pemilik, pengurus, admin | `3201********5678` |
-| Alamat lengkap | `warga_profiles.alamat` | Pemilik, pengurus, admin | — |
-| Tanggal lahir | `warga_profiles.tanggal_lahir` | Pemilik, pengurus, admin | — |
-| Nomor HP | `users.phone` | Pemilik, pengurus, admin | `0812****5678` |
-| Email | `users.email` | Pemilik, pengurus, admin | — |
-| Foto profil | `warga_profiles.foto` | Pemilik, pengurus, admin | — |
-| Bukti transfer | `transaksi.bukti_url`, `iuran_warga.bukti_url` | Pemilik transaksi, bendahara, pengurus, admin | — |
-| Data pengaduan | `pengaduan.*` | Pelapor & pengurus berwenang | Sensitif: tidak publik |
+| NIK | `warga_profiles.nik` | Pemilik, sekretaris, admin | `3201********0001` untuk bendahara/pengurus/warga lain |
+| No. KK | `warga_profiles.no_kk` | Pemilik, sekretaris, admin | `3201********5678` untuk bendahara/pengurus/warga lain |
+| Alamat lengkap | `warga_profiles.alamat` | Pemilik, sekretaris, admin | — |
+| Tanggal lahir | `warga_profiles.tanggal_lahir` | Pemilik, sekretaris, admin | — |
+| Nomor HP | `users.phone` | Pemilik, sekretaris, bendahara, admin | `0812****5678` untuk pengurus/warga lain |
+| Email | `users.email` | Pemilik, sekretaris, admin | — |
+| Foto profil | `warga_profiles.foto` | Pemilik, sekretaris, bendahara, admin | — |
+| Bukti transfer | `transaksi.bukti_url`, `iuran_warga.bukti_url` | Pemilik transaksi, bendahara, admin | — |
+| Data pengaduan | `pengaduan.*` | Pelapor & sekretaris/pengurus berwenang & admin | Sensitif: tidak publik |
 
 ### 1.4 Restricted
 Data sistem. **Tidak boleh di-expose ke mana pun** kecuali ke sistem itu sendiri.
@@ -74,62 +74,79 @@ Data sistem. **Tidak boleh di-expose ke mana pun** kecuali ke sistem itu sendiri
 
 | Role | Deskripsi | Akses Global |
 |------|-----------|-------------|
-| **Admin** | Ketua RT / Super admin | Full access. Manage pengurus. Hapus data. Export full. |
-| **Pengurus** | Sekretaris, bendahara, pengurus lain | CRUD warga, keuangan, pengumuman, forum, pengaduan, kegiatan, polling. Export with mask by default. |
+| **Admin** | Ketua RT / Super admin | Full access. Manage semua role. Hapus data. Export full. Lihat audit log. |
+| **Sekretaris** | Mengelola data warga & administrasi | CRUD data warga, verifikasi warga, import/export, pengumuman, pengaduan. Tidak bisa hapus user. Tidak akses keuangan. |
+| **Bendahara** | Mengelola keuangan RT | CRUD transaksi, konfirmasi/tolak iuran, lihat bukti transfer, export laporan keuangan. Tidak bisa CRUD data warga. |
+| **Pengurus** | Pengurus RT lainnya | Lihat data warga (masked), kelola forum (moderasi), kelola kegiatan, kelola polling, update status pengaduan. Tidak bisa CRUD warga, tidak akses keuangan. |
 | **Warga** | Warga terverifikasi | Lihat pengumuman, upload iuran, forum, pengaduan, RSVP, vote. Lihat profil sendiri. |
 
-### 2.2 Global Permission Matrix
+### 2.2 Role Hierarchy
 
-| Action | Admin | Pengurus | Warga |
-|--------|-------|----------|-------|
-| **User Management** | | | |
-| Create pengurus | ✅ | ❌ | ❌ |
-| Manage roles | ✅ | ❌ | ❌ |
-| Delete user | ✅ | ❌ | ❌ |
-| **Data Warga** | | | |
-| List all warga | ✅ | ✅ | ❌ (own only) |
-| View full profil | ✅ | ✅ | ❌ (own only, full) |
-| View masked profil | ❌ | ❌ | ✅ (own, masked) |
-| Create warga | ✅ | ✅ | ❌ |
-| Update warga | ✅ | ✅ | ❌ (own only, limited fields) |
-| Delete warga | ✅ | ❌ | ❌ |
-| Verify warga | ✅ | ✅ | ❌ |
-| Import warga | ✅ | ✅ | ❌ |
-| Export warga (masked) | ✅ (full) | ✅ (masked) | ❌ |
-| **Keuangan** | | | |
-| View all transaksi | ✅ | ✅ | ❌ |
-| Create transaksi | ✅ | ✅ | ❌ |
-| Confirm/reject iuran | ✅ | ✅ (bendahara) | ❌ |
-| View own iuran | ✅ | ✅ | ✅ |
-| Upload bukti transfer | ✅ | ✅ | ✅ (own only) |
-| View own bukti transfer | ✅ | ✅ | ✅ |
-| View other bukti transfer | ✅ | ✅ | ❌ |
-| Export laporan | ✅ | ✅ | ❌ |
-| **Pengumuman** | | | |
-| Create/Update/Delete | ✅ | ✅ | ❌ |
-| View list | ✅ | ✅ | ✅ |
-| **Forum** | | | |
-| Create thread/comment | ✅ | ✅ | ✅ |
-| Edit own content | ✅ | ✅ | ✅ |
-| Moderate (pin/lock/delete) | ✅ | ✅ | ❌ |
-| **Pengaduan** | | | |
-| Create pengaduan | ✅ | ✅ | ✅ |
-| View own pengaduan | ✅ | ✅ | ✅ |
-| View other pengaduan | ✅ | ✅ | ❌ (unless publik) |
-| View sensitif pengaduan | ✅ | ✅ | ❌ |
-| Update status | ✅ | ✅ | ❌ |
-| **Kegiatan** | | | |
-| CRUD kegiatan | ✅ | ✅ | ❌ |
-| RSVP | ✅ | ✅ | ✅ |
-| **Polling** | | | |
-| CRUD polling | ✅ | ✅ | ❌ |
-| Vote | ✅ | ✅ | ✅ |
-| View results | ✅ | ✅ | ✅ (after deadline) |
-| **Dashboard** | | | |
-| Pengurus dashboard | ✅ | ✅ | ❌ |
-| Warga dashboard | ✅ | ✅ | ✅ (own data only) |
-| **Audit Log** | | | |
-| View audit log | ✅ | ❌ | ❌ |
+```
+Admin (Ketua RT)
+├── Sekretaris  → Data warga + administrasi
+├── Bendahara   → Keuangan
+└── Pengurus    → Forum, kegiatan, polling, moderasi
+    Warga       → Akses terbatas ke data sendiri
+```
+
+### 2.3 Global Permission Matrix
+
+| Action | Admin | Sekretaris | Bendahara | Pengurus | Warga |
+|--------|-------|------------|-----------|----------|-------|
+| **User Management** | | | | | |
+| Create pengurus/sekretaris/bendahara | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Manage roles | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Delete user | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Data Warga** | | | | | |
+| List all warga | ✅ | ✅ | ❌ | ✅ (masked) | ❌ (own only) |
+| View full profil | ✅ | ✅ | ❌ | ❌ (masked) | ❌ (own only, full) |
+| View masked profil | ❌ | ❌ | ✅ | ✅ | ✅ (own, masked) |
+| Create warga | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Update warga | ✅ | ✅ | ❌ | ❌ | ❌ (own only, limited) |
+| Delete warga | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Verify warga | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Import warga | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Export warga | ✅ (full) | ✅ (masked) | ❌ | ❌ | ❌ |
+| **Keuangan** | | | | | |
+| View all transaksi | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Create transaksi | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Update transaksi | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Delete transaksi | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Confirm/reject iuran | ✅ | ❌ | ✅ | ❌ | ❌ |
+| View own iuran | ✅ | ❌ | ✅ | ❌ | ✅ |
+| Upload bukti transfer | ✅ | ❌ | ✅ | ❌ | ✅ (own only) |
+| View own bukti transfer | ✅ | ❌ | ✅ | ❌ | ✅ |
+| View other bukti transfer | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Export laporan keuangan | ✅ | ❌ | ✅ | ❌ | ❌ |
+| **Pengumuman** | | | | | |
+| Create/Update/Delete | ✅ | ✅ | ❌ | ❌ | ❌ |
+| View list | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Forum** | | | | | |
+| Create thread/comment | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Edit own content | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Moderate (pin/lock/delete) | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Pengaduan** | | | | | |
+| Create pengaduan | ✅ | ✅ | ✅ | ✅ | ✅ |
+| View own pengaduan | ✅ | ✅ | ✅ | ✅ | ✅ |
+| View other pengaduan | ✅ | ✅ | ❌ | ✅ | ❌ (unless publik) |
+| View sensitif pengaduan | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Update status | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Kegiatan** | | | | | |
+| CRUD kegiatan | ✅ | ✅ | ❌ | ✅ | ❌ |
+| RSVP | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Polling** | | | | | |
+| CRUD polling | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Vote | ✅ | ✅ | ✅ | ✅ | ✅ |
+| View results | ✅ | ✅ | ✅ | ✅ | ✅ (after deadline) |
+| **Dashboard** | | | | | |
+| Admin dashboard | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Sekretaris dashboard | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Bendahara dashboard | ❌ | ❌ | ✅ | ❌ | ❌ |
+| Pengurus dashboard | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Warga dashboard | ❌ | ❌ | ❌ | ❌ | ✅ (own data only) |
+| **Audit Log** | | | | | |
+| View audit log | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -137,30 +154,28 @@ Data sistem. **Tidak boleh di-expose ke mana pun** kecuali ke sistem itu sendiri
 
 Detail field-level visibility untuk endpoint data warga:
 
-| Field | Admin | Pengurus | Warga (own) | Warga (other) |
-|-------|-------|----------|-------------|---------------|
-| id | ✅ | ✅ | ✅ | ❌ |
-| nik | ✅ full | ✅ full | ✅ full | ❌ |
-| nik_masked | — | — | ✅ (if serializer) | ❌ |
-| no_kk | ✅ full | ✅ full | ✅ full | ❌ |
-| no_kk_masked | — | — | ✅ (if serializer) | ❌ |
-| nama_lengkap | ✅ | ✅ | ✅ | ✅ |
-| tempat_lahir | ✅ | ✅ | ✅ | ❌ |
-| tanggal_lahir | ✅ | ✅ | ✅ | ❌ |
-| jenis_kelamin | ✅ | ✅ | ✅ | ❌ |
-| agama | ✅ | ✅ | ✅ | ❌ |
-| status_perkawinan | ✅ | ✅ | ✅ | ❌ |
-| pendidikan | ✅ | ✅ | ✅ | ❌ |
-| pekerjaan | ✅ | ✅ | ✅ | ❌ |
-| alamat | ✅ | ✅ | ✅ | ❌ |
-| blok | ✅ | ✅ | ✅ | ✅ |
-| no_rumah | ✅ | ✅ | ✅ | ✅ |
-| phone | ✅ | ✅ | ✅ | ❌ |
-| email | ✅ | ✅ | ✅ | ❌ |
-| status | ✅ | ✅ | ✅ | ✅ |
-| foto | ✅ | ✅ | ✅ | ❌ |
-| created_at | ✅ | ✅ | ✅ | ❌ |
-| updated_at | ✅ | ✅ | ✅ | ❌ |
+| Field | Admin | Sekretaris | Bendahara | Pengurus | Warga (own) | Warga (other) |
+|-------|-------|------------|-----------|----------|-------------|---------------|
+| id | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| nik | ✅ full | ✅ full | ✅ masked | ✅ masked | ✅ full | ❌ |
+| no_kk | ✅ full | ✅ full | ✅ masked | ✅ masked | ✅ full | ❌ |
+| nama_lengkap | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| tempat_lahir | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| tanggal_lahir | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| jenis_kelamin | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| agama | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| status_perkawinan | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| pendidikan | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| pekerjaan | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| alamat | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| blok | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| no_rumah | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| phone | ✅ | ✅ | ✅ | ✅ masked | ✅ | ❌ |
+| email | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| status | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| foto | ✅ | ✅ | ✅ | ✅ masked | ✅ | ❌ |
+| created_at | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| updated_at | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
 
 ---
 
@@ -202,7 +217,7 @@ Detail field-level visibility untuk endpoint data warga:
 ### 5.1 RBAC (Role-Based Access Control)
 - Setiap Django ViewSet **WAJIB** punya `permission_classes`.
 - Global permission checked via `has_permission()`.
-- Role defined di model: `admin`, `pengurus`, `warga`.
+- Role defined di model: `admin`, `sekretaris`, `bendahara`, `pengurus`, `warga`.
 
 ### 5.2 Object-Level Permission
 - Setiap endpoint dengan `:id` parameter **WAJIB** melakukan object-level permission check.
@@ -212,16 +227,66 @@ Detail field-level visibility untuk endpoint data warga:
 
 ### 5.3 Queryset Scoping
 - Setiap ViewSet `get_queryset()` **WAJIB** memfilter berdasarkan role:
-  - Admin/Pengurus → full queryset
+  - Admin → full queryset
+  - Sekretaris → full queryset untuk data warga
+  - Bendahara → hanya data keuangan
+  - Pengurus → data warga (masked), forum, kegiatan, polling
   - Warga → hanya data milik sendiri (`filter(user=request.user)`)
 - **DILARANG** return `Model.objects.all()` tanpa filter role.
 
 ### 5.4 IDOR Prevention
 - Semua URL dengan `:id` parameter di-validate:
   - User boleh akses object milik sendiri
-  - Admin/pengurus boleh akses semua object
+  - Admin/sekretaris boleh akses semua object warga
+  - Bendahara hanya akses object keuangan
   - Cross-user access → **403 Forbidden**
 - **DILARANG** return 404 untuk object yang ada tapi user tidak berhak (menghindari enumeration).
+
+### 5.5 Permission Classes (Django)
+
+```python
+# accounts/permissions.py
+from rest_framework import permissions
+
+class IsAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'admin'
+
+class IsSekretaris(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['admin', 'sekretaris']
+
+class IsBendahara(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['admin', 'bendahara']
+
+class IsPengurus(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['admin', 'sekretaris', 'pengurus']
+
+class IsPengurusPlus(permissions.BasePermission):
+    """Admin + sekretaris + pengurus (tidak termasuk bendahara)"""
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['admin', 'sekretaris', 'pengurus']
+
+class IsOwnerOrSekretaris(permissions.BasePermission):
+    """Object-level: pemilik data atau sekretaris/admin"""
+    def has_object_permission(self, request, view, obj):
+        if request.user.role in ['admin', 'sekretaris']:
+            return True
+        return hasattr(obj, 'user') and obj.user == request.user
+
+class IsOwnerOrBendahara(permissions.BasePermission):
+    """Object-level: pemilik data atau bendahara/admin (untuk bukti transfer)"""
+    def has_object_permission(self, request, view, obj):
+        if request.user.role in ['admin', 'bendahara']:
+            return True
+        if hasattr(obj, 'warga'):
+            return obj.warga.user == request.user
+        if hasattr(obj, 'created_by'):
+            return obj.created_by == request.user
+        return False
+```
 
 ---
 
@@ -234,7 +299,7 @@ Detail field-level visibility untuk endpoint data warga:
 | No. KK | `3201********5678` | First 4 + `********` + last 4 |
 | No. HP | `0812****5678` | First 4 + `****` + last 4 |
 | Email | `ah***@gmail.com` | First 2 + `***` + domain |
-| Alamat | Not shown to warga | — |
+| Alamat | Not shown to non-authorized | — |
 
 ### 6.2 Redaction Rules (Audit Log)
 Audit log (`audit_logs`) **TIDAK BOLEH** menyimpan:
@@ -308,7 +373,7 @@ Audit log field sensitif yang di-mask:
 | **Virus Scan** | Optional for production (ClamAV integration) |
 
 ### 7.4 Private Media Access
-```
+```python
 # urls.py
 path('media/<str:file_path>', serve_private_file, name='serve_media')
 
@@ -375,17 +440,17 @@ pg_dump -U smartrt smartrt | gzip | gpg --symmetric --cipher-algo AES256 \
 ### 9.1 What to Log
 | Event | Action | Fields |
 |-------|--------|--------|
-| User login | `login` | user_id, timestamp, IP |
+| User login | `login` | user_id, role, timestamp, IP |
 | User logout | `logout` | user_id, timestamp |
-| Create warga | `create` | user_id, table, record_id, new_data (masked) |
-| Update warga | `update` | user_id, table, record_id, old_data (masked), new_data (masked) |
-| Delete warga | `delete` | user_id, table, record_id, old_data (masked) |
-| Verify warga | `verify` | user_id, table, record_id, status |
-| Confirm iuran | `confirm` | user_id, table, record_id |
-| Export data | `export` | user_id, table, format, record_count |
+| Create warga | `create` | user_id, role, table, record_id, new_data (masked) |
+| Update warga | `update` | user_id, role, table, record_id, old_data (masked), new_data (masked) |
+| Delete warga | `delete` | user_id, role, table, record_id, old_data (masked) |
+| Verify warga | `verify` | user_id, role, table, record_id, status |
+| Confirm iuran | `confirm` | user_id, role, table, record_id |
+| Export data | `export` | user_id, role, table, format, record_count |
 | Failed login | `login_failed` | email_attempted, timestamp, IP |
-| Permission denied | `access_denied` | user_id, endpoint, timestamp |
-| File upload | `file_upload` | user_id, file_type, file_size |
+| Permission denied | `access_denied` | user_id, role, endpoint, timestamp |
+| File upload | `file_upload` | user_id, role, file_type, file_size |
 
 ### 9.2 What NOT to Log
 | Data | Reason |
@@ -401,6 +466,8 @@ pg_dump -U smartrt smartrt | gzip | gpg --symmetric --cipher-algo AES256 \
 | Role | Access |
 |------|--------|
 | Admin | Full access to audit log |
+| Sekretaris | ❌ Cannot access audit log |
+| Bendahara | ❌ Cannot access audit log |
 | Pengurus | ❌ Cannot access audit log |
 | Warga | ❌ Cannot access audit log |
 
@@ -422,68 +489,76 @@ pg_dump -U smartrt smartrt | gzip | gpg --symmetric --cipher-algo AES256 \
 | SEC-09 | Password "password" rejected | 400 | Manual |
 | SEC-10 | Password stored as Argon2 hash | Not plaintext | DB check |
 
-### 10.2 Authorization & Access Control
+### 10.2 Authorization & Access Control (5 Roles)
 | ID | Test Case | Expected | Tool |
 |----|-----------|----------|------|
 | SEC-11 | Warga A GET profil Warga B | 403 Forbidden | Manual |
 | SEC-12 | Warga A GET iuran Warga B | 403 | Manual |
 | SEC-13 | Warga A GET bukti transfer Warga B | 403 | Manual |
 | SEC-14 | Warga A GET pengaduan private Warga B | 403 | Manual |
-| SEC-15 | Warga A PUT profil Warga B | 403 | Manual |
-| SEC-16 | Warga access admin endpoint | 403 | Manual |
-| SEC-17 | Change UUID in URL (IDOR) | 403 | Manual |
-| SEC-18 | Admin access any profile | 200 | Manual |
+| SEC-15 | Bendahara GET data warga | ✅ (masked fields only) | Manual |
+| SEC-16 | Bendahara POST transaksi | 201 | Manual |
+| SEC-17 | Bendahara PUT data warga | 403 | Manual |
+| SEC-18 | Sekretaris CRUD warga | 200/201 | Manual |
+| SEC-19 | Sekretaris POST transaksi | 403 | Manual |
+| SEC-20 | Pengurus GET data warga | ✅ (masked) | Manual |
+| SEC-21 | Pengurus POST transaksi | 403 | Manual |
+| SEC-22 | Pengurus moderate forum | 200 | Manual |
+| SEC-23 | Admin access any resource | 200 | Manual |
+| SEC-24 | Change UUID in URL (IDOR) | 403 | Manual |
 
-### 10.3 Field Masking
+### 10.3 Field Masking (5 Roles)
 | ID | Test Case | Expected | Tool |
 |----|-----------|----------|------|
-| SEC-19 | List warga (warga role) → NIK masked | `3201********0001` | Manual |
-| SEC-20 | List warga (warga role) → phone hidden | Not in response | Manual |
-| SEC-21 | List warga (admin role) → NIK full | `3201010101010001` | Manual |
-| SEC-22 | Export default → NIK masked | Masked | Manual |
-| SEC-23 | Export fullData → NIK full | Full | Manual |
+| SEC-25 | List warga (warga) → NIK masked | `3201********0001` | Manual |
+| SEC-26 | List warga (pengurus) → NIK masked | `3201********0001` | Manual |
+| SEC-27 | List warga (bendahara) → NIK masked | `3201********0001` | Manual |
+| SEC-28 | List warga (sekretaris) → NIK full | `3201010101010001` | Manual |
+| SEC-29 | List warga (admin) → NIK full | `3201010101010001` | Manual |
+| SEC-30 | Export default → NIK masked | Masked | Manual |
+| SEC-31 | Export fullData → NIK full | Full | Manual |
 
 ### 10.4 File Upload
 | ID | Test Case | Expected | Tool |
 |----|-----------|----------|------|
-| SEC-24 | Upload .php | 415 Unsupported Media Type | Manual |
-| SEC-25 | Upload .exe | 415 | Manual |
-| SEC-26 | Upload file > 5MB | 413 Payload Too Large | Manual |
-| SEC-27 | Upload fake MIME (.jpg but .exe) | 415 | Manual |
-| SEC-28 | Upload path traversal (../) | 404 | Manual |
-| SEC-29 | Access file without auth | 401 | Manual |
-| SEC-30 | Filename is UUID (not original) | UUID filename | DB check |
+| SEC-32 | Upload .php | 415 Unsupported Media Type | Manual |
+| SEC-33 | Upload .exe | 415 | Manual |
+| SEC-34 | Upload file > 5MB | 413 Payload Too Large | Manual |
+| SEC-35 | Upload fake MIME (.jpg but .exe) | 415 | Manual |
+| SEC-36 | Upload path traversal (../) | 404 | Manual |
+| SEC-37 | Access file without auth | 401 | Manual |
+| SEC-38 | Filename is UUID (not original) | UUID filename | DB check |
 
 ### 10.5 OWASP Top 10
 | ID | Risk | Test Case | Expected | Tool |
 |----|------|-----------|----------|------|
-| SEC-31 | A01: Broken Access Control | IDOR via UUID manipulation | 403 | Manual |
-| SEC-32 | A02: Cryptographic Failures | Password stored as Argon2 | Not plaintext | DB check |
-| SEC-33 | A02: Cryptographic Failures | Backup encrypted (GPG) | .gpg file | Manual |
-| SEC-34 | A03: Injection | SQL injection via search | Blocked by ORM | sqlmap |
-| SEC-35 | A03: Injection | XSS via input field | Sanitized | Manual |
-| SEC-36 | A05: Security Misconfiguration | DEBUG=False in production | No debug info | Manual |
-| SEC-37 | A05: Security Misconfiguration | Security headers present | HSTS, X-Frame-Options | Manual |
-| SEC-38 | A07: Auth Failures | Brute force protection | Rate limited | Manual |
-| SEC-39 | A08: Data Integrity | CSRF protection | Token validated | Manual |
-| SEC-40 | A09: Logging Failures | Audit log for sensitive ops | Logged | DB check |
-| SEC-41 | A09: Logging Failures | No sensitive data in logs | No password/token | Log check |
+| SEC-39 | A01: Broken Access Control | IDOR via UUID manipulation | 403 | Manual |
+| SEC-40 | A02: Cryptographic Failures | Password stored as Argon2 | Not plaintext | DB check |
+| SEC-41 | A02: Cryptographic Failures | Backup encrypted (GPG) | .gpg file | Manual |
+| SEC-42 | A03: Injection | SQL injection via search | Blocked by ORM | sqlmap |
+| SEC-43 | A03: Injection | XSS via input field | Sanitized | Manual |
+| SEC-44 | A05: Security Misconfiguration | DEBUG=False in production | No debug info | Manual |
+| SEC-45 | A05: Security Misconfiguration | Security headers present | HSTS, X-Frame-Options | Manual |
+| SEC-46 | A07: Auth Failures | Brute force protection | Rate limited | Manual |
+| SEC-47 | A08: Data Integrity | CSRF protection | Token validated | Manual |
+| SEC-48 | A09: Logging Failures | Audit log for sensitive ops | Logged | DB check |
+| SEC-49 | A09: Logging Failures | No sensitive data in logs | No password/token | Log check |
 
 ### 10.6 Audit Log
 | ID | Test Case | Expected | Tool |
 |----|-----------|----------|------|
-| SEC-42 | Create warga → audit log entry | action=create | DB check |
-| SEC-43 | Update warga → audit log masked | NIK masked in old/new_data | DB check |
-| SEC-44 | Audit log NO password | No password field | DB check |
-| SEC-45 | Audit log NO token | No token field | DB check |
-| SEC-46 | Non-admin cannot access audit log | 403 | Manual |
+| SEC-50 | Create warga → audit log entry | action=create | DB check |
+| SEC-51 | Update warga → audit log masked | NIK masked in old/new_data | DB check |
+| SEC-52 | Audit log NO password | No password field | DB check |
+| SEC-53 | Audit log NO token | No token field | DB check |
+| SEC-54 | Non-admin cannot access audit log | 403 | Manual |
 
 ### 10.7 CORS & CSRF
 | ID | Test Case | Expected | Tool |
 |----|-----------|----------|------|
-| SEC-47 | Request from non-whitelisted origin | Blocked | curl |
-| SEC-48 | CSRF token missing on state-changing request | 403 | Manual |
-| SEC-49 | CSRF token present and valid | 200 | Manual |
+| SEC-55 | Request from non-whitelisted origin | Blocked | curl |
+| SEC-56 | CSRF token missing on state-changing request | 403 | Manual |
+| SEC-57 | CSRF token present and valid | 200 | Manual |
 
 ---
 
@@ -537,7 +612,7 @@ pg_dump -U smartrt smartrt | gzip | gpg --symmetric --cipher-algo AES256 \
 Setiap insiden Critical/High harus memiliki:
 1. **Timeline** — Kapan terjadi, kapan terdeteksi, kapan di-resolve.
 2. **Root Cause** — Apa yang menyebabkan insiden.
-3. **Impact** —berapa data/user terdampak.
+3. **Impact** — Berapa data/user terdampak.
 4. **Remediation** — Apa yang sudah diperbaiki.
 5. **Prevention** — Apa yang akan dilakukan agar tidak terulang.
 
@@ -547,4 +622,5 @@ Setiap insiden Critical/High harus memiliki:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0.0 | 2026-06-08 | Initial Security & Privacy Policy. Consolidated from PRD, SRS, SDD, Database, API Contract, Coding Standard, and Test Plan. |
+| 1.0.0 | 2026-06-08 | Initial Security & Privacy Policy |
+| 1.1.0 | 2026-06-08 | Expanded from 3 roles to 5 roles (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated all permission matrices, field visibility matrices, data classification access rules, permission classes, and security tests. Added role hierarchy diagram. |

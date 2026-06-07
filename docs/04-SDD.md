@@ -261,10 +261,12 @@
 
 ### 4.2 Role-Based Access Control (RBAC)
 
-| Role | Global Access |
+| Role | Access |
 |------|--------|
-| **Admin** | Full access, hapus data, manage pengurus |
-| **Pengurus** | CRUD warga, keuangan, pengumuman, forum, pengaduan, kegiatan, polling |
+| **Admin** | Full access, hapus data, manage semua role |
+| **Sekretaris** | CRUD data warga, verifikasi, import/export, pengumuman, pengaduan. Tidak akses keuangan. |
+| **Bendahara** | CRUD transaksi, konfirmasi iuran, lihat bukti transfer, export laporan. Tidak akses CRUD warga. |
+| **Pengurus** | Lihat data warga (masked), moderasi forum, kelola kegiatan/polling, update status pengaduan |
 | **Warga** | Lihat pengumuman, upload iuran, forum, pengaduan, RSVP, vote |
 
 ### 4.3 Object-Level Permission Rules
