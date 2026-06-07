@@ -53,8 +53,7 @@ LOCAL_APPS = [
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
-# AUTH_USER_MODEL akan diset ke "accounts.User" pada task 2.1 (Phase 2) saat
-# model User custom (AbstractUser extended) dibuat — lihat docs/07-TASK-BREAKDOWN.md.
+AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -111,6 +110,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+    {
+        "NAME": "accounts.validators.PasswordComplexityValidator",
     },
 ]
 
@@ -185,3 +187,9 @@ SIMPLE_JWT = {
 # CORS — lihat docs/04-SDD.md §4.4
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:5173"])
 CORS_ALLOW_CREDENTIALS = True
+
+# Refresh token cookie — httpOnly, Secure, SameSite=Strict (lihat docs/06-API-CONTRACT.md §2.2)
+REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
+REFRESH_TOKEN_COOKIE_PATH = "/api/v1/auth"
+REFRESH_TOKEN_COOKIE_SAMESITE = "Strict"
+REFRESH_TOKEN_COOKIE_SECURE = not DEBUG

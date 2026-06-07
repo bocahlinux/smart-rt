@@ -255,7 +255,7 @@ docker compose up --build
 | Phase | Fokus | Status |
 |-------|-------|--------|
 | 1 | Project Setup | ✅ Done |
-| 2 | Authentication & Role System | ⬜ Pending |
+| 2 | Authentication & Role System | ✅ Done |
 | 3 | Data Warga | ⬜ Pending |
 | 4 | Keuangan RT | ⬜ Pending |
 | 5 | Pengumuman & Notifikasi | ⬜ Pending |
@@ -269,13 +269,13 @@ docker compose up --build
 
 ## 📊 Development Status
 
-> **Last updated:** June 8, 2026
+> **Last updated:** June 7, 2026
 
 ### Overall Progress
 
 ```
-Phase 1       ████████████████████  100%  ✅
-Phase 2-10    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-2     ████████████████████  100%  ✅
+Phase 3-10    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -295,7 +295,7 @@ Documentation ████████████████████  100%
 |-------|-------|--------|-------|
 | — | Documentation & Planning | ✅ Done | All 13 docs complete, README, AI Rules |
 | 1 | Project Setup | ✅ Done | Backend (Django+DRF) & frontend (React+Vite) scaffolded, Docker/Compose, lint tooling, pytest config |
-| 2 | Authentication & Role System | ⬜ Pending | — |
+| 2 | Authentication & Role System | ✅ Done | JWT auth (access+refresh, rotation & blacklist), RBAC permissions, Argon2 hashing, rate limiting, field masking, security test suite |
 | 3 | Data Warga | ⬜ Pending | — |
 | 4 | Keuangan RT | ⬜ Pending | — |
 | 5 | Pengumuman & Notifikasi | ⬜ Pending | — |
@@ -317,10 +317,13 @@ Documentation ████████████████████  100%
   - Frontend scaffold: React 19 + Vite + TypeScript, Tailwind CSS 4, PWA plugin, Zustand, react-router-dom, axios client
   - Tooling: Ruff/Black/Bandit (backend) & ESLint/Prettier (frontend), pytest + pytest-django config
   - Docker: multi-stage Dockerfiles, docker-compose (db/backend/frontend/nginx), nginx reverse proxy
+- ✅ **v0.2.0** — Authentication & Role System (June 7, 2026)
+  - Backend: custom `User` model (UUID, 5-role RBAC), register/login/refresh/logout/me/change-password endpoints, JWT access+refresh with rotation & blacklist (incl. `AUTH_REFRESH_TOKEN_REUSED` session-revocation), Argon2 password hashing, password strength validators, login rate limiting (10/5min), role-based serializers with field masking (NIK/KK/phone/email)
+  - Frontend: Zustand auth store (in-memory token only), axios client with 401→refresh→retry interceptor, Login/Register pages, `ProtectedRoute` with httpOnly-cookie session restoration
+  - Security tests: full auth flow, token edge cases (expired/invalid/reused), rate limit, password strength — `accounts/tests/test_security.py` (10/10 passing)
 
 ### Upcoming Milestones
 
-- ⬜ **v0.2.0** — Authentication & Role System
 - ⬜ **v0.3.0** — Data Warga
 - ⬜ **v0.4.0** — Keuangan RT
 - ⬜ **v0.5.0** — Pengumuman & Notifikasi
