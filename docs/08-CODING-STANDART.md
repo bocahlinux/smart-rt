@@ -183,6 +183,8 @@ class User(AbstractUser):
     
     class Role(models.TextChoices):
         ADMIN = 'admin', 'Admin'
+        SEKRETARIS = 'sekretaris', 'Sekretaris'
+        BENDAHARA = 'bendahara', 'Bendahara'
         PENGURUS = 'pengurus', 'Pengurus'
         WARGA = 'warga', 'Warga'
     
@@ -302,17 +304,18 @@ class IsOwnerOrPengurus(permissions.BasePermission):
             return True
         return hasattr(obj, 'user') and obj.user == request.user
 
-class IsOwnerOrPengurusForFile(permissions.BasePermission):
-    """
-    Object-level permission untuk file/bukti transfer:
-    - Hanya pemilik, bendahara, pengurus berwenang, admin
-    """
+class IsOwnerOrSekretaris(permissions.BasePermission):
+    """Object-level: pemilik data atau sekretaris/admin"""
     def has_object_permission(self, request, view, obj):
-        if request.user.role == 'admin':
+        if request.user.role in ['admin', 'sekretaris']:
             return True
-        if request.user.role == 'pengurus':
-            return True  # Bisa dipersempit ke bendahara saja jika perlu
-        # Warga hanya bisa akses file miliknya
+        return hasattr(obj, 'user') and obj.user == request.user
+
+class IsOwnerOrBendahara(permissions.BasePermission):
+    """Object-level: pemilik data atau bendahara/admin (untuk bukti transfer)"""
+    def has_object_permission(self, request, view, obj):
+        if request.user.role in ['admin', 'bendahara']:
+            return True
         if hasattr(obj, 'warga'):
             return obj.warga.user == request.user
         if hasattr(obj, 'created_by'):
@@ -323,39 +326,39 @@ class IsOwnerOrPengurusForFile(permissions.BasePermission):
 ```python
 # accounts/views.py
 from rest_framework import viewsets, permissions
-from .permissions import IsPengurus, IsOwnerOrPengurus
+from .permissions import IsSekretaris, IsBendahara, IsPengurus, IsOwnerOrSekretaris
 
 class WargaProfileViewSet(viewsets.ModelViewSet):
-    """Warga ViewSet dengan RBAC + object-level permission"""
+    """Warga ViewSet dengan 5-role RBAC + object-level permission"""
     
-    # ✅ WAJIB: permission_classes untuk setiap ViewSet
     permission_classes = [permissions.IsAuthenticated]
     
     def get_permissions(self):
-        """Permission per action"""
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAuthenticated(), IsPengurus()]
-        if self.action == 'verify':
-            return [permissions.IsAuthenticated(), IsPengurus()]
-        # list, retrieve: semua authenticated, tapi queryset di-scope
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'verify']:
+            return [permissions.IsAuthenticated(), IsSekretaris()]
         return [permissions.IsAuthenticated()]
     
     def get_serializer_class(self):
         """Serializer berbeda per role"""
-        if self.request.user.role in ['admin', 'pengurus']:
+        role = self.request.user.role
+        if role == 'admin':
             return WargaProfileAdminSerializer
+        if role == 'sekretaris':
+            return WargaProfileSekretarisSerializer
+        if role == 'bendahara':
+            return WargaProfileBendaharaSerializer  # masked
+        if role == 'pengurus':
+            return WargaProfilePengurusSerializer  # masked
         return WargaProfileWargaSerializer
     
     def get_queryset(self):
-        """
-        ✅ WAJIB: get_queryset membatasi data berdasarkan role.
-        Warga TIDAK BOLEH menerima queryset global.
-        """
         user = self.request.user
-        
-        if user.role in ['admin', 'pengurus']:
+        if user.role in ['admin', 'sekretaris']:
             return WargaProfile.objects.select_related('user').all()
-        
+        if user.role == 'bendahara':
+            return WargaProfile.objects.select_related('user').only('id', 'nama_lengkap', 'blok', 'no_rumah', 'status')
+        if user.role == 'pengurus':
+            return WargaProfile.objects.select_related('user').exclude(user=user)
         # Warga hanya lihat profil sendiri
         return WargaProfile.objects.select_related('user').filter(user=user)
 ```
@@ -1099,4 +1102,5 @@ bandit -r backend/
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial coding standard |
 | 1.1.0 | 2026-06-07 | Migrated backend from Express to Django patterns |
-| 1.2.0 | 2026-06-07 | Major security rewrite: DRF permission standard (RBAC + object-level), serializer field exposure rules, queryset scoping, file upload security, audit log masking, settings security, frontend token storage (no persist), axios refresh token interceptor, secrets policy, code review checklist. Removed all Express/TypeScript/Prisma/Zod references. Updated section numbering. |
+| 1.2.0 | 2026-06-07 | Major security rewrite: DRF permission standard, serializer field exposure, queryset scoping, file upload security, audit log masking, settings security, frontend token storage. |
+| 1.3.0 | 2026-06-08 | Expanded roles to 5 (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated model TextChoices, permission classes (IsSekretaris, IsBendahara, IsOwnerOrSekretaris, IsOwnerOrBendahara), viewset examples, serializer variants per role. |

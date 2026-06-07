@@ -37,10 +37,13 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 | FR-AUTH-01 | Sistem harus mendukung register dengan email dan no. HP | High |
 | FR-AUTH-02 | Sistem harus mendukung login dengan email/no. HP + password | High |
 | FR-AUTH-03 | Sistem harus memiliki 5 role: Admin, Sekretaris, Bendahara, Pengurus, Warga | High |
-| FR-AUTH-04 | Warga harus diverifikasi oleh pengurus sebelum bisa login | High |
-| FR-AUTH-05 | Sistem harus menggunakan JWT untuk session management | High |
-| FR-AUTH-06 | Sistem harus mendukung logout & token expiration | Medium |
-| FR-AUTH-07 | Sistem harus mendukung reset password via email/no. HP | Medium |
+| FR-AUTH-04 | Warga harus diverifikasi oleh sekretaris/admin sebelum bisa login | High |
+| FR-AUTH-05 | Sistem harus menggunakan JWT (access + refresh token) untuk session management | High |
+| FR-AUTH-06 | Sistem harus mendukung logout & token blacklist | Medium |
+| FR-AUTH-07 | Sistem harus mendukung token refresh dengan rotation | Medium |
+| FR-AUTH-08 | Sistem harus mendukung reset password via email/no. HP | Medium |
+| FR-AUTH-09 | Sistem harus menerapkan rate limiting pada login (10 attempts / 5 menit) | High |
+| FR-AUTH-10 | Sistem harus menerapkan password strength validation (min 8 chars, uppercase, lowercase, digit) | High |
 
 ### 2.2 Data Warga
 
@@ -140,28 +143,36 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 - Support hingga 50 concurrent users
 
 ### 3.2 Security
-- Semua password di-hash menggunakan Django password hasher (default production: Argon2, fallback: PBKDF2-SHA256)
-- JWT token expiration: 24 jam
-- Role-based access control (RBAC) di setiap endpoint
-- Input validation & sanitization di semua form
+- Semua password di-hash dengan Django Argon2 (default), fallback PBKDF2-SHA256
+- Access token lifetime: 15-30 menit
+- Refresh token lifetime: 7-14 hari (httpOnly Secure SameSite cookie)
+- Token rotation + blacklist setelah refresh/logout
+- Role-based access control (RBAC) 5 role di setiap endpoint
+- Object-level permission untuk data sensitif
+- Input validation & sanitization di semua form (DRF Serializers + Django Validators)
 - SQL injection prevention via Django ORM
 - XSS prevention via output encoding
-- Rate limiting: 100 requests/menit per IP
+- Rate limiting: 100 requests/menit per IP, 10 login attempts/5 menit
+- CORS: django-cors-headers dengan whitelist
+- Security headers: HSTS, X-Content-Type-Options, X-Frame-Options
 
 ### 3.2.1 Data Protection Requirements
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| SEC-01 | Sistem harus melakukan masking NIK dan no KK pada list view untuk role warga. | High |
-| SEC-02 | Sistem hanya boleh menampilkan data lengkap warga kepada admin/sekretaris yang berwenang; bendahara/pengurus hanya menerima field terbatas/masked. | High |
+| SEC-01 | Sistem harus melakukan masking NIK dan no KK pada list view untuk role yang tidak berhak (pengurus, bendahara). | High |
+| SEC-02 | Sistem hanya boleh menampilkan data lengkap warga kepada sekretaris dan admin. | High |
+| SEC-02a | Bendahara dan pengurus hanya melihat data warga yang masked/agregat. | High |
 | SEC-03 | Warga hanya boleh melihat data profil miliknya sendiri kecuali data publik yang memang disetujui. | High |
-| SEC-04 | Semua perubahan pada data warga wajib tercatat di audit log. | High |
-| SEC-05 | Semua file upload wajib divalidasi MIME type, extension, ukuran, dan disimpan dengan nama random. | High |
+| SEC-04 | Semua perubahan pada data warga wajib tercatat di audit log dengan field sensitif di-mask. | High |
+| SEC-05 | Semua file upload wajib divalidasi MIME type (magic bytes), extension, ukuran, dan disimpan dengan nama random UUID. | High |
 | SEC-06 | Bukti transfer hanya boleh dilihat oleh pemilik, bendahara, dan admin. | High |
-| SEC-07 | Pengaduan pribadi hanya boleh dilihat oleh pelapor, admin, serta sekretaris/pengurus yang ditugaskan. | High |
-| SEC-08 | Backup database wajib terenkripsi. | High |
+| SEC-07 | Pengaduan pribadi hanya boleh dilihat oleh pelapor, sekretaris, pengurus berwenang, dan admin. | High |
+| SEC-08 | Backup database wajib terenkripsi (GPG AES256). | High |
 | SEC-09 | Secret key, JWT signing key, database password, dan credential lain wajib berasal dari environment variable. | High |
 | SEC-10 | API harus mencegah IDOR dengan object-level permission. | High |
+| SEC-11 | Role Bendahara hanya boleh akses modul keuangan, tidak boleh CRUD data warga. | High |
+| SEC-12 | Role Sekretaris hanya boleh akses modul data warga dan administrasi, tidak boleh akses keuangan. | High |
 
 ### 3.3 Availability
 - Target uptime: 99.5%
@@ -302,3 +313,4 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial SRS |
 | 1.1.0 | 2026-06-07 | Koreksi SQL injection prevention via Django ORM. Tambah §3.2.1 Data Protection Requirements (SEC-01 s/d SEC-10). |
+| 1.2.0 | 2026-06-08 | Expanded roles to 5 (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated auth requirements (FR-AUTH-03 s/d FR-AUTH-10), security section (token strategy, Argon2, object-level permission), data protection (SEC-01 s/d SEC-12 with role-specific rules). |

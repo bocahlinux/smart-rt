@@ -250,15 +250,15 @@ Data pribadi warga, akses terbatas berdasarkan role dan object-level permission:
 
 | Data | Lokasi | Aturan Akses |
 |------|--------|-------------|
-| NIK | `warga_profiles.nik` | Hanya pemilik, pengurus, admin. Di-mask untuk role warga. |
-| No. KK | `warga_profiles.no_kk` | Hanya pemilik, pengurus, admin. Di-mask untuk role warga. |
-| Alamat lengkap | `warga_profiles.alamat` | Hanya pemilik, pengurus, admin. |
-| Tanggal lahir | `warga_profiles.tanggal_lahir` | Hanya pemilik, pengurus, admin. |
-| Nomor HP | `users.phone` | Hanya pemilik, pengurus, admin. Di-mask untuk role warga. |
-| Email | `users.email` | Hanya pemilik, pengurus, admin. |
-| Foto profil | `warga_profiles.foto` | Hanya pemilik, pengurus, admin. |
-| Bukti transfer | `transaksi.bukti_url`, `iuran_warga.bukti_url` | Hanya pemilik transaksi, bendahara, pengurus, admin. |
-| Data pengaduan | `pengaduan.*` | Hanya pelapor dan pengurus berwenang. Pengaduan sensitif tidak publik. |
+| NIK | `warga_profiles.nik` | Pemilik, sekretaris, admin (full). Bendahara, pengurus (masked). Warga lain (hidden). |
+| No. KK | `warga_profiles.no_kk` | Pemilik, sekretaris, admin (full). Bendahara, pengurus (masked). Warga lain (hidden). |
+| Alamat lengkap | `warga_profiles.alamat` | Pemilik, sekretaris, admin. Others (hidden). |
+| Tanggal lahir | `warga_profiles.tanggal_lahir` | Pemilik, sekretaris, admin. Others (hidden). |
+| Nomor HP | `users.phone` | Pemilik, sekretaris, bendahara, admin (full). Pengurus, warga lain (masked/hidden). |
+| Email | `users.email` | Pemilik, sekretaris, admin. Others (hidden). |
+| Foto profil | `warga_profiles.foto` | Pemilik, sekretaris, bendahara, admin. Pengurus (masked). Warga lain (hidden). |
+| Bukti transfer | `transaksi.bukti_url`, `iuran_warga.bukti_url` | Pemilik transaksi, bendahara, admin. Others (hidden). |
+| Data pengaduan | `pengaduan.*` | Pelapor, sekretaris, pengurus berwenang, admin. Pengaduan sensitif: tidak publik. |
 
 ### 3.4 Restricted
 Data sistem, tidak boleh di-expose ke mana pun kecuali ke sistem itu sendiri:

@@ -39,7 +39,9 @@
 | 1.2 | Register endpoint + validation (DRF Serializer) | 45m | ⬜ |
 | 1.3 | Login endpoint + JWT generation (access + refresh token) | 45m | ⬜ |
 | 1.4 | Auth classes (SimpleJWT authentication + custom permission) | 30m | ⬜ |
-| 1.5 | RBAC permission classes (IsAdmin, IsPengurus, IsOwnerOrPengurus) | 30m | ⬜ |
+|| 1.5 | RBAC permission classes (IsAdmin, IsSekretaris, IsBendahara, IsPengurus, IsOwnerOrSekretaris, IsOwnerOrBendahara) | 45m | ⬜ |
+|| 1.5a | Role-based serializer variants (Admin, Sekretaris, Bendahara, Pengurus, Warga) | 30m | ⬜ |
+|| 1.5b | Field masking per role (NIK, KK, phone, email) | 20m | ⬜ |
 | 1.6 | Token refresh endpoint + rotation | 20m | ⬜ |
 | 1.7 | Logout + token blacklist | 20m | ⬜ |
 | 1.8 | Get current user endpoint | 15m | ⬜ |
@@ -71,25 +73,27 @@
 | 2.2 | CRUD endpoints for warga (ViewSet) | 60m | ⬜ |
 | 2.3 | Search & filter endpoint | 30m | ⬜ |
 | 2.4 | Pagination endpoint | 20m | ⬜ |
-| 2.5 | Import from Excel endpoint | 45m | ⬜ |
-| 2.6 | Export to Excel endpoint (pengurus/admin only) | 30m | ⬜ |
-| 2.7 | Export to PDF — kartu keluarga (pengurus/admin only) | 45m | ⬜ |
-| 2.8 | Warga verification endpoint (approve/reject) | 20m | ⬜ |
-| 2.9 | Audit log for data changes (create/update/delete/verify) | 30m | ⬜ |
-| 2.10 | **Security:** Implement object-level permission (warga hanya lihat profil sendiri) | 30m | ⬜ |
-| 2.11 | **Security:** Implement field masking (NIK, no KK, phone, email per role) | 30m | ⬜ |
-| 2.12 | **Security:** Restrict export to pengurus/admin only | 15m | ⬜ |
-| 2.13 | **Security:** Audit every export event (action: export, table: warga) | 15m | ⬜ |
-| 2.14 | **Security:** Mask sensitive fields by default in export (fullData=true only for admin) | 20m | ⬜ |
+|| 2.5 | Import from Excel endpoint (sekretaris/admin only) | 45m | ⬜ |
+|| 2.6 | Export to Excel endpoint (sekretaris/admin only) | 30m | ⬜ |
+|| 2.7 | Export to PDF — kartu keluarga (sekretaris/admin only) | 45m | ⬜ |
+|| 2.8 | Warga verification endpoint (approve/reject) — sekretaris/admin | 20m | ⬜ |
+|| 2.9 | Audit log for data changes (create/update/delete/verify) | 30m | ⬜ |
+|| 2.10 | **Security:** Implement object-level permission (warga hanya lihat profil sendiri) | 30m | ⬜ |
+|| 2.11 | **Security:** Implement field masking (NIK, no KK, phone, email per role) | 30m | ⬜ |
+|| 2.12 | **Security:** Restrict export to sekretaris/admin only | 15m | ⬜ |
+|| 2.13 | **Security:** Bendahara sees only masked warga data | 15m | ⬜ |
+|| 2.14 | **Security:** Audit every export event (action: export, table: warga) | 15m | ⬜ |
+|| 2.15 | **Security:** Mask sensitive fields by default in export (fullData=true only for admin) | 20m | ⬜ |
 | 2.15 | Frontend: Warga list page (table + filter) | 60m | ⬜ |
 | 2.16 | Frontend: Warga detail page (field visibility per role) | 45m | ⬜ |
 | 2.17 | Frontend: Warga form (create/edit) | 60m | ⬜ |
 | 2.18 | Frontend: Import/Export buttons (pengurus only) | 20m | ⬜ |
 | 2.19 | Frontend: Kartu keluarga view | 30m | ⬜ |
-| 2.20 | **Security Tests:** Warga cannot access other warga private data → 403 | 20m | ⬜ |
-| 2.21 | **Security Tests:** Field masking verification per role | 15m | ⬜ |
-| 2.22 | **Security Tests:** Export without pengurus role → 403 | 10m | ⬜ |
-| 2.23 | **Security Tests:** Audit log entries for all CRUD operations | 15m | ⬜ |
+|| 2.21 | **Security Tests:** Warga cannot access other warga private data → 403 | 20m | ⬜ |
+|| 2.22 | **Security Tests:** Field masking verification per role (5 roles) | 20m | ⬜ |
+|| 2.23 | **Security Tests:** Export without sekretaris role → 403 | 10m | ⬜ |
+|| 2.24 | **Security Tests:** Bendahara cannot CRUD warga data → 403 | 10m | ⬜ |
+|| 2.25 | **Security Tests:** Audit log entries for all CRUD operations | 15m | ⬜ |
 
 ---
 
@@ -108,10 +112,11 @@
 | 3.7 | Dashboard saldo endpoint | 20m | ⬜ |
 | 3.8 | Laporan keuangan endpoint (PDF via WeasyPrint) | 45m | ⬜ |
 | 3.9 | **Security:** Restrict bukti transfer access (only pemilik, bendahara, pengurus, admin) | 20m | ⬜ |
-| 3.10 | **Security:** Validate upload file type (MIME magic bytes), extension, max size (5MB) | 20m | ⬜ |
-| 3.11 | **Security:** Store uploaded files with random UUID filename | 15m | ⬜ |
-| 3.12 | **Security:** Audit every confirmation/rejection of iuran | 15m | ⬜ |
-| 3.13 | **Security:** Object-level permission (warga only access own iuran) | 20m | ⬜ |
+|| 3.2 | CRUD endpoints for transaksi (bendahara/admin only) | 45m | ⬜ |
+|| 3.9 | **Security:** Restrict bukti transfer access (only pemilik, bendahara, admin) | 20m | ⬜ |
+|| 3.9a | **Security:** Bendahara cannot access data warga CRUD → 403 | 10m | ⬜ |
+|| 3.12 | **Security:** Audit every confirmation/rejection of iuran (by bendahara) | 15m | ⬜ |
+|| 3.13 | **Security:** Object-level permission (bendahara only access keuangan module) | 20m | ⬜ |
 | 3.14 | Frontend: Keuangan list page | 45m | ⬜ |
 | 3.15 | Frontend: Transaksi form | 30m | ⬜ |
 | 3.16 | Frontend: Upload bukti transfer (warga) | 30m | ⬜ |

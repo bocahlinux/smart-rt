@@ -55,9 +55,15 @@ Satu platform digital yang:
 
 ### 4.1 Multi-Role Authentication
 - Register & login dengan email/no. HP
-- 5 role: Admin (Ketua RT), Sekretaris, Bendahara, Pengurus, Warga
-- Warga perlu verifikasi oleh pengurus (approve/reject)
-- JWT-based authentication
+- 5 role: **Admin** (Ketua RT), **Sekretaris**, **Bendahara**, **Pengurus**, **Warga**
+- Warga perlu verifikasi oleh sekretaris/admin (approve/reject)
+- JWT-based authentication (access + refresh token)
+- **Permission per role:**
+  - Admin: Full access, manage semua role
+  - Sekretaris: CRUD data warga, verifikasi, import/export
+  - Bendahara: CRUD transaksi, konfirmasi iuran, laporan keuangan
+  - Pengurus: Lihat data warga (masked), moderasi forum, kelola kegiatan/polling
+  - Warga: Lihat pengumuman, upload iuran, forum, pengaduan, RSVP, vote
 
 ### 4.2 Data Warga
 - Data lengkap: NIK, nama, TTL, jenis kelamin, agama, status perkawinan, pendidikan, pekerjaan, no. HP, email, foto
@@ -193,10 +199,10 @@ Satu platform digital yang:
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Warga sulit adaptasi | High | UI simpel, onboarding, bantuan via WhatsApp |
-| Data sensitif bocor | High | Enkripsi, role-based access, audit log |
+| Data sensitif bocor | High | Enkripsi, RBAC (5 role), object-level permission, audit log, field masking |
 | Server down | Medium | Daily backup, monitoring, VPS reliable |
 | Fitur terlalu kompleks | Medium | Prioritaskan MVP, tambah fitur bertahap |
-| Pengurus tidak mau pakai | Medium | Training, UI mudah, manfaat langsung terasa |
+| Pengurus/Sekretaris/Bendahara tidak mau pakai | Medium | Training, UI mudah, manfaat langsung terasa |
 
 ---
 
@@ -205,4 +211,5 @@ Satu platform digital yang:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial PRD |
-| 1.1.0 | 2026-06-07 | Added §6 Data Privacy & Protection. Renumbered §7-§9 → §8-§10. |
+| 1.1.0 | 2026-06-07 | Added §6 Data Privacy & Protection |
+| 1.2.0 | 2026-06-08 | Expanded roles to 5 (Admin, Sekretaris, Bendahara, Pengurus, Warga) |
