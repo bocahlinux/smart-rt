@@ -128,7 +128,7 @@
 | UT-SER-05 | Export serializer masks by default | fullData=false | NIK/KK masked |
 | UT-SER-06 | Export serializer full for admin | fullData=true, admin | NIK/KK full |
 | UT-SER-07 | Sekretaris serializer includes all fields | Sekretaris role | nik, no_kk, phone, email, alamat included |
-| UT-SER-08 | Bendahara serializer includes all fields | Bendahara role | nik, no_kk, phone, email, alamat included |
+| UT-SER-08 | Bendahara serializer returns limited fields | Bendahara role | nik/no_kk/phone masked, email hidden, alamat terbatas |
 
 ### 2.6 Unit Tests — File Upload Validators
 | Test ID | Test Case | Input | Expected Output |
@@ -176,9 +176,9 @@
 | Test ID | Test Case | Method | Endpoint | Expected |
 |---------|-----------|--------|----------|----------|
 | IT-WRG-01 | List warga (admin) | GET | /api/v1/warga/ | 200 + paginated + full fields |
-| IT-WRG-02 | List warga (pengurus) | GET | /api/v1/warga/ | 200 + paginated + full fields |
+| IT-WRG-02 | List warga (pengurus) | GET | /api/v1/warga/ | 200 + paginated + masked/limited fields |
 | IT-WRG-03 | List warga (sekretaris) | GET | /api/v1/warga/ | 200 + paginated + full fields |
-| IT-WRG-04 | List warga (bendahara) | GET | /api/v1/warga/ | 200 + paginated + full fields |
+| IT-WRG-04 | List warga (bendahara) | GET | /api/v1/warga/ | 200 + paginated + masked/limited fields |
 | IT-WRG-05 | List warga (warga) | GET | /api/v1/warga/ | 200 + own profile only + masked fields |
 | IT-WRG-06 | Get own profile (warga) | GET | /api/v1/warga/:own_id/ | 200 + full data (no mask) |
 | IT-WRG-07 | Get other profile (warga) | GET | /api/v1/warga/:other_id/ | 403 Forbidden |
@@ -203,11 +203,11 @@
 | Test ID | Test Case | Method | Endpoint | Expected |
 |---------|-----------|--------|----------|----------|
 | IT-FIN-01 | List transaksi (bendahara) | GET | /api/v1/keuangan/ | 200 + paginated |
-| IT-FIN-02 | List transaksi (sekretaris) | GET | /api/v1/keuangan/ | 200 + paginated |
+| IT-FIN-02 | List transaksi (sekretaris) | GET | /api/v1/keuangan/ | 403 |
 | IT-FIN-03 | List transaksi (pengurus) | GET | /api/v1/keuangan/ | 403 |
 | IT-FIN-04 | List transaksi (warga) | GET | /api/v1/keuangan/ | 403 |
 | IT-FIN-05 | Create transaksi (bendahara) | POST | /api/v1/keuangan/ | 201 |
-| IT-FIN-06 | Create transaksi (sekretaris) | POST | /api/v1/keuangan/ | 201 |
+| IT-FIN-06 | Create transaksi (sekretaris) | POST | /api/v1/keuangan/ | 403 |
 | IT-FIN-07 | Create transaksi (pengurus) | POST | /api/v1/keuangan/ | 403 |
 | IT-FIN-08 | Upload bukti iuran (warga, own) | POST | /api/v1/iuran/upload/ | 201 |
 | IT-FIN-09 | Upload bukti iuran (warga, other) | POST | /api/v1/iuran/upload/ | 403 |
@@ -215,7 +215,7 @@
 | IT-FIN-11 | View other bukti transfer (warga) | GET | /api/v1/media/bukti-iuran/:other_id/ | 403 |
 | IT-FIN-12 | View bukti transfer (bendahara) | GET | /api/v1/media/bukti-iuran/:id/ | 200 + file |
 | IT-FIN-13 | Konfirmasi iuran (bendahara) | PUT | /api/v1/iuran/:id/confirm/ | 200 |
-| IT-FIN-14 | Konfirmasi iuran (sekretaris) | PUT | /api/v1/iuran/:id/confirm/ | 200 |
+| IT-FIN-14 | Konfirmasi iuran (sekretaris) | PUT | /api/v1/iuran/:id/confirm/ | 403 |
 | IT-FIN-15 | Konfirmasi iuran (pengurus) | PUT | /api/v1/iuran/:id/confirm/ | 403 |
 | IT-FIN-16 | Konfirmasi iuran (warga) | PUT | /api/v1/iuran/:id/confirm/ | 403 |
 | IT-FIN-17 | Upload .php file | POST | /api/v1/iuran/upload/ | 415 Unsupported Media Type |
@@ -283,9 +283,9 @@
 | SEC-MASK-04 | List warga — email hidden | Warga | email | Not in response |
 | SEC-MASK-05 | List warga — alamat hidden | Warga | alamat | Not in response |
 | SEC-MASK-06 | List warga — NIK full | Admin | nik | "3201010101010001" |
-| SEC-MASK-07 | List warga — no KK full | Pengurus | no_kk | "3201010101010001" |
+| SEC-MASK-07 | List warga — no KK masked | Pengurus | no_kk | "3201********0001" |
 | SEC-MASK-08 | List warga — NIK full | Sekretaris | nik | "3201010101010001" |
-| SEC-MASK-09 | List warga — NIK full | Bendahara | nik | "3201010101010001" |
+| SEC-MASK-09 | List warga — NIK masked | Bendahara | nik | "3201********0001" |
 | SEC-MASK-10 | Export default — NIK masked | Pengurus | nik | Masked |
 | SEC-MASK-11 | Export fullData — NIK full | Admin | nik | Full (fullData=true) |
 | SEC-MASK-12 | Owner view — NIK full (no mask) | Warga (own) | nik | Full |
@@ -766,4 +766,4 @@ jobs:
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial test plan |
 | 1.1.0 | 2026-06-07 | Migrated backend from Vitest/Supertest/Node to pytest/Django TestCase/DRF APITestCase. Added detailed security test sections: object-level permission tests (SEC-OBJ), field masking tests (SEC-MASK), audit log tests (SEC-AUDIT), file upload security tests (SEC-FILE), JWT/auth security tests (SEC-JWT), OWASP Top 10 tests, backup/recovery tests. Added Django fixtures. Updated CI/CD pipeline for Django. Updated test counts. |
-| 1.2.0 | 2026-06-08 | Expanded to 5-role system: added sekretaris_user and bendahara_user fixtures. Added permission unit tests for IsSekretaris and IsBendahara (UT-PERM-05 to UT-PERM-08). Added integration tests for Sekretaris (CRUD warga, verifikasi, export) and Bendahara (CRUD keuangan, konfirmasi iuran). Added object-level permission tests (SEC-OBJ-09 to SEC-OBJ-16) and field masking tests (SEC-MASK-08, SEC-MASK-09) for Sekretaris & Bendahara. Added serializer tests (UT-SER-07, UT-SER-08). Updated test counts. |
+| 1.2.0 | 2026-06-07 | Expanded to 5-role system: added sekretaris_user and bendahara_user fixtures. Added permission unit tests for IsSekretaris and IsBendahara (UT-PERM-05 to UT-PERM-08). Added integration tests for Sekretaris (CRUD warga, verifikasi, export) and Bendahara (CRUD keuangan, konfirmasi iuran), with Sekretaris blocked from keuangan mutations. Added object-level permission tests (SEC-OBJ-09 to SEC-OBJ-16) and field masking tests (SEC-MASK-08, SEC-MASK-09) for Sekretaris & Bendahara. Added serializer tests (UT-SER-07, UT-SER-08). Updated test counts. |
