@@ -1,6 +1,6 @@
 # Smart-RT — AI Development Rules
 
-**Version:** 1.1.0
+**Version:** 1.5.0
 **Date:** June 7, 2026
 **Untuk:** AI Assistant
 **Status:** Active
@@ -90,6 +90,9 @@ smart-rt/
   8. Coding Standard
   9. Test Plan
   10. AI Rules
+  11. Security Policy (11-SECURITY.md)
+  12. CI/CD Pipeline (12-CICD.md) — terutama untuk task Phase 0 & Phase 9
+  13. Monitoring & Observability (13-MONITORING.md) — terutama untuk task Phase 9
 - Jika ada konflik antar dokumen, jangan ambil keputusan sendiri.
 - Laporkan konflik dengan file dan section terkait.
 - Tunggu keputusan user sebelum implementasi.
@@ -246,3 +249,4 @@ chore: update dependencies
 | 1.2.0 | 2026-06-07 | Added Security Reference pointer to docs/11-SECURITY.md. |
 | 1.3.0 | 2026-06-07 | Updated Canonical Stack to specify 5 roles (admin, sekretaris, bendahara, pengurus, warga). |
 | 1.4.0 | 2026-06-07 | Updated Authentication section with 5-role permission matrix. Added role-specific endpoint annotations. Updated field visibility table to 6 columns. |
+| 1.5.0 | 2026-06-07 | Added docs/12-CICD.md and docs/13-MONITORING.md to the Documentation & Source of Truth reading order (§4). |
