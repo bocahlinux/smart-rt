@@ -1,7 +1,7 @@
 # Smart-RT — Database Design Document
 
-**Version:** 1.2.0
-**Date:** June 7, 2026
+**Version:** 1.3.0
+**Date:** June 8, 2026
 **Database:** PostgreSQL 16
 **ORM:** Django ORM (bawaan)
 **Status:** Draft
@@ -485,9 +485,12 @@ class WargaProfile(models.Model):
     no_rumah = models.CharField(max_length=10, null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.AKTIF)
     foto = models.FileField(upload_to='foto-profil/', null=True, blank=True)  # SENSITIF
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='warga_deleted')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'warga_profiles'
         indexes = [
@@ -495,8 +498,9 @@ class WargaProfile(models.Model):
             models.Index(fields=['blok'], name='idx_warga_blok'),
             models.Index(fields=['status'], name='idx_warga_status'),
             models.Index(fields=['nik'], name='idx_warga_nik'),
+            models.Index(fields=['is_deleted'], name='idx_warga_is_deleted'),
         ]
-    
+
     def __str__(self):
         return self.nama_lengkap
 ```
@@ -686,6 +690,7 @@ class Pengaduan(models.Model):
     judul = models.CharField(max_length=255)
     deskripsi = models.TextField()  # SENSITIF
     kategori = models.CharField(max_length=20, choices=Kategori.choices, default=Kategori.LAINNYA)
+    is_sensitif = models.BooleanField(default=False)  # True = tidak tampil di daftar publik (lihat 03-UIUX-Flow.md & 05-DATABASE.md §3.3)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DITERIMA)
     foto = models.FileField(upload_to='pengaduan/', null=True, blank=True)  # SENSITIF
     warga = models.ForeignKey(User, on_delete=models.PROTECT, related_name='pengaduan')
@@ -699,6 +704,7 @@ class Pengaduan(models.Model):
         indexes = [
             models.Index(fields=['status'], name='idx_pengaduan_status'),
             models.Index(fields=['kategori'], name='idx_pengaduan_kategori'),
+            models.Index(fields=['is_sensitif'], name='idx_pengaduan_sensitif'),
         ]
 ```
 
@@ -714,10 +720,19 @@ class Kegiatan(models.Model):
     deskripsi = models.TextField(null=True, blank=True)
     tanggal = models.DateTimeField()
     lokasi = models.CharField(max_length=255, null=True, blank=True)
+    kuota_peserta = models.PositiveIntegerField(null=True, blank=True)  # null = tanpa batas kuota
+    rsvp_buka_at = models.DateTimeField(null=True, blank=True)  # null = RSVP langsung dibuka saat kegiatan dipublish
+    rsvp_tutup_at = models.DateTimeField(null=True, blank=True)  # null = RSVP ditutup otomatis saat waktu `tanggal` tercapai
     penanggung_jawab = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
+    def kuota_tersisa(self):
+        """Hitung sisa kuota = kuota_peserta - jumlah RSVP berstatus 'hadir'. Return None jika kuota tak terbatas."""
+        if self.kuota_peserta is None:
+            return None
+        return self.kuota_peserta - self.rsvp.filter(status=RSVP.Status.HADIR).count()
+
     class Meta:
         db_table = 'kegiatan'
         ordering = ['tanggal']
@@ -1022,7 +1037,9 @@ python manage.py loaddata backup.json
 
 ### 10.6 Data Retention
 - Data warga yang statusnya `pindah` atau `meninggal` di-soft delete, bukan hard delete.
-- Data soft-deleted disimpan maksimal 2 tahun, kemudian dihapus permanen.
+- Mekanisme soft-delete pada `WargaProfile`: field `is_deleted` (default `False`), `deleted_at` (timestamp saat dihapus), dan `deleted_by` (FK ke `User` admin yang melakukan penghapusan).
+- Saat soft-delete dijalankan: set `is_deleted=True`, `deleted_at=now()`, `deleted_by=<admin>`. Data tidak dihapus dari database — hanya disembunyikan dari query default (`get_queryset` wajib filter `is_deleted=False` kecuali untuk Admin yang membuka arsip).
+- Data soft-deleted disimpan maksimal 2 tahun (dihitung sejak `deleted_at`), kemudian dihapus permanen (hard delete) via scheduled job.
 - Backup terenkripsi disimpan sesuai retention policy (§9.3).
 
 ### 10.7 Right to Access & Deletion
@@ -1081,3 +1098,4 @@ class WargaProfileAdmin(admin.ModelAdmin):
 | 1.0.0 | 2026-06-06 | Initial database design (Prisma) |
 | 1.1.0 | 2026-06-07 | Migrate to Django ORM, update all models |
 | 1.2.0 | 2026-06-07 | Added §3 Data Classification (Public/Internal/Sensitive/Restricted). Added §6 Encryption & Hashing Policy. Added §10 Data Protection Policy. Updated AuditLog model with masking/redact rules. Updated backup section with GPG encryption. Added data classification column to all table specs. Added SENSITIF markers on Django model fields. |
+| 1.3.0 | 2026-06-08 | Added `is_sensitif` field + index to `Pengaduan` model (was referenced in 03-UIUX-Flow.md/07-TASK-BREAKDOWN.md/09-TEST-PLAN.md but missing from schema). Added `kuota_peserta`, `rsvp_buka_at`, `rsvp_tutup_at` fields + `kuota_tersisa()` helper to `Kegiatan` model (was referenced in E2E-05/`KEGIATAN_CAPACITY_FULL` but missing). Added soft-delete fields (`is_deleted`, `deleted_at`, `deleted_by`) + index to `WargaProfile`, and detailed the soft-delete mechanism in §10.6 Data Retention (was documented as policy but had no model fields). |
