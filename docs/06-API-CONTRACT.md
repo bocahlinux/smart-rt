@@ -11,15 +11,19 @@
 
 ### 1.1 Base URL
 ```
-Development: http://localhost:3001/api/v1
+Development: http://localhost:8000/api/v1
 Production: https://smartrt.yourdomain.com/api/v1
 ```
 
 ### 1.2 Authentication
+
 Semua endpoint (kecuali Public) memerlukan header:
 ```
-Authorization: Bearer <jwt_token>
-```
+Authorization: Bearer *** Strategy:**
+- **Access token:** Short-lived (15-30 menit). Disimpan di frontend memory/state (Zustand). Dikirim via `Authorization: Bearer` header.
+- **Refresh token:** Long-lived (7-14 hari). Disimpan di httpOnly Secure SameSite cookie. **Dilarang** disimpan di localStorage.
+- **Token rotation:** Setiap refresh menghasilkan access token + refresh token baru. Refresh token lama di-blacklist.
+- **Logout:** Refresh token di-blacklist. Access token dihapus dari frontend state.
 
 ### 1.3 Standard Response Format
 
@@ -140,11 +144,42 @@ POST /auth/login
       "role": "warga",
       "status": "active"
     },
-    "token": "eyJhbGciOiJIUzI1NiIs..."
+    "accessToken": "eyJhbG...NiIs...",
+    "expiresIn": 1800
   }
 }
 ```
+**Cookies (httpOnly):**
+```
+Set-Cookie: refresh_token=eyJhbG...; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth; Max-Age=1209600
+```
 **Errors:** 401 (kredensial salah), 403 (akun belum diverifikasi/ditolak)
+
+---
+
+### 2.2.1 Refresh Token
+```
+POST /auth/token/refresh
+```
+**Auth:** Refresh token (httpOnly cookie, auto-sent by browser)
+**Body:** (empty — refresh token dari cookie)
+**Response 200:**
+```json
+{
+  "status": "success",
+  "data": {
+    "accessToken": "eyJhbG...new...",
+    "expiresIn": 1800
+  }
+}
+```
+**Cookies (httpOnly):**
+```
+Set-Cookie: refresh_token=eyJhbG...new...; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth; Max-Age=1209600
+```
+**Errors:** 401 (refresh token invalid/expired)
+
+**Note:** Refresh token di-rotate setiap request. Refresh token lama di-blacklist.
 
 ---
 
@@ -152,15 +187,20 @@ POST /auth/login
 ```
 POST /auth/logout
 ```
-**Auth:** Required
+**Auth:** Required (access token + refresh token cookie)
+**Body:** (empty)
 **Response 200:**
 ```json
 { "status": "success", "message": "Logout berhasil" }
 ```
+**Effect:**
+- Refresh token di-blacklist (ditambahkan ke OutstandingToken blacklist table).
+- Access token dihapus dari frontend state.
+- Cookie refresh_token dihapus (Set-Cookie dengan Max-Age=0).
 
 ---
 
-### 2.4 Get Current User
+### 2.5 Get Current User
 ```
 GET /auth/me
 ```
@@ -185,7 +225,7 @@ GET /auth/me
 
 ---
 
-### 2.5 Change Password
+### 2.6 Change Password
 ```
 PUT /auth/password
 ```
@@ -213,18 +253,23 @@ PUT /auth/password
 GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 ```
 **Auth:** Pengurus/Admin
-**Response 200:**
+**Object-level:** Warga hanya melihat data publik sendiri (NIK/no KK di-mask).
+
+**Response 200 (Admin/Pengurus):**
 ```json
 {
   "status": "success",
   "data": [
     {
       "id": "uuid",
-      "nik": "1234567890123456",
+      "nik": "3201010101010001",
+      "noKk": "3201010101010001",
       "namaLengkap": "Ahmad Fauzi",
       "blok": "A",
       "noRumah": "15",
       "phone": "081234567890",
+      "email": "ahmad@email.com",
+      "alamat": "Jl. Merdeka No. 10",
       "status": "aktif",
       "foto": "https://..."
     }
@@ -233,21 +278,57 @@ GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 }
 ```
 
+**Response 200 (Warga — melihat profil sendiri):**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "uuid",
+      "nikMasked": "3201********0001",
+      "namaLengkap": "Ahmad Fauzi",
+      "blok": "A",
+      "noRumah": "15",
+      "status": "aktif"
+    }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 1, "totalPages": 1 }
+}
+```
+
+**Field Visibility per Role:**
+
+| Field | Admin | Pengurus | Warga (own) | Warga (other) |
+|-------|-------|----------|-------------|---------------|
+| id | ✅ | ✅ | ✅ | ❌ |
+| nik | ✅ | ✅ | ✅ (masked) | ❌ |
+| noKk | ✅ | ✅ | ✅ (masked) | ❌ |
+| namaLengkap | ✅ | ✅ | ✅ | ✅ |
+| blok | ✅ | ✅ | ✅ | ✅ |
+| noRumah | ✅ | ✅ | ✅ | ✅ |
+| phone | ✅ | ✅ | ✅ (own only) | ❌ |
+| email | ✅ | ✅ | ✅ (own only) | ❌ |
+| alamat | ✅ | ✅ | ✅ (own only) | ❌ |
+| status | ✅ | ✅ | ✅ | ✅ |
+| foto | ✅ | ✅ | ✅ (own only) | ❌ |
+
 ---
 
 ### 3.2 Get Warga Detail
 ```
 GET /warga/:id
 ```
-**Auth:** Pengurus/Admin
-**Response 200:**
+**Auth:** Required
+**Object-level:** Admin/Pengurus bisa akses semua. Warga hanya bisa akses profil sendiri.
+
+**Response 200 (Admin/Pengurus):**
 ```json
 {
   "status": "success",
   "data": {
     "id": "uuid",
     "userId": "uuid",
-    "nik": "1234567890123456",
+    "nik": "3201010101010001",
     "namaLengkap": "Ahmad Fauzi",
     "tempatLahir": "Palangkaraya",
     "tanggalLahir": "1990-05-15",
@@ -256,11 +337,13 @@ GET /warga/:id
     "statusPerkawinan": "KAWIN",
     "pendidikan": "S1",
     "pekerjaan": "PNS",
-    "noKk": "1234567890123456",
+    "noKk": "3201010101010001",
     "hubunganKeluarga": "kepala_keluarga",
     "alamat": "Jl. Merdeka No. 10",
     "blok": "A",
     "noRumah": "15",
+    "phone": "081234567890",
+    "email": "ahmad@email.com",
     "status": "aktif",
     "foto": "https://...",
     "createdAt": "2026-06-06T10:00:00Z",
@@ -268,6 +351,38 @@ GET /warga/:id
   }
 }
 ```
+
+**Response 200 (Warga — profil sendiri):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "uuid",
+    "nikMasked": "3201********0001",
+    "namaLengkap": "Ahmad Fauzi",
+    "tempatLahir": "Palangkaraya",
+    "tanggalLahir": "1990-05-15",
+    "jenisKelamin": "L",
+    "agama": "Islam",
+    "statusPerkawinan": "KAWIN",
+    "pendidikan": "S1",
+    "pekerjaan": "PNS",
+    "noKkMasked": "3201********0001",
+    "hubunganKeluarga": "kepala_keluarga",
+    "alamat": "Jl. Merdeka No. 10",
+    "blok": "A",
+    "noRumah": "15",
+    "phone": "081234567890",
+    "email": "ahmad@email.com",
+    "status": "aktif",
+    "foto": "https://...",
+    "createdAt": "2026-06-06T10:00:00Z",
+    "updatedAt": "2026-06-06T10:00:00Z"
+  }
+}
+```
+
+**Errors:** 403 (bukan profil sendiri untuk role warga), 404 (tidak ditemukan)
 
 ---
 
@@ -359,8 +474,20 @@ Content-Type: multipart/form-data
 GET /warga/export?format=excel&status=aktif
 GET /warga/export?format=pdf&blok=A
 ```
-**Auth:** Pengurus/Admin
-**Response:** File download
+**Auth:** Pengurus/Admin only
+**Object-level:** Warga tidak bisa akses export.
+**Audit:** Ya — setiap export dicatat di audit_logs (action: export, table: warga).
+**Query Params:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| format | string | Yes | `excel` or `pdf` |
+| status | string | No | Filter by status |
+| blok | string | No | Filter by blok |
+| fullData | boolean | No | Default `false`. Jika `true` dan role = admin, export menyertakan data sensitif lengkap (NIK, no KK, alamat, phone, email). Jika `false`, field sensitif di-mask. |
+
+**Response:** File download (Content-Type: application/vnd.openxmlformats / application/pdf)
+
+**Errors:** 403 (role warga), 400 (invalid format)
 
 ---
 
@@ -472,22 +599,44 @@ POST /iuran/upload
 Content-Type: multipart/form-data
 ```
 **Auth:** Warga
+**Object-level:** Warga hanya bisa upload untuk iuran miliknya sendiri.
+
 **Body:**
-```json
-{
-  "bulan": 6,
-  "tahun": 2026,
-  "jumlah": 50000,
-  "buktiTransfer": "<file>"
-}
-```
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| bulan | integer | Yes | 1-12 |
+| tahun | integer | Yes | e.g., 2026 |
+| jumlah | decimal | Yes | Nominal iuran |
+| buktiTransfer | file | Yes | Gambar bukti transfer |
+
+**File Upload Rules:**
+| Rule | Value |
+|------|-------|
+| Allowed MIME types | `image/jpeg`, `image/png`, `image/webp`, `application/pdf` |
+| Allowed extensions | `.jpg`, `.jpeg`, `.png`, `.webp`, `.pdf` |
+| Max file size | 5 MB |
+| Filename storage | Random UUID (original filename tidak disimpan) |
+| Storage path | `bukti-iuran/{uuid}/{random_filename}` |
+| Access control | Private — hanya pemilik, bendahara, pengurus berwenang, admin |
+| URL access | Signed URL atau protected route via Django |
+
 **Response 201:**
 ```json
 {
   "status": "success",
+  "data": {
+    "id": "uuid",
+    "bulan": 6,
+    "tahun": 2026,
+    "jumlah": 50000,
+    "status": "pending",
+    "buktiUrl": null  // URL hanya bisa diakses oleh pemilik/pengurus
+  },
   "message": "Bukti transfer berhasil diupload. Menunggu konfirmasi pengurus."
 }
 ```
+
+**Errors:** 400 (validation), 403 (bukan iuran sendiri), 413 (file terlalu besar), 415 (MIME type tidak diizinkan)
 
 ---
 
