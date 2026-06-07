@@ -36,7 +36,7 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 |----|-------------|----------|
 | FR-AUTH-01 | Sistem harus mendukung register dengan email dan no. HP | High |
 | FR-AUTH-02 | Sistem harus mendukung login dengan email/no. HP + password | High |
-| FR-AUTH-03 | Sistem harus memiliki 3 role: Admin, Pengurus, Warga | High |
+| FR-AUTH-03 | Sistem harus memiliki 5 role: Admin, Sekretaris, Bendahara, Pengurus, Warga | High |
 | FR-AUTH-04 | Warga harus diverifikasi oleh pengurus sebelum bisa login | High |
 | FR-AUTH-05 | Sistem harus menggunakan JWT untuk session management | High |
 | FR-AUTH-06 | Sistem harus mendukung logout & token expiration | Medium |
