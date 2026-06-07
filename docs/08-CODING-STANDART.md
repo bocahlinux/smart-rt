@@ -1,6 +1,6 @@
 # Smart-RT — Coding Standard
 
-**Version:** 1.2.0
+**Version:** 1.3.1
 **Date:** June 7, 2026
 **Status:** Draft
 
@@ -231,7 +231,7 @@ class WargaProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     nik = models.CharField(max_length=16, unique=True, null=True, blank=True)  # SENSITIF
     nama_lengkap = models.CharField(max_length=255)
-    tempat_lahir = models.CharField(max_length=10, null=True, blank=True)
+    tempat_lahir = models.CharField(max_length=100, null=True, blank=True)
     tanggal_lahir = models.DateField(null=True, blank=True)  # SENSITIF
     jenis_kelamin = models.CharField(max_length=1, choices=JenisKelamin.choices, null=True, blank=True)
     agama = models.CharField(max_length=50, null=True, blank=True)
@@ -1104,3 +1104,4 @@ bandit -r backend/
 | 1.1.0 | 2026-06-07 | Migrated backend from Express to Django patterns |
 | 1.2.0 | 2026-06-07 | Major security rewrite: DRF permission standard, serializer field exposure, queryset scoping, file upload security, audit log masking, settings security, frontend token storage. |
 | 1.3.0 | 2026-06-08 | Expanded roles to 5 (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated model TextChoices, permission classes (IsSekretaris, IsBendahara, IsOwnerOrSekretaris, IsOwnerOrBendahara), viewset examples, serializer variants per role. |
+| 1.3.1 | 2026-06-07 | Fixed header version to match Revision History (was showing 1.2.0). Fixed `tempat_lahir` example field `max_length` from 10 to 100 to match 05-DATABASE.md §4.2 model definition. |

@@ -1,7 +1,7 @@
 # Smart-RT — Software Requirements Specification (SRS)
 
-**Version:** 1.0.0
-**Date:** June 6, 2026
+**Version:** 1.2.0
+**Date:** June 8, 2026
 **Based on:** PRD v1.0.0
 **Status:** Draft
 
@@ -314,3 +314,4 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 | 1.0.0 | 2026-06-06 | Initial SRS |
 | 1.1.0 | 2026-06-07 | Koreksi SQL injection prevention via Django ORM. Tambah §3.2.1 Data Protection Requirements (SEC-01 s/d SEC-10). |
 | 1.2.0 | 2026-06-08 | Expanded roles to 5 (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated auth requirements (FR-AUTH-03 s/d FR-AUTH-10), security section (token strategy, Argon2, object-level permission), data protection (SEC-01 s/d SEC-12 with role-specific rules). |
+| 1.2.1 | 2026-06-08 | Fixed header version/date to match Revision History (was showing 1.0.0 / June 6, 2026). |

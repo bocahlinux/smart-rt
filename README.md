@@ -91,7 +91,7 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 
 ### 📝 Pengaduan Warga
 - Form pengaduan dengan upload foto
-- Tracking status: Diterima → Diproses → Selesai
+- Tracking status: Diterima → Diproses → Selesai / Ditolak
 - Notifikasi perubahan status
 - Riwayat pengaduan
 
@@ -254,16 +254,16 @@ docker compose up --build
 
 | Phase | Fokus | Status |
 |-------|-------|--------|
-| 0 | Project Setup | ⬜ Pending |
-| 1 | Authentication & Role System | ⬜ Pending |
-| 2 | Data Warga | ⬜ Pending |
-| 3 | Keuangan RT | ⬜ Pending |
-| 4 | Pengumuman & Notifikasi | ⬜ Pending |
-| 5 | Forum Diskusi | ⬜ Pending |
-| 6 | Pengaduan Warga | ⬜ Pending |
-| 7 | Kegiatan & Polling | ⬜ Pending |
-| 8 | Dashboard & Laporan | ⬜ Pending |
-| 9 | Polish, Testing & Deployment | ⬜ Pending |
+| 1 | Project Setup | ⬜ Pending |
+| 2 | Authentication & Role System | ⬜ Pending |
+| 3 | Data Warga | ⬜ Pending |
+| 4 | Keuangan RT | ⬜ Pending |
+| 5 | Pengumuman & Notifikasi | ⬜ Pending |
+| 6 | Forum Diskusi | ⬜ Pending |
+| 7 | Pengaduan Warga | ⬜ Pending |
+| 8 | Kegiatan & Polling | ⬜ Pending |
+| 9 | Dashboard & Laporan | ⬜ Pending |
+| 10 | Polish, Testing & Deployment | ⬜ Pending |
 
 ---
 
@@ -274,7 +274,7 @@ docker compose up --build
 ### Overall Progress
 
 ```
-Phase 0-1    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-2    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -292,24 +292,24 @@ Documentation ████████████████████  100%
 
 | Phase | Fokus | Status | Notes |
 |-------|-------|--------|-------|
-| — | Documentation & Planning | ✅ Done | All 10 docs complete, README, AI Rules |
-| 0 | Project Setup | ⬜ Pending | — |
-| 1 | Authentication & Role System | ⬜ Pending | — |
-| 2 | Data Warga | ⬜ Pending | — |
-| 3 | Keuangan RT | ⬜ Pending | — |
-| 4 | Pengumuman & Notifikasi | ⬜ Pending | — |
-| 5 | Forum Diskusi | ⬜ Pending | — |
-| 6 | Pengaduan Warga | ⬜ Pending | — |
-| 7 | Kegiatan & Polling | ⬜ Pending | — |
-| 8 | Dashboard & Laporan | ⬜ Pending | — |
-| 9 | Polish, Testing & Deployment | ⬜ Pending | — |
+| — | Documentation & Planning | ✅ Done | All 13 docs complete, README, AI Rules |
+| 1 | Project Setup | ⬜ Pending | — |
+| 2 | Authentication & Role System | ⬜ Pending | — |
+| 3 | Data Warga | ⬜ Pending | — |
+| 4 | Keuangan RT | ⬜ Pending | — |
+| 5 | Pengumuman & Notifikasi | ⬜ Pending | — |
+| 6 | Forum Diskusi | ⬜ Pending | — |
+| 7 | Pengaduan Warga | ⬜ Pending | — |
+| 8 | Kegiatan & Polling | ⬜ Pending | — |
+| 9 | Dashboard & Laporan | ⬜ Pending | — |
+| 10 | Polish, Testing & Deployment | ⬜ Pending | — |
 
 ### Completed Milestones
 
 - ✅ **v0.1.0** — Documentation & Planning (June 7, 2026)
-  - 11 documentation files (PRD, SRS, UI/UX, SDD, Database, API Contract, Task Breakdown, Coding Standard, Test Plan, AI Rules, **Security & Privacy Policy**)
+  - 13 documentation files (PRD, SRS, UI/UX, SDD, Database, API Contract, Task Breakdown, Coding Standard, Test Plan, AI Rules, Security & Privacy Policy, **CI/CD Pipeline**, **Monitoring & Observability**)
   - README.md with professional layout
-  - AI Development Rules v1.1.0
+  - AI Development Rules v1.5.0
   - Security document as single source of truth for all security policies
 
 ### Upcoming Milestones
