@@ -1,7 +1,7 @@
 # Smart-RT — Security & Privacy Policy
 
-**Version:** 1.2.0
-**Date:** June 7, 2026
+**Version:** 1.2.1
+**Date:** June 8, 2026
 **Status:** Active
 **Author:** BocahLinux
 **Classification:** Internal
@@ -269,12 +269,25 @@ class IsPengurusPlus(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ['admin', 'sekretaris', 'pengurus']
 
+def _is_owner(obj, user):
+    """
+    Helper kepemilikan object yang menoleransi variasi nama field FK ke pemilik:
+    `obj.user` (mis. RSVP), `obj.warga` (FK ke User di Pengaduan, atau FK ke
+    WargaProfile di IuranWarga), `obj.created_by` (Transaksi/Thread/Comment).
+    Selalu resolve ke instance User sebelum dibandingkan — lihat 08-CODING-STANDART.md.
+    """
+    owner = getattr(obj, 'user', None) or getattr(obj, 'warga', None) or getattr(obj, 'created_by', None)
+    if owner is None:
+        return False
+    owner_user = getattr(owner, 'user', owner)
+    return owner_user == user
+
 class IsOwnerOrSekretaris(permissions.BasePermission):
     """Object-level: pemilik data atau sekretaris/admin"""
     def has_object_permission(self, request, view, obj):
         if request.user.role in ['admin', 'sekretaris']:
             return True
-        return hasattr(obj, 'user') and obj.user == request.user
+        return _is_owner(obj, request.user)
 
 class IsOwnerOrBendahara(permissions.BasePermission):
     """Object-level: pemilik data atau bendahara/admin (untuk bukti transfer)"""
@@ -625,3 +638,4 @@ Setiap insiden Critical/High harus memiliki:
 | 1.0.0 | 2026-06-07 | Initial Security & Privacy Policy |
 | 1.1.0 | 2026-06-07 | Expanded from 3 roles to 5 roles (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated all permission matrices, field visibility matrices, data classification access rules, permission classes, and security tests. Added role hierarchy diagram. |
 | 1.2.0 | 2026-06-07 | Refined field visibility matrix: alamat akses terbatas untuk Bendahara/Pengurus/Warga; phone Bendahara → masked. Updated pengaduan permissions: Sekretaris/Pengurus hanya jika ditugaskan. Updated audit log access: Sekretaris (terbatas — log data warga/pengaduan), Bendahara (terbatas — log keuangan). |
+| 1.2.1 | 2026-06-08 | Fixed `IsOwnerOrSekretaris` object-level permission example: replaced fragile `hasattr(obj, 'user')` check with shared `_is_owner()` helper that resolves the owner across `user`/`warga`/`created_by` FK field-name variants and unwraps `WargaProfile.user` (e.g. Pengaduan.warga is FK to User, while IuranWarga.warga is FK to WargaProfile). Mirrors the fix in 08-CODING-STANDART.md. |

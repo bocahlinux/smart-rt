@@ -1,6 +1,6 @@
 # Smart-RT — Software Requirements Specification (SRS)
 
-**Version:** 1.2.0
+**Version:** 1.2.2
 **Date:** June 8, 2026
 **Based on:** PRD v1.0.0
 **Status:** Draft
@@ -37,7 +37,7 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 | FR-AUTH-01 | Sistem harus mendukung register dengan email dan no. HP | High |
 | FR-AUTH-02 | Sistem harus mendukung login dengan email/no. HP + password | High |
 | FR-AUTH-03 | Sistem harus memiliki 5 role: Admin, Sekretaris, Bendahara, Pengurus, Warga | High |
-| FR-AUTH-04 | Warga harus diverifikasi oleh sekretaris/admin sebelum bisa login | High |
+| FR-AUTH-04 | Warga harus diverifikasi secara manual oleh sekretaris/admin (approve/reject di panel admin) sebelum bisa login — tidak ada verifikasi via link email | High |
 | FR-AUTH-05 | Sistem harus menggunakan JWT (access + refresh token) untuk session management | High |
 | FR-AUTH-06 | Sistem harus mendukung logout & token blacklist | Medium |
 | FR-AUTH-07 | Sistem harus mendukung token refresh dengan rotation | Medium |
@@ -315,3 +315,4 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 | 1.1.0 | 2026-06-07 | Koreksi SQL injection prevention via Django ORM. Tambah §3.2.1 Data Protection Requirements (SEC-01 s/d SEC-10). |
 | 1.2.0 | 2026-06-08 | Expanded roles to 5 (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated auth requirements (FR-AUTH-03 s/d FR-AUTH-10), security section (token strategy, Argon2, object-level permission), data protection (SEC-01 s/d SEC-12 with role-specific rules). |
 | 1.2.1 | 2026-06-08 | Fixed header version/date to match Revision History (was showing 1.0.0 / June 6, 2026). |
+| 1.2.2 | 2026-06-08 | Clarified FR-AUTH-04: verification is a manual approve/reject step by sekretaris/admin in the admin panel — no email verification link involved (resolves contradiction with E2E-01 in 09-TEST-PLAN.md). |

@@ -1,7 +1,7 @@
 # Smart-RT — Coding Standard
 
-**Version:** 1.3.1
-**Date:** June 7, 2026
+**Version:** 1.3.2
+**Date:** June 8, 2026
 **Status:** Draft
 
 ---
@@ -293,23 +293,39 @@ class IsPengurusOrReadOnly(permissions.BasePermission):
             return request.user.is_authenticated
         return request.user.is_authenticated and request.user.role in ['admin', 'pengurus']
 
+def _is_owner(obj, user):
+    """
+    Helper pengecekan kepemilikan object yang menoleransi variasi nama field FK
+    ke pemilik di berbagai model:
+    - `obj.user`       → FK langsung ke User (mis. RSVP)
+    - `obj.warga`      → FK ke User (mis. Pengaduan.warga) ATAU FK ke WargaProfile (mis. IuranWarga.warga)
+    - `obj.created_by` → FK ke User (mis. Transaksi, Thread, Comment)
+    Selalu resolve ke instance User sebelum dibandingkan dengan request.user.
+    """
+    owner = getattr(obj, 'user', None) or getattr(obj, 'warga', None) or getattr(obj, 'created_by', None)
+    if owner is None:
+        return False
+    owner_user = getattr(owner, 'user', owner)  # unwrap WargaProfile.user jika perlu
+    return owner_user == user
+
 class IsOwnerOrPengurus(permissions.BasePermission):
     """
-    Object-level permission: 
+    Object-level permission:
     - Admin/pengurus bisa akses semua object
-    - Warga hanya bisa akses object miliknya sendiri → cek obj.user == request.user
+    - Warga hanya bisa akses object miliknya sendiri → cek lewat _is_owner()
+      (mis. Pengaduan.warga adalah FK ke User, bukan `user`)
     """
     def has_object_permission(self, request, view, obj):
         if request.user.role in ['admin', 'pengurus']:
             return True
-        return hasattr(obj, 'user') and obj.user == request.user
+        return _is_owner(obj, request.user)
 
 class IsOwnerOrSekretaris(permissions.BasePermission):
     """Object-level: pemilik data atau sekretaris/admin"""
     def has_object_permission(self, request, view, obj):
         if request.user.role in ['admin', 'sekretaris']:
             return True
-        return hasattr(obj, 'user') and obj.user == request.user
+        return _is_owner(obj, request.user)
 
 class IsOwnerOrBendahara(permissions.BasePermission):
     """Object-level: pemilik data atau bendahara/admin (untuk bukti transfer)"""
@@ -1105,3 +1121,4 @@ bandit -r backend/
 | 1.2.0 | 2026-06-07 | Major security rewrite: DRF permission standard, serializer field exposure, queryset scoping, file upload security, audit log masking, settings security, frontend token storage. |
 | 1.3.0 | 2026-06-08 | Expanded roles to 5 (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated model TextChoices, permission classes (IsSekretaris, IsBendahara, IsOwnerOrSekretaris, IsOwnerOrBendahara), viewset examples, serializer variants per role. |
 | 1.3.1 | 2026-06-07 | Fixed header version to match Revision History (was showing 1.2.0). Fixed `tempat_lahir` example field `max_length` from 10 to 100 to match 05-DATABASE.md §4.2 model definition. |
+| 1.3.2 | 2026-06-08 | Fixed `IsOwnerOrPengurus`/`IsOwnerOrSekretaris` object-level permission examples: replaced fragile `hasattr(obj, 'user')` check with shared `_is_owner()` helper that resolves the owner across `user`/`warga`/`created_by` FK field-name variants and unwraps `WargaProfile.user` (e.g. Pengaduan.warga is FK to User, while IuranWarga.warga is FK to WargaProfile — the old check silently denied owners access to their own Pengaduan). |

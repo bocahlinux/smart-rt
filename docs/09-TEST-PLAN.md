@@ -1,6 +1,6 @@
 # Smart-RT — Test Plan
 
-**Version:** 1.3.0
+**Version:** 1.3.1
 **Date:** June 7, 2026
 **Status:** Draft
 
@@ -677,13 +677,14 @@ Setiap skenario dicatat dengan: **ID, Role, Precondition, Steps, Expected Result
 **E2E-01 — Warga: Registrasi sampai mengajukan pengaduan**
 | Step | Aksi | Expected Result |
 |------|------|-----------------|
-| 1 | Buka halaman registrasi, isi data diri, submit | Akun dibuat, email verifikasi dikirim |
-| 2 | Klik link verifikasi di email | Akun terverifikasi, redirect ke login |
-| 3 | Login dengan akun baru | Berhasil masuk ke dashboard Warga |
-| 4 | Lihat profil — cek NIK/KK ditampilkan ter-mask sesuai role | Field sensitif termask sesuai 11-SECURITY.md §3 |
-| 5 | Buka menu Pengaduan, isi form, lampirkan foto, submit | Pengaduan tersimpan dengan status "Baru" |
-| 6 | Tunggu pengurus mengubah status pengaduan | Warga menerima notifikasi update status |
-| 7 | Buka detail pengaduan | Riwayat status & tanggapan pengurus tampil |
+| 1 | Buka halaman registrasi, isi data diri, submit | Akun dibuat dengan status `pending` |
+| 2 | Coba login sebelum diverifikasi | Login ditolak — akun belum aktif (status `pending`) |
+| 3 | Login sebagai Sekretaris/Admin, buka panel verifikasi akun, setujui akun warga tsb | Status akun berubah jadi `active`, warga menerima notifikasi |
+| 4 | Login dengan akun yang sudah diverifikasi | Berhasil masuk ke dashboard Warga |
+| 5 | Lihat profil — cek NIK/KK ditampilkan ter-mask sesuai role | Field sensitif termask sesuai 11-SECURITY.md §3 |
+| 6 | Buka menu Pengaduan, isi form, lampirkan foto, submit | Pengaduan tersimpan dengan status "Diterima" |
+| 7 | Tunggu pengurus mengubah status pengaduan | Warga menerima notifikasi update status |
+| 8 | Buka detail pengaduan | Riwayat status & tanggapan pengurus tampil |
 
 **E2E-02 — Bendahara: Input transaksi sampai laporan keuangan**
 | Step | Aksi | Expected Result |
@@ -844,3 +845,4 @@ jobs:
 | 1.1.0 | 2026-06-07 | Migrated backend from Vitest/Supertest/Node to pytest/Django TestCase/DRF APITestCase. Added detailed security test sections: object-level permission tests (SEC-OBJ), field masking tests (SEC-MASK), audit log tests (SEC-AUDIT), file upload security tests (SEC-FILE), JWT/auth security tests (SEC-JWT), OWASP Top 10 tests, backup/recovery tests. Added Django fixtures. Updated CI/CD pipeline for Django. Updated test counts. |
 | 1.2.0 | 2026-06-07 | Expanded to 5-role system: added sekretaris_user and bendahara_user fixtures. Added permission unit tests for IsSekretaris and IsBendahara (UT-PERM-05 to UT-PERM-08). Added integration tests for Sekretaris (CRUD warga, verifikasi, export) and Bendahara (CRUD keuangan, konfirmasi iuran), with Sekretaris blocked from keuangan mutations. Added object-level permission tests (SEC-OBJ-09 to SEC-OBJ-16) and field masking tests (SEC-MASK-08, SEC-MASK-09) for Sekretaris & Bendahara. Added serializer tests (UT-SER-07, UT-SER-08). Updated test counts. |
 | 1.3.0 | 2026-06-07 | Added §8 E2E Test Scenarios (Manual): detailed step-by-step flows per role (E2E-01 Warga registration to pengaduan, E2E-02 Bendahara transaksi & laporan, E2E-03 Admin pengumuman/forum/polling, E2E-04 Sekretaris verifikasi & export, E2E-05 Pengurus kegiatan & RSVP, E2E-06 cross-role negative/IDOR test), pass/fail criteria, and automation candidates. Renumbered subsequent sections (Test Execution Plan → §9, Test Summary → §10, Revision History → §11). |
+| 1.3.1 | 2026-06-07 | Fixed E2E-01 steps to reflect manual account verification by sekretaris/admin (per FR-AUTH-04 & 03-UIUX-Flow.md §2.1) instead of email verification link, resolving contradiction with SRS. |
