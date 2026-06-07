@@ -91,8 +91,8 @@ smart-rt/
   9. Test Plan
   10. AI Rules
   11. Security Policy (11-SECURITY.md)
-  12. CI/CD Pipeline (12-CICD.md) — terutama untuk task Phase 0 & Phase 9
-  13. Monitoring & Observability (13-MONITORING.md) — terutama untuk task Phase 9
+  12. CI/CD Pipeline (12-CICD.md) — terutama untuk task Phase 1 & Phase 10
+  13. Monitoring & Observability (13-MONITORING.md) — terutama untuk task Phase 10
 - Jika ada konflik antar dokumen, jangan ambil keputusan sendiri.
 - Laporkan konflik dengan file dan section terkait.
 - Tunggu keputusan user sebelum implementasi.

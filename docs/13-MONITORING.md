@@ -186,7 +186,7 @@ Setiap insiden Critical/High yang terdeteksi dari monitoring **wajib** mengikuti
 
 ---
 
-## 9. Checklist Implementasi (Phase 9 — Testing & Deployment)
+## 9. Checklist Implementasi (Phase 10 — Polish, Testing & Deployment)
 
 - [ ] Implementasikan endpoint `/api/v1/healthz/`
 - [ ] Daftarkan project Sentry (backend & frontend), set `SENTRY_DSN` sebagai secret
