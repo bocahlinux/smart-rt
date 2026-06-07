@@ -48,7 +48,7 @@ smart-rt/
 ## 2. Canonical Stack
 
 - Backend: Django 5.x + Django REST Framework
-- Auth: SimpleJWT
+- Auth: SimpleJWT (5 role: admin, sekretaris, bendahara, pengurus, warga)
 - Database: PostgreSQL 16 via Django ORM
 - Frontend: React + Vite + TypeScript
 - Styling: Tailwind CSS
@@ -244,3 +244,5 @@ chore: update dependencies
 | 1.0.0 | 2026-06-07 | Initial AI rules |
 | 1.1.0 | 2026-06-07 | Added Canonical Stack, Documentation & Source of Truth, Security & Privacy, API Consistency, and Implementation Workflow sections. Renumbered all sections. |
 | 1.2.0 | 2026-06-08 | Added Security Reference pointer to docs/11-SECURITY.md. |
+| 1.3.0 | 2026-06-08 | Updated Canonical Stack to specify 5 roles (admin, sekretaris, bendahara, pengurus, warga). |
+| 1.4.0 | 2026-06-08 | Updated Authentication section with 5-role permission matrix. Added role-specific endpoint annotations. Updated field visibility table to 6 columns. |

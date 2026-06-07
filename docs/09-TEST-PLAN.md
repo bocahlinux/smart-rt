@@ -108,11 +108,15 @@
 | UT-PERM-02 | IsAdmin with warga role | Warga user | False |
 | UT-PERM-03 | IsPengurus with pengurus role | Pengurus user | True |
 | UT-PERM-04 | IsPengurus with warga role | Warga user | False |
-| UT-PERM-05 | IsOwnerOrPengurus — owner | Warga accessing own profile | True |
-| UT-PERM-06 | IsOwnerOrPengurus — other | Warga accessing other profile | False |
-| UT-PERM-07 | IsOwnerOrPengurus — admin | Admin accessing any profile | True |
-| UT-PERM-08 | IsOwnerOrPengurusForFile — pemilik | Warga accessing own bukti transfer | True |
-| UT-PERM-09 | IsOwnerOrPengurusForFile — other | Warga accessing other bukti transfer | False |
+| UT-PERM-05 | IsSekretaris with sekretaris role | Sekretaris user | True |
+| UT-PERM-06 | IsSekretaris with pengurus role | Pengurus user | False |
+| UT-PERM-07 | IsBendahara with bendahara role | Bendahara user | True |
+| UT-PERM-08 | IsBendahara with sekretaris role | Sekretaris user | False |
+| UT-PERM-09 | IsOwnerOrPengurus — owner | Warga accessing own profile | True |
+| UT-PERM-10 | IsOwnerOrPengurus — other | Warga accessing other profile | False |
+| UT-PERM-11 | IsOwnerOrPengurus — admin | Admin accessing any profile | True |
+| UT-PERM-12 | IsOwnerOrPengurusForFile — pemilik | Warga accessing own bukti transfer | True |
+| UT-PERM-13 | IsOwnerOrPengurusForFile — other | Warga accessing other bukti transfer | False |
 
 ### 2.5 Unit Tests — Serializers
 | Test ID | Test Case | Input | Expected Output |
@@ -123,6 +127,8 @@
 | UT-SER-04 | Owner serializer includes own data | Warga own profile | Full data (no mask) |
 | UT-SER-05 | Export serializer masks by default | fullData=false | NIK/KK masked |
 | UT-SER-06 | Export serializer full for admin | fullData=true, admin | NIK/KK full |
+| UT-SER-07 | Sekretaris serializer includes all fields | Sekretaris role | nik, no_kk, phone, email, alamat included |
+| UT-SER-08 | Bendahara serializer includes all fields | Bendahara role | nik, no_kk, phone, email, alamat included |
 
 ### 2.6 Unit Tests — File Upload Validators
 | Test ID | Test Case | Input | Expected Output |
@@ -171,41 +177,53 @@
 |---------|-----------|--------|----------|----------|
 | IT-WRG-01 | List warga (admin) | GET | /api/v1/warga/ | 200 + paginated + full fields |
 | IT-WRG-02 | List warga (pengurus) | GET | /api/v1/warga/ | 200 + paginated + full fields |
-| IT-WRG-03 | List warga (warga) | GET | /api/v1/warga/ | 200 + own profile only + masked fields |
-| IT-WRG-04 | Get own profile (warga) | GET | /api/v1/warga/:own_id/ | 200 + full data (no mask) |
-| IT-WRG-05 | Get other profile (warga) | GET | /api/v1/warga/:other_id/ | 403 Forbidden |
-| IT-WRG-06 | Get any profile (admin) | GET | /api/v1/warga/:id/ | 200 + full data |
-| IT-WRG-07 | Create warga (pengurus) | POST | /api/v1/warga/ | 201 |
-| IT-WRG-08 | Create warga (warga) | POST | /api/v1/warga/ | 403 |
-| IT-WRG-09 | Update own profile (warga) | PUT | /api/v1/warga/:own_id/ | 200 |
-| IT-WRG-10 | Update other profile (warga) | PUT | /api/v1/warga/:other_id/ | 403 |
-| IT-WRG-11 | Delete warga (admin) | DELETE | /api/v1/warga/:id/ | 200 |
-| IT-WRG-12 | Delete warga (pengurus) | DELETE | /api/v1/warga/:id/ | 403 |
-| IT-WRG-13 | Verify warga (pengurus) | PUT | /api/v1/warga/:id/verify/ | 200 |
-| IT-WRG-14 | Export warga (admin) | GET | /api/v1/warga/export/ | 200 + file |
-| IT-WRG-15 | Export warga (warga) | GET | /api/v1/warga/export/ | 403 |
-| IT-WRG-16 | Export with fullData=true (admin) | GET | /api/v1/warga/export/?fullData=true | 200 + unmasked |
-| IT-WRG-17 | Export with fullData=false | GET | /api/v1/warga/export/?fullData=false | 200 + masked |
+| IT-WRG-03 | List warga (sekretaris) | GET | /api/v1/warga/ | 200 + paginated + full fields |
+| IT-WRG-04 | List warga (bendahara) | GET | /api/v1/warga/ | 200 + paginated + full fields |
+| IT-WRG-05 | List warga (warga) | GET | /api/v1/warga/ | 200 + own profile only + masked fields |
+| IT-WRG-06 | Get own profile (warga) | GET | /api/v1/warga/:own_id/ | 200 + full data (no mask) |
+| IT-WRG-07 | Get other profile (warga) | GET | /api/v1/warga/:other_id/ | 403 Forbidden |
+| IT-WRG-08 | Get any profile (admin) | GET | /api/v1/warga/:id/ | 200 + full data |
+| IT-WRG-09 | Get any profile (sekretaris) | GET | /api/v1/warga/:id/ | 200 + full data |
+| IT-WRG-10 | Create warga (sekretaris) | POST | /api/v1/warga/ | 201 |
+| IT-WRG-11 | Create warga (pengurus) | POST | /api/v1/warga/ | 403 |
+| IT-WRG-12 | Create warga (warga) | POST | /api/v1/warga/ | 403 |
+| IT-WRG-13 | Update own profile (warga) | PUT | /api/v1/warga/:own_id/ | 200 |
+| IT-WRG-14 | Update other profile (warga) | PUT | /api/v1/warga/:other_id/ | 403 |
+| IT-WRG-15 | Delete warga (admin) | DELETE | /api/v1/warga/:id/ | 200 |
+| IT-WRG-16 | Delete warga (pengurus) | DELETE | /api/v1/warga/:id/ | 403 |
+| IT-WRG-17 | Verify warga (sekretaris) | PUT | /api/v1/warga/:id/verify/ | 200 |
+| IT-WRG-18 | Verify warga (pengurus) | PUT | /api/v1/warga/:id/verify/ | 403 |
+| IT-WRG-19 | Export warga (admin) | GET | /api/v1/warga/export/ | 200 + file |
+| IT-WRG-20 | Export warga (sekretaris) | GET | /api/v1/warga/export/ | 200 + file |
+| IT-WRG-21 | Export warga (warga) | GET | /api/v1/warga/export/ | 403 |
+| IT-WRG-22 | Export with fullData=true (admin) | GET | /api/v1/warga/export/?fullData=true | 200 + unmasked |
+| IT-WRG-23 | Export with fullData=false | GET | /api/v1/warga/export/?fullData=false | 200 + masked |
 
 ### 2.10 Integration Tests — Keuangan API (Object-Level + File Upload)
 | Test ID | Test Case | Method | Endpoint | Expected |
 |---------|-----------|--------|----------|----------|
-| IT-FIN-01 | List transaksi (pengurus) | GET | /api/v1/keuangan/ | 200 + paginated |
-| IT-FIN-02 | List transaksi (warga) | GET | /api/v1/keuangan/ | 403 |
-| IT-FIN-03 | Create transaksi (pengurus) | POST | /api/v1/keuangan/ | 201 |
-| IT-FIN-04 | Upload bukti iuran (warga, own) | POST | /api/v1/iuran/upload/ | 201 |
-| IT-FIN-05 | Upload bukti iuran (warga, other) | POST | /api/v1/iuran/upload/ | 403 |
-| IT-FIN-06 | View own bukti transfer (warga) | GET | /api/v1/media/bukti-iuran/:id/ | 200 + file |
-| IT-FIN-07 | View other bukti transfer (warga) | GET | /api/v1/media/bukti-iuran/:other_id/ | 403 |
-| IT-FIN-08 | View bukti transfer (pengurus) | GET | /api/v1/media/bukti-iuran/:id/ | 200 + file |
-| IT-FIN-09 | Konfirmasi iuran (pengurus) | PUT | /api/v1/iuran/:id/confirm/ | 200 |
-| IT-FIN-10 | Konfirmasi iuran (warga) | PUT | /api/v1/iuran/:id/confirm/ | 403 |
-| IT-FIN-11 | Upload .php file | POST | /api/v1/iuran/upload/ | 415 Unsupported Media Type |
-| IT-FIN-12 | Upload .exe file | POST | /api/v1/iuran/upload/ | 415 |
-| IT-FIN-13 | Upload oversized file (6MB) | POST | /api/v1/iuran/upload/ | 413 Payload Too Large |
-| IT-FIN-14 | Upload fake MIME (.jpg but .exe) | POST | /api/v1/iuran/upload/ | 415 |
-| IT-FIN-15 | Access file without auth | GET | /api/v1/media/bukti-iuran/:id/ | 401 |
-| IT-FIN-16 | Access file with path traversal | GET | /api/v1/media/../../../etc/passwd | 404 |
+| IT-FIN-01 | List transaksi (bendahara) | GET | /api/v1/keuangan/ | 200 + paginated |
+| IT-FIN-02 | List transaksi (sekretaris) | GET | /api/v1/keuangan/ | 200 + paginated |
+| IT-FIN-03 | List transaksi (pengurus) | GET | /api/v1/keuangan/ | 403 |
+| IT-FIN-04 | List transaksi (warga) | GET | /api/v1/keuangan/ | 403 |
+| IT-FIN-05 | Create transaksi (bendahara) | POST | /api/v1/keuangan/ | 201 |
+| IT-FIN-06 | Create transaksi (sekretaris) | POST | /api/v1/keuangan/ | 201 |
+| IT-FIN-07 | Create transaksi (pengurus) | POST | /api/v1/keuangan/ | 403 |
+| IT-FIN-08 | Upload bukti iuran (warga, own) | POST | /api/v1/iuran/upload/ | 201 |
+| IT-FIN-09 | Upload bukti iuran (warga, other) | POST | /api/v1/iuran/upload/ | 403 |
+| IT-FIN-10 | View own bukti transfer (warga) | GET | /api/v1/media/bukti-iuran/:id/ | 200 + file |
+| IT-FIN-11 | View other bukti transfer (warga) | GET | /api/v1/media/bukti-iuran/:other_id/ | 403 |
+| IT-FIN-12 | View bukti transfer (bendahara) | GET | /api/v1/media/bukti-iuran/:id/ | 200 + file |
+| IT-FIN-13 | Konfirmasi iuran (bendahara) | PUT | /api/v1/iuran/:id/confirm/ | 200 |
+| IT-FIN-14 | Konfirmasi iuran (sekretaris) | PUT | /api/v1/iuran/:id/confirm/ | 200 |
+| IT-FIN-15 | Konfirmasi iuran (pengurus) | PUT | /api/v1/iuran/:id/confirm/ | 403 |
+| IT-FIN-16 | Konfirmasi iuran (warga) | PUT | /api/v1/iuran/:id/confirm/ | 403 |
+| IT-FIN-17 | Upload .php file | POST | /api/v1/iuran/upload/ | 415 Unsupported Media Type |
+| IT-FIN-18 | Upload .exe file | POST | /api/v1/iuran/upload/ | 415 |
+| IT-FIN-19 | Upload oversized file (6MB) | POST | /api/v1/iuran/upload/ | 413 Payload Too Large |
+| IT-FIN-20 | Upload fake MIME (.jpg but .exe) | POST | /api/v1/iuran/upload/ | 415 |
+| IT-FIN-21 | Access file without auth | GET | /api/v1/media/bukti-iuran/:id/ | 401 |
+| IT-FIN-22 | Access file with path traversal | GET | /api/v1/media/../../../etc/passwd | 404 |
 
 ### 2.11 Integration Tests — Pengaduan API (Object-Level + Privacy)
 | Test ID | Test Case | Method | Endpoint | Expected |
@@ -247,8 +265,14 @@
 | SEC-OBJ-06 | Warga A DELETE profil Warga B | Warga A | DELETE /warga/:b_id | 403 Forbidden |
 | SEC-OBJ-07 | Admin GET profil Warga B | Admin | GET /warga/:b_id | 200 OK |
 | SEC-OBJ-08 | Pengurus GET profil Warga B | Pengurus | GET /warga/:b_id | 200 OK |
-| SEC-OBJ-09 | Warga A GET own profil | Warga A | GET /warga/:a_id | 200 OK (full data) |
-| SEC-OBJ-10 | Warga A PUT own profil | Warga A | PUT /warga/:a_id | 200 OK |
+| SEC-OBJ-09 | Sekretaris GET profil Warga B | Sekretaris | GET /warga/:b_id | 200 OK |
+| SEC-OBJ-10 | Bendahara GET profil Warga B | Bendahara | GET /warga/:b_id | 200 OK |
+| SEC-OBJ-11 | Warga A GET own profil | Warga A | GET /warga/:a_id | 200 OK (full data) |
+| SEC-OBJ-12 | Warga A PUT own profil | Warga A | PUT /warga/:a_id | 200 OK |
+| SEC-OBJ-13 | Bendahara GET transaksi list | Bendahara | GET /keuangan/ | 200 OK |
+| SEC-OBJ-14 | Pengurus GET transaksi list | Pengurus | GET /keuangan/ | 403 Forbidden |
+| SEC-OBJ-15 | Bendahara konfirmasi iuran | Bendahara | PUT /iuran/:id/confirm/ | 200 OK |
+| SEC-OBJ-16 | Warga konfirmasi iuran | Warga | PUT /iuran/:id/confirm/ | 403 Forbidden |
 
 ### 3.2 Field Masking Tests
 | Test ID | Test Case | Role | Field | Expected |
@@ -260,9 +284,11 @@
 | SEC-MASK-05 | List warga — alamat hidden | Warga | alamat | Not in response |
 | SEC-MASK-06 | List warga — NIK full | Admin | nik | "3201010101010001" |
 | SEC-MASK-07 | List warga — no KK full | Pengurus | no_kk | "3201010101010001" |
-| SEC-MASK-08 | Export default — NIK masked | Pengurus | nik | Masked |
-| SEC-MASK-09 | Export fullData — NIK full | Admin | nik | Full (fullData=true) |
-| SEC-MASK-10 | Owner view — NIK full (no mask) | Warga (own) | nik | Full |
+| SEC-MASK-08 | List warga — NIK full | Sekretaris | nik | "3201010101010001" |
+| SEC-MASK-09 | List warga — NIK full | Bendahara | nik | "3201010101010001" |
+| SEC-MASK-10 | Export default — NIK masked | Pengurus | nik | Masked |
+| SEC-MASK-11 | Export fullData — NIK full | Admin | nik | Full (fullData=true) |
+| SEC-MASK-12 | Owner view — NIK full (no mask) | Warga (own) | nik | Full |
 
 ### 3.3 Audit Log Tests
 | Test ID | Test Case | Expected |
@@ -448,6 +474,28 @@ def admin_user(db):
         phone='081111111111',
         password='Admin123!',
         role='admin',
+        status='active'
+    )
+
+@pytest.fixture
+def sekretaris_user(db):
+    return User.objects.create_user(
+        email='sekretaris@smartrt.local',
+        username='sekretaris',
+        phone='081111111110',
+        password='Sekretaris123!',
+        role='sekretaris',
+        status='active'
+    )
+
+@pytest.fixture
+def bendahara_user(db):
+    return User.objects.create_user(
+        email='bendahara@smartrt.local',
+        username='bendahara',
+        phone='081111111112',
+        password='Bendahara123!',
+        role='bendahara',
         status='active'
     )
 
@@ -686,17 +734,17 @@ jobs:
 | Backend Unit (Auth) | 18 | ⬜ |
 | Backend Unit (Warga) | 9 | ⬜ |
 | Backend Unit (Keuangan) | 8 | ⬜ |
-| Backend Unit (Permissions) | 9 | ⬜ |
-| Backend Unit (Serializers) | 6 | ⬜ |
+| Backend Unit (Permissions) | 13 | ⬜ |
+| Backend Unit (Serializers) | 8 | ⬜ |
 | Backend Unit (File Upload) | 8 | ⬜ |
 | Backend Unit (Audit Log) | 10 | ⬜ |
 | Backend Integration (Auth) | 12 | ⬜ |
-| Backend Integration (Warga) | 17 | ⬜ |
-| Backend Integration (Keuangan) | 16 | ⬜ |
+| Backend Integration (Warga) | 23 | ⬜ |
+| Backend Integration (Keuangan) | 22 | ⬜ |
 | Backend Integration (Pengaduan) | 11 | ⬜ |
 | Backend Integration (Other) | 44 | ⬜ |
-| Security (Object-Level) | 10 | ⬜ |
-| Security (Masking) | 10 | ⬜ |
+| Security (Object-Level) | 16 | ⬜ |
+| Security (Masking) | 12 | ⬜ |
 | Security (Audit Log) | 12 | ⬜ |
 | Security (File Upload) | 14 | ⬜ |
 | Security (JWT/Auth) | 10 | ⬜ |
@@ -718,3 +766,4 @@ jobs:
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial test plan |
 | 1.1.0 | 2026-06-07 | Migrated backend from Vitest/Supertest/Node to pytest/Django TestCase/DRF APITestCase. Added detailed security test sections: object-level permission tests (SEC-OBJ), field masking tests (SEC-MASK), audit log tests (SEC-AUDIT), file upload security tests (SEC-FILE), JWT/auth security tests (SEC-JWT), OWASP Top 10 tests, backup/recovery tests. Added Django fixtures. Updated CI/CD pipeline for Django. Updated test counts. |
+| 1.2.0 | 2026-06-08 | Expanded to 5-role system: added sekretaris_user and bendahara_user fixtures. Added permission unit tests for IsSekretaris and IsBendahara (UT-PERM-05 to UT-PERM-08). Added integration tests for Sekretaris (CRUD warga, verifikasi, export) and Bendahara (CRUD keuangan, konfirmasi iuran). Added object-level permission tests (SEC-OBJ-09 to SEC-OBJ-16) and field masking tests (SEC-MASK-08, SEC-MASK-09) for Sekretaris & Bendahara. Added serializer tests (UT-SER-07, UT-SER-08). Updated test counts. |

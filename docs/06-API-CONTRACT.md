@@ -252,8 +252,9 @@ PUT /auth/password
 ```
 GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Admin
 **Object-level:** Warga hanya melihat data publik sendiri (NIK/no KK di-mask).
+**Field Visibility:** Bendahara melihat sama seperti Pengurus (full fields).
 
 **Response 200 (Admin/Pengurus):**
 ```json
@@ -298,19 +299,19 @@ GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 
 **Field Visibility per Role:**
 
-| Field | Admin | Pengurus | Warga (own) | Warga (other) |
-|-------|-------|----------|-------------|---------------|
-| id | ✅ | ✅ | ✅ | ❌ |
-| nik | ✅ | ✅ | ✅ (masked) | ❌ |
-| noKk | ✅ | ✅ | ✅ (masked) | ❌ |
-| namaLengkap | ✅ | ✅ | ✅ | ✅ |
-| blok | ✅ | ✅ | ✅ | ✅ |
-| noRumah | ✅ | ✅ | ✅ | ✅ |
-| phone | ✅ | ✅ | ✅ (own only) | ❌ |
-| email | ✅ | ✅ | ✅ (own only) | ❌ |
-| alamat | ✅ | ✅ | ✅ (own only) | ❌ |
-| status | ✅ | ✅ | ✅ | ✅ |
-| foto | ✅ | ✅ | ✅ (own only) | ❌ |
+| Field | Admin | Sekretaris | Bendahara | Pengurus | Warga (own) | Warga (other) |
+|-------|-------|------------|-----------|----------|-------------|---------------|
+| id | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| nik | ✅ | ✅ | ✅ | ✅ | ✅ (masked) | ❌ |
+| noKk | ✅ | ✅ | ✅ | ✅ | ✅ (masked) | ❌ |
+| namaLengkap | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| blok | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| noRumah | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| phone | ✅ | ✅ | ✅ | ✅ | ✅ (own only) | ❌ |
+| email | ✅ | ✅ | ✅ | ✅ | ✅ (own only) | ❌ |
+| alamat | ✅ | ✅ | ✅ | ✅ | ✅ (own only) | ❌ |
+| status | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| foto | ✅ | ✅ | ✅ | ✅ | ✅ (own only) | ❌ |
 
 ---
 
@@ -318,8 +319,8 @@ GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 ```
 GET /warga/:id
 ```
-**Auth:** Required
-**Object-level:** Admin/Pengurus bisa akses semua. Warga hanya bisa akses profil sendiri.
+**Auth:** Sekretaris/Admin
+**Object-level:** Admin/Pengurus/Sekretaris/Bendahara bisa akses semua. Warga hanya bisa akses profil sendiri.
 
 **Response 200 (Admin/Pengurus):**
 ```json
@@ -390,7 +391,7 @@ GET /warga/:id
 ```
 POST /warga
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Admin
 **Body:**
 ```json
 {
@@ -426,7 +427,7 @@ POST /warga
 ```
 PUT /warga/:id
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Admin
 **Body:** Same as Create (partial update supported)
 **Response 200:**
 ```json
@@ -456,7 +457,7 @@ DELETE /warga/:id
 POST /warga/import
 Content-Type: multipart/form-data
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Admin
 **Body:** `file: <excel_file>`
 **Response 200:**
 ```json
@@ -474,7 +475,7 @@ Content-Type: multipart/form-data
 GET /warga/export?format=excel&status=aktif
 GET /warga/export?format=pdf&blok=A
 ```
-**Auth:** Pengurus/Admin only
+**Auth:** Sekretaris/Admin only
 **Object-level:** Warga tidak bisa akses export.
 **Audit:** Ya — setiap export dicatat di audit_logs (action: export, table: warga).
 **Query Params:**
@@ -495,7 +496,7 @@ GET /warga/export?format=pdf&blok=A
 ```
 PUT /warga/:id/verify
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Admin
 **Body:**
 ```json
 { "status": "active", "keterangan": "Data valid" }
@@ -513,7 +514,7 @@ PUT /warga/:id/verify
 ```
 GET /keuangan?page=1&limit=20&tipe=pemasukan&dari=2026-01-01&sampai=2026-06-30
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Bendahara/Sekretaris/Admin
 **Response 200:**
 ```json
 {
@@ -541,7 +542,7 @@ GET /keuangan?page=1&limit=20&tipe=pemasukan&dari=2026-01-01&sampai=2026-06-30
 ```
 POST /keuangan
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Bendahara/Sekretaris/Admin
 **Body:**
 ```json
 {
@@ -567,7 +568,7 @@ POST /keuangan
 ```
 PUT /keuangan/:id
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Bendahara/Sekretaris/Admin
 **Body:** Same as Create (partial)
 **Response 200**
 
@@ -589,7 +590,7 @@ POST   /keuangan/kategori          — Create { "nama": "Sumbangan", "tipe": "pe
 PUT    /keuangan/kategori/:id      — Update
 DELETE /keuangan/kategori/:id      — Delete (Admin only)
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Bendahara/Sekretaris/Admin
 
 ---
 
@@ -644,7 +645,7 @@ Content-Type: multipart/form-data
 ```
 PUT /iuran/:id/confirm
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Bendahara/Sekretaris/Admin
 **Body:**
 ```json
 { "status": "lunas", "keterangan": "Pembayaran valid" }
@@ -678,7 +679,7 @@ GET /iuran/saya?tahun=2026
 ```
 GET /keuangan/dashboard?tahun=2026
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Bendahara/Sekretaris/Admin
 **Response 200:**
 ```json
 {
@@ -701,7 +702,7 @@ GET /keuangan/dashboard?tahun=2026
 ```
 GET /keuangan/laporan?dari=2026-01-01&sampai=2026-06-30&format=pdf
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Bendahara/Sekretaris/Admin
 **Response:** PDF file download
 
 ---
@@ -748,7 +749,7 @@ GET /pengumuman/:id
 POST /pengumuman
 Content-Type: multipart/form-data
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Body:**
 ```json
 {
@@ -767,7 +768,7 @@ Content-Type: multipart/form-data
 ```
 PUT /pengumuman/:id
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Response 200**
 
 ---
@@ -776,7 +777,7 @@ PUT /pengumuman/:id
 ```
 DELETE /pengumuman/:id
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Response 200**
 
 ---
@@ -868,7 +869,7 @@ POST /forum
 ```
 PUT /forum/:id
 ```
-**Auth:** Owner/Admin
+**Auth:** Owner/Sekretaris/Pengurus/Admin
 **Body:** { "judul": "...", "isi": "..." }
 **Response 200**
 
@@ -878,7 +879,7 @@ PUT /forum/:id
 ```
 DELETE /forum/:id
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Response 200**
 
 ---
@@ -903,15 +904,15 @@ POST /forum/:id/comments
 ```
 DELETE /forum/comments/:id
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Response 200**
 
 ---
 
 ### 6.8 Moderation
 ```
-PUT /forum/:id/pin     — Pin thread (Pengurus/Admin)
-PUT /forum/:id/lock    — Lock thread (Pengurus/Admin)
+PUT /forum/:id/pin     — Pin thread (Sekretaris/Pengurus/Admin)
+PUT /forum/:id/lock    — Lock thread (Sekretaris/Pengurus/Admin)
 ```
 **Body:** { "status": "pinned" } / { "status": "locked" }
 **Response 200**
@@ -978,7 +979,7 @@ Content-Type: multipart/form-data
 ```
 PUT /pengaduan/:id/status
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Body:**
 ```json
 {
@@ -1023,7 +1024,7 @@ GET /kegiatan?dari=2026-06-01&sampai=2026-06-30
       "nama": "Kerja Bakti",
       "deskripsi": "Bersih-bersih lingkungan",
       "tanggal": "2026-06-10T07:00:00Z",
-      "lokai": "Balai RT",
+      "lokasi": "Balai RT",
       "penanggungJawab": { "namaLengkap": "Budi" },
       "rsvpCount": 15
     }
@@ -1046,7 +1047,7 @@ GET /kegiatan/:id
 ```
 POST /kegiatan
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Body:**
 ```json
 {
@@ -1065,7 +1066,7 @@ POST /kegiatan
 ```
 PUT /kegiatan/:id
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Response 200**
 
 ---
@@ -1074,7 +1075,7 @@ PUT /kegiatan/:id
 ```
 DELETE /kegiatan/:id
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Response 200**
 
 ---
@@ -1147,7 +1148,7 @@ GET /polling/:id
 ```
 POST /polling
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Body:**
 ```json
 {
@@ -1183,7 +1184,7 @@ POST /polling/:id/vote
 ```
 GET /dashboard/pengurus
 ```
-**Auth:** Pengurus/Admin
+**Auth:** Sekretaris/Pengurus/Admin
 **Response 200:**
 ```json
 {
@@ -1308,3 +1309,4 @@ Content-Type: multipart/form-data
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial API contract |
+| 1.1.0 | 2026-06-08 | Expanded auth annotations to 5 roles: Sekretaris (CRUD warga, verifikasi, pengumuman, forum moderation), Bendahara (CRUD keuangan, konfirmasi iuran, dashboard keuangan). Updated field visibility table to 6 columns. Fixed typo "lokai" → "lokasi". |
