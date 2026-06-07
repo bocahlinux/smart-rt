@@ -2,7 +2,7 @@
 
 **Version:** 1.2.0
 **Date:** June 8, 2026
-**Author:** OWL (Hermes Agent) for YCC
+**Author:** OWL (Hermes Agent) for BocahLinux
 **Status:** Draft
 
 ---
