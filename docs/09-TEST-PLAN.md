@@ -1,7 +1,7 @@
 # Smart-RT — Test Plan
 
-**Version:** 1.0.0
-**Date:** June 6, 2026
+**Version:** 1.1.0
+**Date:** June 7, 2026
 **Status:** Draft
 
 ---
@@ -17,7 +17,7 @@
 │  │  ┌─────────────────────────────────────────────┐    │    │
 │  │  │              Unit Tests                      │    │    │
 │  │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐       │    │    │
-│  │  │  │Services │ │Validators│ │Utilities│       │    │    │
+│  │  │  │ Models  │ │Serializ.│ │  Views  │       │    │    │
 │  │  │  └─────────┘ └─────────┘ └─────────┘       │    │    │
 │  │  └─────────────────────────────────────────────┘    │    │
 │  └─────────────────────────────────────────────────────┘    │
@@ -27,21 +27,24 @@
 ### 1.2 Testing Tools
 | Layer | Tool | Purpose |
 |-------|------|---------|
-| Backend Unit | Vitest | Service, middleware, utility tests |
-| Backend Integration | Vitest + Supertest | API endpoint tests |
+| Backend Unit | pytest + Django TestCase | Model, serializer, utility tests |
+| Backend Integration | pytest + DRF APITestCase / APIClient | API endpoint tests |
+| Backend Security | Django security checks + bandit + OWASP ZAP | Security scanning |
 | Frontend Unit | Vitest | Store, hook, utility tests |
 | Frontend Component | Vitest + React Testing Library | Component rendering & interaction |
 | Frontend Integration | Vitest + MSW | Page-level API mocking |
 | E2E | Manual | Full user flow testing |
-| Performance | k6 / Artillery | API load testing |
-| Security | Manual + OWASP ZAP | Security testing |
+| Performance | k6 / Locust | API load testing |
+| Security | Manual + OWASP ZAP + bandit | Security testing |
 
 ### 1.3 Coverage Targets
 | Layer | Target | Minimum |
 |-------|--------|---------|
-| Backend Services | 90% | 80% |
-| Backend Controllers | 85% | 75% |
-| Backend Middleware | 90% | 80% |
+| Backend Models | 90% | 80% |
+| Backend Serializers | 90% | 80% |
+| Backend Views (API) | 90% | 80% |
+| Backend Permissions | 95% | 85% |
+| Backend Security | 100% | 90% |
 | Frontend Stores | 90% | 80% |
 | Frontend Components | 80% | 70% |
 | Frontend Hooks | 85% | 75% |
@@ -51,139 +54,312 @@
 
 ## 2. Backend Test Plan
 
-### 2.1 Unit Tests — Auth Service
+### 2.1 Unit Tests — Auth (Django TestCase)
 | Test ID | Test Case | Input | Expected Output |
 |---------|-----------|-------|-----------------|
 | UT-AUTH-01 | Register with valid data | Valid email, phone, password | User created, status PENDING |
 | UT-AUTH-02 | Register with duplicate email | Email already exists | 409 Conflict |
 | UT-AUTH-03 | Register with invalid email | "not-an-email" | 400 Validation error |
-| UT-AUTH-04 | Register with short password | "123" | 400 Validation error |
-| UT-AUTH-05 | Login with valid credentials | Correct email + password | JWT token returned |
-| UT-AUTH-06 | Login with wrong password | Wrong password | 401 Unauthorized |
-| UT-AUTH-07 | Login with unverified account | Status PENDING | 403 Forbidden |
-| UT-AUTH-08 | Login with rejected account | Status REJECTED | 403 Forbidden |
-| UT-AUTH-09 | Change password with correct current | Correct current + new password | Success |
-| UT-AUTH-10 | Change password with wrong current | Wrong current password | 401 Unauthorized |
-| UT-AUTH-11 | JWT token generation | Valid user | Token with correct payload |
-| UT-AUTH-12 | JWT token verification | Valid token | Decoded payload |
-| UT-AUTH-13 | JWT token verification | Expired token | 401 Unauthorized |
-| UT-AUTH-14 | JWT token verification | Invalid signature | 401 Unauthorized |
+| UT-AUTH-04 | Register with short password | "123" | 400 Validation error (min 8 chars) |
+| UT-AUTH-05 | Register with weak password | "password" | 400 Validation error (no uppercase/digit) |
+| UT-AUTH-06 | Login with valid credentials | Correct email + password | Access token + refresh token cookie |
+| UT-AUTH-07 | Login with wrong password | Wrong password | 401 Unauthorized |
+| UT-AUTH-08 | Login with unverified account | Status PENDING | 403 Forbidden |
+| UT-AUTH-09 | Login with rejected account | Status REJECTED | 403 Forbidden |
+| UT-AUTH-10 | Login rate limit | 11 failed attempts in 5 min | 429 on 11th attempt |
+| UT-AUTH-11 | Change password with correct current | Correct current + new password | Success |
+| UT-AUTH-12 | Change password with wrong current | Wrong current password | 401 Unauthorized |
+| UT-AUTH-13 | Access token generation | Valid user | JWT with correct payload |
+| UT-AUTH-14 | Access token expired | Expired token | 401 Unauthorized |
+| UT-AUTH-15 | Refresh token rotation | Valid refresh token | New access + refresh token, old refresh blacklisted |
+| UT-AUTH-16 | Reuse blacklisted refresh token | Blacklisted refresh token | 401 Unauthorized |
+| UT-AUTH-17 | Logout blacklists refresh token | Valid logout | Refresh token di-blacklist |
+| UT-AUTH-18 | Password hashed with Argon2 | User created | Password NOT stored as plaintext |
 
-### 2.2 Unit Tests — Warga Service
+### 2.2 Unit Tests — Warga Model (Django TestCase)
 | Test ID | Test Case | Input | Expected Output |
 |---------|-----------|-------|-----------------|
 | UT-WRG-01 | Create warga with valid data | Complete profile | Warga created |
-| UT-WRG-02 | Create warga with duplicate NIK | NIK already exists | 409 Conflict |
-| UT-WRG-03 | Get warga by ID | Valid UUID | Warga object |
-| UT-WRG-04 | Get warga by invalid ID | Random UUID | 404 Not Found |
+| UT-WRG-02 | Create warga with duplicate NIK | NIK already exists | IntegrityError |
+| UT-WRG-03 | Get warga by ID | Valid PK | Warga object |
+| UT-WRG-04 | Get warga by invalid ID | Random PK | DoesNotExist |
 | UT-WRG-05 | Update warga data | Partial data | Updated warga |
-| UT-WRG-06 | Delete warga | Valid UUID | Warga deleted |
-| UT-WRG-07 | List warga with pagination | page=1, limit=20 | Paginated results |
-| UT-WRG-08 | Search warga by name | "Ahmad" | Matching results |
-| UT-WRG-09 | Filter warga by status | status=aktif | Filtered results |
-| UT-WRG-10 | Filter warga by blok | blok=A | Filtered results |
-| UT-WRG-11 | Verify warga (approve) | Valid UUID | Status ACTIVE |
-| UT-WRG-12 | Verify warga (reject) | Valid UUID | Status REJECTED |
-| UT-WRG-13 | Export warga to Excel | Filter params | Excel file |
-| UT-WRG-14 | Export warga to PDF | Filter params | PDF file |
+| UT-WRG-06 | Soft delete warga | Valid PK | Status changed, not hard deleted |
+| UT-WRG-07 | WargaProfile 1:1 with User | Create profile | OneToOne relation works |
+| UT-WRG-08 | NIK masking | NIK "3201010101010001" | "3201********0001" |
+| UT-WRG-09 | No KK masking | KK "3201010101010001" | "3201********0001" |
 
-### 2.3 Unit Tests — Keuangan Service
-| Test ID | Test Case | Input | Input | Expected Output |
-|---------|-----------|-------|-------|
-| UT-FIN-01 | Create pemasukan transaksi | Valid data | Transaksi created |
-| UT-FIN-02 | Create pengeluaran transaksi | Valid data | Transaksi created |
-| UT-FIN-03 | Get transaksi by ID | Valid UUID | Transaksi object |
-| UT-FIN-04 | List transaksi with filter | tipe=pemasukan | Filtered results |
-| UT-FIN-05 | List transaksi by date range | dari & sampai | Filtered results |
-| UT-FIN-06 | Update transaksi | Partial data | Updated transaksi |
-| UT-FIN-07 | Delete transaksi | Valid UUID | Transaksi deleted |
-| UT-FIN-08 | Confirm iuran | Valid iuran ID | Status LUNAS |
-| UT-FIN-09 | Reject iuran | Valid iuran ID | Status REJECTED |
-| UT-FIN-10 | Auto-generate iuran bulanan | Month + year | Iuran for all warga |
-| UT-FIN-11 | Dashboard saldo calculation | Year | Correct totals |
-| UT-FIN-12 | Laporan PDF generation | Date range | PDF file |
-
-### 2.4 Unit Tests — Middleware
+### 2.3 Unit Tests — Keuangan Model
 | Test ID | Test Case | Input | Expected Output |
 |---------|-----------|-------|-----------------|
-| UT-MID-01 | Auth middleware with valid token | Bearer token | next() called |
-| UT-MID-02 | Auth middleware without token | No header | 401 Unauthorized |
-| UT-MID-03 | Auth middleware with invalid token | "Bearer invalid" | 401 Unauthorized |
-| UT-MID-04 | RBAC middleware with correct role | Admin accessing admin route | next() called |
-| UT-MID-05 | RBAC middleware with wrong role | Warga accessing admin route | 403 Forbidden |
-| UT-MID-06 | Rate limiter under limit | 50 requests | All pass |
-| UT-MID-07 | Rate limiter over limit | 101 requests | 429 on 101st |
-| UT-MID-08 | Error handler with AppError | ValidationError | Correct status + format |
-| UT-MID-09 | Error handler with unknown error | TypeError | 500 + generic message |
+| UT-FIN-01 | Create pemasukan transaksi | Valid data | Transaksi created |
+| UT-FIN-02 | Create pengeluaran transaksi | Valid data | Transaksi created |
+| UT-FIN-03 | Get transaksi by ID | Valid PK | Transaksi object |
+| UT-FIN-04 | Confirm iuran | Valid iuran ID | Status LUNAS |
+| UT-FIN-05 | Reject iuran | Valid iuran ID | Status REJECTED |
+| UT-FIN-06 | Auto-generate iuran bulanan | Month + year | Iuran for all active warga |
+| UT-FIN-07 | Dashboard saldo calculation | Year | Correct totals |
+| UT-FIN-08 | Unique together iuran (warga, bulan, tahun) | Duplicate iuran | IntegrityError |
 
-### 2.5 Integration Tests — Auth API
+### 2.4 Unit Tests — Permissions
+| Test ID | Test Case | Input | Expected Output |
+|---------|-----------|-------|-----------------|
+| UT-PERM-01 | IsAdmin with admin role | Admin user | True |
+| UT-PERM-02 | IsAdmin with warga role | Warga user | False |
+| UT-PERM-03 | IsPengurus with pengurus role | Pengurus user | True |
+| UT-PERM-04 | IsPengurus with warga role | Warga user | False |
+| UT-PERM-05 | IsOwnerOrPengurus — owner | Warga accessing own profile | True |
+| UT-PERM-06 | IsOwnerOrPengurus — other | Warga accessing other profile | False |
+| UT-PERM-07 | IsOwnerOrPengurus — admin | Admin accessing any profile | True |
+| UT-PERM-08 | IsOwnerOrPengurusForFile — pemilik | Warga accessing own bukti transfer | True |
+| UT-PERM-09 | IsOwnerOrPengurusForFile — other | Warga accessing other bukti transfer | False |
+
+### 2.5 Unit Tests — Serializers
+| Test ID | Test Case | Input | Expected Output |
+|---------|-----------|-------|-----------------|
+| UT-SER-01 | Admin serializer includes all fields | Admin role | nik, no_kk, phone, email, alamat included |
+| UT-SER-02 | Warga serializer excludes sensitive fields | Warga role | nik, no_kk, phone, email NOT included |
+| UT-SER-03 | Warga serializer includes masked fields | Warga role | nik_masked, no_kk_masked included |
+| UT-SER-04 | Owner serializer includes own data | Warga own profile | Full data (no mask) |
+| UT-SER-05 | Export serializer masks by default | fullData=false | NIK/KK masked |
+| UT-SER-06 | Export serializer full for admin | fullData=true, admin | NIK/KK full |
+
+### 2.6 Unit Tests — File Upload Validators
+| Test ID | Test Case | Input | Expected Output |
+|---------|-----------|-------|-----------------|
+| UT-FILE-01 | Valid JPEG upload | image/jpeg, 1MB | Pass |
+| UT-FILE-02 | Valid PNG upload | image/png, 2MB | Pass |
+| UT-FILE-03 | Valid PDF upload | application/pdf, 3MB | Pass |
+| UT-FILE-04 | Invalid .php upload | application/x-php | ValidationError |
+| UT-FILE-05 | Invalid .exe upload | application/x-executable | ValidationError |
+| UT-FILE-06 | Oversized file | image/jpeg, 6MB | ValidationError (max 5MB) |
+| UT-FILE-07 | MIME mismatch (fake extension) | .jpg but actually .exe | ValidationError (magic bytes) |
+| UT-FILE-08 | Filename is UUID | Any valid upload | Filename is UUID, not original |
+
+### 2.7 Unit Tests — Audit Log
+| Test ID | Test Case | Input | Expected Output |
+|---------|-----------|-------|-----------------|
+| UT-AUDIT-01 | Create warga → audit log | Create warga | AuditLog entry with action=create |
+| UT-AUDIT-02 | Update warga → audit log | Update warga | AuditLog entry with action=update |
+| UT-AUDIT-03 | Delete warga → audit log | Delete warga | AuditLog entry with action=delete |
+| UT-AUDIT-04 | Confirm iuran → audit log | Confirm iuran | AuditLog entry with action=confirm |
+| UT-AUDIT-05 | Export → audit log | Export warga | AuditLog entry with action=export |
+| UT-AUDIT-06 | Audit log masks NIK | Update NIK | old_data/new_data NIK masked |
+| UT-AUDIT-07 | Audit log masks no KK | Update KK | old_data/new_data KK masked |
+| UT-AUDIT-08 | Audit log masks phone | Update phone | old_data/new_data phone masked |
+| UT-AUDIT-09 | Audit log does NOT store password | Change password | old_data/new_data NO password field |
+| UT-AUDIT-10 | Audit log does NOT store token | Login | AuditLog NO token field |
+
+### 2.8 Integration Tests — Auth API (DRF APITestCase)
 | Test ID | Test Case | Method | Endpoint | Expected |
 |---------|-----------|--------|----------|----------|
-| IT-AUTH-01 | Register new user | POST | /auth/register | 201 + user object |
-| IT-AUTH-02 | Register duplicate email | POST | /auth/register | 409 |
-| IT-AUTH-03 | Login with valid credentials | POST | /auth/login | 200 + token |
-| IT-AUTH-04 | Login with wrong password | POST | /auth/login | 401 |
-| IT-AUTH-05 | Get current user | GET | /auth/me | 200 + user |
-| IT-AUTH-06 | Access protected route without token | GET | /warga | 401 |
-| IT-AUTH-07 | Access protected route with invalid token | GET | /warga | 401 |
-| IT-AUTH-08 | Change password | PUT | /auth/password | 200 |
-| IT-AUTH-09 | Logout | POST | /auth/logout | 200 |
+| IT-AUTH-01 | Register new user | POST | /api/v1/auth/register/ | 201 + user object |
+| IT-AUTH-02 | Register duplicate email | POST | /api/v1/auth/register/ | 409 |
+| IT-AUTH-03 | Login with valid credentials | POST | /api/v1/auth/login/ | 200 + accessToken + Set-Cookie refresh_token |
+| IT-AUTH-04 | Login with wrong password | POST | /api/v1/auth/login/ | 401 |
+| IT-AUTH-05 | Login rate limit | POST x11 | /api/v1/auth/login/ | 429 on 11th |
+| IT-AUTH-06 | Refresh token | POST | /api/v1/auth/token/refresh/ | 200 + new accessToken + new Set-Cookie |
+| IT-AUTH-07 | Refresh with blacklisted token | POST | /api/v1/auth/token/refresh/ | 401 |
+| IT-AUTH-08 | Logout | POST | /api/v1/auth/logout/ | 200 + refresh token blacklisted |
+| IT-AUTH-09 | Get current user | GET | /api/v1/auth/me/ | 200 + user |
+| IT-AUTH-10 | Access protected route without token | GET | /api/v1/warga/ | 401 |
+| IT-AUTH-11 | Access protected route with expired token | GET | /api/v1/warga/ | 401 |
+| IT-AUTH-12 | Change password | PUT | /api/v1/auth/password/ | 200 |
 
-### 2.6 Integration Tests — Warga API
+### 2.9 Integration Tests — Warga API (Object-Level Permission)
 | Test ID | Test Case | Method | Endpoint | Expected |
 |---------|-----------|--------|----------|----------|
-| IT-WRG-01 | List warga (pengurus) | GET | /warga | 200 + paginated |
-| IT-WRG-02 | List warga (warga) | GET | /warga | 403 |
-| IT-WRG-03 | Get warga detail | GET | /warga/:id | 200 + detail |
-| IT-WRG-04 | Create warga | POST | /warga | 201 |
-| IT-WRG-05 | Create warga (invalid data) | POST | /warga | 400 |
-| IT-WRG-06 | Update warga | PUT | /warga/:id | 200 |
-| IT-WRG-07 | Delete warga (admin) | DELETE | /warga/:id | 200 |
-| IT-WRG-08 | Delete warga (pengurus) | DELETE | /warga/:id | 403 |
-| IT-WRG-09 | Search warga | GET | /warga?search=ahmad | 200 + filtered |
-| IT-WRG-10 | Verify warga | PUT | /warga/:id/verify | 200 |
+| IT-WRG-01 | List warga (admin) | GET | /api/v1/warga/ | 200 + paginated + full fields |
+| IT-WRG-02 | List warga (pengurus) | GET | /api/v1/warga/ | 200 + paginated + full fields |
+| IT-WRG-03 | List warga (warga) | GET | /api/v1/warga/ | 200 + own profile only + masked fields |
+| IT-WRG-04 | Get own profile (warga) | GET | /api/v1/warga/:own_id/ | 200 + full data (no mask) |
+| IT-WRG-05 | Get other profile (warga) | GET | /api/v1/warga/:other_id/ | 403 Forbidden |
+| IT-WRG-06 | Get any profile (admin) | GET | /api/v1/warga/:id/ | 200 + full data |
+| IT-WRG-07 | Create warga (pengurus) | POST | /api/v1/warga/ | 201 |
+| IT-WRG-08 | Create warga (warga) | POST | /api/v1/warga/ | 403 |
+| IT-WRG-09 | Update own profile (warga) | PUT | /api/v1/warga/:own_id/ | 200 |
+| IT-WRG-10 | Update other profile (warga) | PUT | /api/v1/warga/:other_id/ | 403 |
+| IT-WRG-11 | Delete warga (admin) | DELETE | /api/v1/warga/:id/ | 200 |
+| IT-WRG-12 | Delete warga (pengurus) | DELETE | /api/v1/warga/:id/ | 403 |
+| IT-WRG-13 | Verify warga (pengurus) | PUT | /api/v1/warga/:id/verify/ | 200 |
+| IT-WRG-14 | Export warga (admin) | GET | /api/v1/warga/export/ | 200 + file |
+| IT-WRG-15 | Export warga (warga) | GET | /api/v1/warga/export/ | 403 |
+| IT-WRG-16 | Export with fullData=true (admin) | GET | /api/v1/warga/export/?fullData=true | 200 + unmasked |
+| IT-WRG-17 | Export with fullData=false | GET | /api/v1/warga/export/?fullData=false | 200 + masked |
 
-### 2.7 Integration Tests — Keuangan API
+### 2.10 Integration Tests — Keuangan API (Object-Level + File Upload)
 | Test ID | Test Case | Method | Endpoint | Expected |
 |---------|-----------|--------|----------|----------|
-| IT-FIN-01 | List transaksi | GET | /keuangan | 200 + paginated |
-| IT-FIN-02 | Create transaksi | POST | /keuangan | 201 |
-| IT-FIN-03 | Update transaksi | PUT | /keuangan/:id | 200 |
-| IT-FIN-04 | Delete transaksi | DELETE | /keuangan/:id | 200 |
-| IT-FIN-05 | Upload bukti iuran | POST | /iuran/upload | 201 |
-| IT-FIN-06 | Konfirmasi iuran | PUT | /iuran/:id/confirm | 200 |
-| IT-FIN-07 | Dashboard keuangan | GET | /keuangan/dashboard | 200 + stats |
-| IT-FIN-08 | Laporan PDF | GET | /keuangan/laporan | PDF file |
+| IT-FIN-01 | List transaksi (pengurus) | GET | /api/v1/keuangan/ | 200 + paginated |
+| IT-FIN-02 | List transaksi (warga) | GET | /api/v1/keuangan/ | 403 |
+| IT-FIN-03 | Create transaksi (pengurus) | POST | /api/v1/keuangan/ | 201 |
+| IT-FIN-04 | Upload bukti iuran (warga, own) | POST | /api/v1/iuran/upload/ | 201 |
+| IT-FIN-05 | Upload bukti iuran (warga, other) | POST | /api/v1/iuran/upload/ | 403 |
+| IT-FIN-06 | View own bukti transfer (warga) | GET | /api/v1/media/bukti-iuran/:id/ | 200 + file |
+| IT-FIN-07 | View other bukti transfer (warga) | GET | /api/v1/media/bukti-iuran/:other_id/ | 403 |
+| IT-FIN-08 | View bukti transfer (pengurus) | GET | /api/v1/media/bukti-iuran/:id/ | 200 + file |
+| IT-FIN-09 | Konfirmasi iuran (pengurus) | PUT | /api/v1/iuran/:id/confirm/ | 200 |
+| IT-FIN-10 | Konfirmasi iuran (warga) | PUT | /api/v1/iuran/:id/confirm/ | 403 |
+| IT-FIN-11 | Upload .php file | POST | /api/v1/iuran/upload/ | 415 Unsupported Media Type |
+| IT-FIN-12 | Upload .exe file | POST | /api/v1/iuran/upload/ | 415 |
+| IT-FIN-13 | Upload oversized file (6MB) | POST | /api/v1/iuran/upload/ | 413 Payload Too Large |
+| IT-FIN-14 | Upload fake MIME (.jpg but .exe) | POST | /api/v1/iuran/upload/ | 415 |
+| IT-FIN-15 | Access file without auth | GET | /api/v1/media/bukti-iuran/:id/ | 401 |
+| IT-FIN-16 | Access file with path traversal | GET | /api/v1/media/../../../etc/passwd | 404 |
 
-### 2.8 Integration Tests — Other Modules
+### 2.11 Integration Tests — Pengaduan API (Object-Level + Privacy)
+| Test ID | Test Case | Method | Endpoint | Expected |
+|---------|-----------|--------|----------|----------|
+| IT-COMP-01 | List own pengaduan (warga) | GET | /api/v1/pengaduan/ | 200 + own only |
+| IT-COMP-02 | List all pengaduan (pengurus) | GET | /api/v1/pengaduan/ | 200 + all |
+| IT-COMP-03 | Get own pengaduan detail (warga) | GET | /api/v1/pengaduan/:own_id/ | 200 |
+| IT-COMP-04 | Get other pengaduan (warga) | GET | /api/v1/pengaduan/:other_id/ | 403 |
+| IT-COMP-05 | Get sensitif pengaduan (other warga) | GET | /api/v1/pengaduan/:sensitif_id/ | 403 |
+| IT-COMP-06 | Get sensitif pengaduan (pengurus) | GET | /api/v1/pengaduan/:sensitif_id/ | 200 |
+| IT-COMP-07 | Create pengaduan (warga) | POST | /api/v1/pengaduan/ | 201 |
+| IT-COMP-08 | Update status (pengurus) | PUT | /api/v1/pengaduan/:id/status/ | 200 |
+| IT-COMP-09 | Update status (warga) | PUT | /api/v1/pengaduan/:id/status/ | 403 |
+| IT-COMP-10 | Upload foto pengaduan (valid) | POST | /api/v1/pengaduan/ | 201 |
+| IT-COMP-11 | Upload foto pengaduan (.php) | POST | /api/v1/pengaduan/ | 415 |
+
+### 2.12 Integration Tests — Other Modules
 | Module | Test Cases | Count |
 |--------|-----------|-------|
-| Pengumuman | CRUD + list + detail | 6 |
-| Forum | CRUD thread + comment + moderation | 8 |
-| Pengaduan | CRUD + status update + filter | 7 |
-| Kegiatan | CRUD + RSVP | 6 |
-| Polling | CRUD + vote + results | 6 |
-| Dashboard | Pengurus + warga dashboard | 4 |
+| Pengumuman | CRUD + list + detail + file upload validation | 8 |
+| Forum | CRUD thread + comment + moderation + object-level | 10 |
+| Kegiatan | CRUD + RSVP + double RSVP prevention | 8 |
+| Polling | CRUD + vote + double vote prevention + results visibility | 8 |
+| Dashboard | Pengurus + warga dashboard + role-filtered data | 6 |
 | Notifications | List + read + read-all | 4 |
-| File Upload | Upload + validation | 3 |
 
 ---
 
-## 3. Frontend Test Plan
+## 3. Security Test Plan (Detailed)
 
-### 3.1 Unit Tests — Stores
+### 3.1 Object-Level Permission Tests
+| Test ID | Test Case | Role | Action | Expected |
+|---------|-----------|------|--------|----------|
+| SEC-OBJ-01 | Warga A GET profil Warga B | Warga A | GET /warga/:b_id | 403 Forbidden |
+| SEC-OBJ-02 | Warga A GET iuran Warga B | Warga A | GET /iuran/?warga_id=b_id | 403 or empty |
+| SEC-OBJ-03 | Warga A GET bukti transfer Warga B | Warga A | GET /media/bukti-iuran/:b_id | 403 Forbidden |
+| SEC-OBJ-04 | Warga A GET pengaduan private Warga B | Warga A | GET /pengaduan/:b_id | 403 Forbidden |
+| SEC-OBJ-05 | Warga A PUT profil Warga B | Warga A | PUT /warga/:b_id | 403 Forbidden |
+| SEC-OBJ-06 | Warga A DELETE profil Warga B | Warga A | DELETE /warga/:b_id | 403 Forbidden |
+| SEC-OBJ-07 | Admin GET profil Warga B | Admin | GET /warga/:b_id | 200 OK |
+| SEC-OBJ-08 | Pengurus GET profil Warga B | Pengurus | GET /warga/:b_id | 200 OK |
+| SEC-OBJ-09 | Warga A GET own profil | Warga A | GET /warga/:a_id | 200 OK (full data) |
+| SEC-OBJ-10 | Warga A PUT own profil | Warga A | PUT /warga/:a_id | 200 OK |
+
+### 3.2 Field Masking Tests
+| Test ID | Test Case | Role | Field | Expected |
+|---------|-----------|------|-------|----------|
+| SEC-MASK-01 | List warga — NIK masked | Warga | nik | "3201********0001" |
+| SEC-MASK-02 | List warga — no KK masked | Warga | no_kk | "3201********0001" |
+| SEC-MASK-03 | List warga — phone hidden | Warga | phone | Not in response |
+| SEC-MASK-04 | List warga — email hidden | Warga | email | Not in response |
+| SEC-MASK-05 | List warga — alamat hidden | Warga | alamat | Not in response |
+| SEC-MASK-06 | List warga — NIK full | Admin | nik | "3201010101010001" |
+| SEC-MASK-07 | List warga — no KK full | Pengurus | no_kk | "3201010101010001" |
+| SEC-MASK-08 | Export default — NIK masked | Pengurus | nik | Masked |
+| SEC-MASK-09 | Export fullData — NIK full | Admin | nik | Full (fullData=true) |
+| SEC-MASK-10 | Owner view — NIK full (no mask) | Warga (own) | nik | Full |
+
+### 3.3 Audit Log Tests
+| Test ID | Test Case | Expected |
+|---------|-----------|----------|
+| SEC-AUDIT-01 | Create warga → audit log entry | action=create, table=warga_profiles |
+| SEC-AUDIT-02 | Update warga → audit log entry | action=update, old_data + new_data |
+| SEC-AUDIT-03 | Delete warga → audit log entry | action=delete |
+| SEC-AUDIT-04 | Confirm iuran → audit log entry | action=confirm |
+| SEC-AUDIT-05 | Export warga → audit log entry | action=export |
+| SEC-AUDIT-06 | Audit log old_data NIK masked | NIK in old_data is "3201********0001" |
+| SEC-AUDIT-07 | Audit log new_data NIK masked | NIK in new_data is "3201********0001" |
+| SEC-AUDIT-08 | Audit log no KK masked | KK in old_data/new_data is masked |
+| SEC-AUDIT-09 | Audit log phone masked | Phone in old_data/new_data is masked |
+| SEC-AUDIT-10 | Audit log does NOT contain password | No password field in old_data/new_data |
+| SEC-AUDIT-11 | Audit log does NOT contain token | No token field in old_data/new_data |
+| SEC-AUDIT-12 | Audit log only accessible by admin | Warga GET /audit-logs/ → 403 |
+
+### 3.4 File Upload Security Tests
+| Test ID | Test Case | Expected |
+|---------|-----------|----------|
+| SEC-FILE-01 | Upload .php file | 415 Unsupported Media Type |
+| SEC-FILE-02 | Upload .exe file | 415 |
+| SEC-FILE-03 | Upload .sh file | 415 |
+| SEC-FILE-04 | Upload .svg with XSS payload | 415 (svg not in allowed MIME) |
+| SEC-FILE-05 | Upload file > 5MB | 413 Payload Too Large |
+| SEC-FILE-06 | Upload fake MIME (.jpg but actually .exe) | 415 (magic bytes mismatch) |
+| SEC-FILE-07 | Upload double extension (.jpg.php) | 415 |
+| SEC-FILE-08 | Upload null byte (file.php%00.jpg) | 415 |
+| SEC-FILE-09 | Filename is UUID (not original) | Stored as UUID |
+| SEC-FILE-10 | Access file without auth | 401 Unauthorized |
+| SEC-FILE-11 | Access file with path traversal (../) | 404 Not Found |
+| SEC-FILE-12 | Access other user's private file | 403 Forbidden |
+| SEC-FILE-13 | Access own private file | 200 OK |
+| SEC-FILE-14 | Pengurus access any private file | 200 OK |
+
+### 3.5 JWT / Auth Security Tests
+| Test ID | Test Case | Expected |
+|---------|-----------|----------|
+| SEC-JWT-01 | Access with expired access token | 401 Unauthorized |
+| SEC-JWT-02 | Access with invalid signature | 401 |
+| SEC-JWT-03 | Access with tampered payload | 401 |
+| SEC-JWT-04 | Access with "none" algorithm | 401 |
+| SEC-JWT-05 | Reuse blacklisted refresh token | 401 |
+| SEC-JWT-06 | Access after logout | 401 (refresh token blacklisted) |
+| SEC-JWT-07 | Login rate limit (11 failed attempts) | 429 on 11th |
+| SEC-JWT-08 | Password "123456" rejected | 400 (weak password) |
+| SEC-JWT-09 | Password "password" rejected | 400 (no uppercase/digit) |
+| SEC-JWT-10 | Password stored as Argon2 hash | NOT plaintext in DB |
+
+### 3.6 OWASP Top 10 Tests
+| Risk | Test Case | Expected | Status |
+|------|-----------|----------|--------|
+| A01: Broken Access Control | IDOR: change UUID in URL | 403 Forbidden | ⬜ |
+| A01: Broken Access Control | Access admin endpoint as warga | 403 | ⬜ |
+| A02: Cryptographic Failures | Password stored as Argon2 | Not plaintext | ⬜ |
+| A02: Cryptographic Failures | HTTPS enforced | Redirect HTTP→HTTPS | ⬜ |
+| A02: Cryptographic Failures | Backup encrypted | GPG AES256 | ⬜ |
+| A03: Injection | SQL injection via search param | Blocked by Django ORM | ⬜ |
+| A03: Injection | XSS via input field | Sanitized | ⬜ |
+| A04: Insecure Design | Object-level permission enforced | 403 for unauthorized | ⬜ |
+| A05: Security Misconfiguration | DEBUG=False in production | No debug info leaked | ⬜ |
+| A05: Security Misconfiguration | Security headers present | HSTS, X-Frame-Options | ⬜ |
+| A06: Vulnerable Components | Dependencies up-to-date | No known CVEs | ⬜ |
+| A07: Auth Failures | Brute force protection | Rate limited | ⬜ |
+| A07: Auth Failures | Session fixation | Token rotation | ⬜ |
+| A08: Data Integrity | CSRF protection | Token validated | ⬜ |
+| A09: Logging Failures | Audit log for sensitive ops | Logged | ⬜ |
+| A09: Logging Failures | No sensitive data in logs | No password/token in logs | ⬜ |
+| A10: SSRF | File URL manipulation | Blocked | ⬜ |
+
+### 3.7 Backup & Recovery Tests
+| Test ID | Test Case | Expected |
+|---------|-----------|----------|
+| SEC-BAK-01 | Backup job runs successfully | Exit code 0 |
+| SEC-BAK-02 | Backup file is encrypted (GPG) | File is .gpg, not plain .gz |
+| SEC-BAK-03 | Backup file cannot be read without key | gpg decrypt fails without passphrase |
+| SEC-BAK-04 | Restore from backup in non-production | Data restored correctly |
+| SEC-BAK-05 | Backup file permission is 600 | Only owner can read |
+| SEC-BAK-06 | Backup not in Git repository | .gitignore includes backup files |
+
+---
+
+## 4. Frontend Test Plan
+
+### 4.1 Unit Tests — Stores (Vitest)
 | Test ID | Test Case | Store | Expected |
 |---------|-----------|-------|----------|
-| UT-STO-01 | Login sets user and token | authStore | user + token set |
-| UT-STO-02 | Logout clears state | authStore | user + token null |
+| UT-STO-01 | Login sets user and accessToken | authStore | user + accessToken set |
+| UT-STO-02 | Logout clears state | authStore | user + accessToken null |
 | UT-STO-03 | Set user data | authStore | user updated |
-| UT-STO-04 | Add warga to list | wargaStore | List updated |
-| UT-STO-05 | Remove warga from list | wargaStore | List updated |
-| UT-STO-06 | Set loading state | wargaStore | isLoading true |
-| UT-STO-07 | Set error state | wargaStore | error set |
-| UT-STO-08 | Pagination state | wargaStore | page + limit set |
+| UT-STO-04 | accessToken NOT persisted on refresh | authStore | null after page reload |
+| UT-STO-05 | Add warga to list | wargaStore | List updated |
+| UT-STO-06 | Remove warga from list | wargaStore | List updated |
+| UT-STO-07 | Set loading state | wargaStore | isLoading true |
+| UT-STO-08 | Set error state | wargaStore | error set |
 
-### 3.2 Unit Tests — Hooks
+### 4.2 Unit Tests — Hooks (Vitest + RTL)
 | Test ID | Test Case | Hook | Expected |
 |---------|-----------|------|----------|
 | UT-HOK-01 | useAuth returns user | useAuth | Current user |
@@ -195,7 +371,7 @@
 | UT-HOK-07 | useForm submits valid data | useForm | Submit called |
 | UT-HOK-08 | useDebounce delays value | useDebounce | Delayed value |
 
-### 3.3 Component Tests — Common
+### 4.3 Component Tests — Common (Vitest + RTL)
 | Test ID | Test Case | Component | Expected |
 |---------|-----------|-----------|----------|
 | UT-COM-01 | Button renders | Button | Text visible |
@@ -209,7 +385,7 @@
 | UT-COM-09 | Badge renders | Badge | Correct color + text |
 | UT-COM-10 | Loading spinner | Loading | Spinner visible |
 
-### 3.4 Component Tests — Auth
+### 4.4 Component Tests — Auth
 | Test ID | Test Case | Component | Expected |
 |---------|-----------|-----------|----------|
 | UT-AUT-01 | LoginForm renders | LoginForm | Email + password fields |
@@ -218,16 +394,18 @@
 | UT-AUT-04 | RegisterForm renders | RegisterForm | All fields visible |
 | UT-AUT-05 | RegisterForm validation | RegisterForm | Password mismatch error |
 
-### 3.5 Component Tests — Warga
+### 4.5 Component Tests — Warga (Field Visibility)
 | Test ID | Test Case | Component | Expected |
 |---------|-----------|-----------|----------|
-| UT-WRG-01 | WargaTable renders | WargaTable | Rows visible |
-| UT-WRG-02 | WargaTable empty | WargaTable | Empty state |
-| UT-WRG-03 | WargaForm renders | WargaForm | All fields |
-| UT-WRG-04 | WargaForm validation | WargaForm | Required errors |
-| UT-WRG-05 | WargaDetail renders | WargaDetail | Profile data |
+| UT-WRG-01 | WargaTable renders (admin) | WargaTable | NIK column visible |
+| UT-WRG-02 | WargaTable renders (warga) | WargaTable | NIK column NOT visible |
+| UT-WRG-03 | WargaTable shows masked NIK (warga) | WargaTable | "3201********0001" |
+| UT-WRG-04 | WargaTable shows full NIK (admin) | WargaTable | "3201010101010001" |
+| UT-WRG-05 | WargaForm renders | WargaForm | All fields |
+| UT-WRG-06 | WargaForm validation | WargaForm | Required errors |
+| UT-WRG-07 | WargaDetail renders | WargaDetail | Profile data |
 
-### 3.6 Component Tests — Other Modules
+### 4.6 Component Tests — Other Modules
 | Module | Components | Test Count |
 |--------|-----------|-----------|
 | Keuangan | TransaksiTable, TransaksiForm, Grafik | 6 |
@@ -238,7 +416,7 @@
 | Polling | PollCard, PollForm, PollResult | 5 |
 | Dashboard | StatsCard, Chart, RecentActivity | 4 |
 
-### 3.7 Integration Tests — Pages
+### 4.7 Integration Tests — Pages (Vitest + MSW)
 | Test ID | Test Case | Page | Expected |
 |---------|-----------|------|----------|
 | IT-PAGE-01 | Login page flow | /login | Login → redirect dashboard |
@@ -254,62 +432,99 @@
 
 ---
 
-## 4. Test Data Strategy
+## 5. Test Data Strategy
 
-### 4.1 Test Fixtures
-```typescript
-// tests/fixtures/users.ts
-export const mockAdmin = {
-  id: 'uuid-admin',
-  email: 'admin@smartrt.local',
-  phone: '081111111111',
-  role: 'ADMIN',
-  status: 'ACTIVE',
-};
+### 5.1 Test Fixtures (Django fixtures)
+```python
+# accounts/tests/fixtures.py
+import pytest
+from accounts.models import User, WargaProfile
 
-export const mockPengurus = {
-  id: 'uuid-pengurus',
-  email: 'pengurus@smartrt.local',
-  phone: '082222222222',
-  role: 'PENGURUS',
-  status: 'ACTIVE',
-};
+@pytest.fixture
+def admin_user(db):
+    return User.objects.create_superuser(
+        email='admin@smartrt.local',
+        username='admin',
+        phone='081111111111',
+        password='Admin123!',
+        role='admin',
+        status='active'
+    )
 
-export const mockWarga = {
-  id: 'uuid-warga',
-  email: 'warga@smartrt.local',
-  phone: '083333333333',
-  role: 'WARGA',
-  status: 'ACTIVE',
-};
+@pytest.fixture
+def pengurus_user(db):
+    return User.objects.create_user(
+        email='pengurus@smartrt.local',
+        username='pengurus',
+        phone='082222222222',
+        password='Pengurus123!',
+        role='pengurus',
+        status='active'
+    )
 
-// tests/fixtures/warga.ts
-export const mockWargaProfile = {
-  id: 'uuid-profile',
-  userId: 'uuid-warga',
-  nik: '1234567890123456',
-  namaLengkap: 'Ahmad Fauzi',
-  tempatLahir: 'Palangkaraya',
-  tanggalLahir: '1990-05-15',
-  jenisKelamin: 'L',
-  agama: 'Islam',
-  blok: 'A',
-  noRumah: '15',
-  status: 'AKTIF',
-};
+@pytest.fixture
+def warga_user_a(db):
+    user = User.objects.create_user(
+        email='warga_a@smartrt.local',
+        username='warga_a',
+        phone='083333333333',
+        password='WargaA123!',
+        role='warga',
+        status='active'
+    )
+    WargaProfile.objects.create(
+        user=user,
+        nik='3201010101010001',
+        nama_lengkap='Ahmad Fauzi',
+        blok='A',
+        no_rumah='15',
+        status='aktif'
+    )
+    return user
+
+@pytest.fixture
+def warga_user_b(db):
+    user = User.objects.create_user(
+        email='warga_b@smartrt.local',
+        username='warga_b',
+        phone='084444444444',
+        password='WargaB123!',
+        role='warga',
+        status='active'
+    )
+    WargaProfile.objects.create(
+        user=user,
+        nik='3201020202020002',
+        nama_lengkap='Budi Santoso',
+        blok='B',
+        no_rumah='10',
+        status='aktif'
+    )
+    return user
 ```
 
-### 4.2 Test Database
+### 5.2 Test Database
 ```bash
-# Use separate test database
-DATABASE_URL="postgresql://smartrt:***@localhost:5432/smartrt_test"
+# pytest.ini
+[pytest]
+DJANGO_SETTINGS_MODULE = config.settings.test
+python_files = tests.py test_*.py *_tests.py
 
-# Reset before test run
-npx prisma migrate reset --force --skip-seed
-npx prisma db seed
+# Django test settings — use separate test database
+# config/settings/test.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'smartrt_test',
+        'USER': 'smartrt',
+        'PASSWORD': 'test_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
 ```
 
-### 4.3 MSW Handlers (Frontend)
+### 5.3 MSW Handlers (Frontend)
 ```typescript
 // tests/mocks/handlers.ts
 import { http, HttpResponse } from 'msw';
@@ -325,7 +540,7 @@ export const handlers = [
   http.post('/api/v1/auth/login', () => {
     return HttpResponse.json({
       status: 'success',
-      data: { user: mockWarga, token: 'mock-jwt' },
+      data: { user: mockWarga, accessToken: 'mock-jwt', expiresIn: 1800 },
     });
   }),
 ];
@@ -333,9 +548,9 @@ export const handlers = [
 
 ---
 
-## 5. Performance Testing
+## 6. Performance Testing
 
-### 5.1 Load Testing (k6)
+### 6.1 Load Testing (k6)
 ```javascript
 // tests/performance/auth-load.js
 import http from 'k6/http';
@@ -350,14 +565,14 @@ export const options = {
 };
 
 export default function () {
-  http.post('http://localhost:3001/api/v1/login', JSON.stringify({
+  http.post('http://localhost:8000/api/v1/auth/login/', JSON.stringify({
     email: 'warga@smartrt.local',
     password: 'password123',
   }), { headers: { 'Content-Type': 'application/json' } });
 }
 ```
 
-### 5.2 Performance Targets
+### 6.2 Performance Targets
 | Endpoint | Target p95 | Max p99 |
 |----------|-----------|---------|
 | Login | < 200ms | < 500ms |
@@ -367,45 +582,13 @@ export default function () {
 | Export PDF | < 2s | < 5s |
 | Dashboard | < 500ms | < 1s |
 
-### 5.3 Load Test Scenarios
+### 6.3 Load Test Scenarios
 | Scenario | VUs | Duration | Purpose |
 |----------|-----|----------|---------|
 | Normal load | 20 | 5 min | Daily usage |
 | Peak load | 50 | 5 min | Peak hours |
 | Stress test | 100 | 5 min | Breaking point |
 | Soak test | 30 | 30 min | Memory leaks |
-
----
-
-## 6. Security Testing
-
-### 6.1 Security Checklist
-| Check | Method | Expected |
-|-------|--------|----------|
-| SQL Injection | Manual (sqlmap) | Blocked |
-| XSS | Manual (payload test) | Sanitized |
-| CSRF | Manual | Token validated |
-| Brute force | Manual (hydra) | Rate limited |
-| IDOR | Manual (change ID in URL) | 403 Forbidden |
-| File upload | Upload .exe, .php | Rejected |
-| JWT tampering | Modify token | 401 Unauthorized |
-| Password strength | Test weak passwords | Rejected |
-| Session fixation | Reuse old token | 401 Unauthorized |
-| CORS | Request from other origin | Blocked |
-
-### 6.2 OWASP Top 10 Checklist
-| Risk | Status |
-|------|--------|
-| A01: Broken Access Control | ⬜ Test |
-| A02: Cryptographic Failures | ⬜ Test |
-| A03: Injection | ⬜ Test |
-| A04: Insecure Design | ⬜ Test |
-| A05: Security Misconfiguration | ⬜ Test |
-| A06: Vulnerable Components | ⬜ Test |
-| A07: Auth Failures | ⬜ Test |
-| A08: Data Integrity Failures | ⬜ Test |
-| A09: Logging Failures | ⬜ Test |
-| A10: SSRF | ⬜ Test |
 
 ---
 
@@ -437,25 +620,28 @@ export default function () {
 ## 8. Test Execution Plan
 
 ### 8.1 Pre-Development
-- [ ] Setup test environment (Vitest, Supertest, RTL)
+- [ ] Setup test environment (pytest, Vitest, RTL)
 - [ ] Create test fixtures and mocks
-- [ ] Setup test database
+- [ ] Setup test database (smartrt_test)
 - [ ] Configure CI/CD pipeline
+- [ ] Setup bandit (Python security linter)
 
 ### 8.2 During Development
 - [ ] Write unit tests alongside code (TDD)
 - [ ] Write integration tests after API complete
+- [ ] Write security tests for each phase
 - [ ] Run tests before every commit (pre-commit hook)
 - [ ] Maintain coverage > 80%
 
 ### 8.3 Pre-Release
 - [ ] Run full test suite
-- [ ] Performance testing
-- [ ] Security testing
+- [ ] Security testing (OWASP ZAP + manual)
+- [ ] Performance testing (k6)
 - [ ] PWA testing
 - [ ] Cross-browser testing
 - [ ] Mobile responsive testing
 - [ ] User acceptance testing (UAT)
+- [ ] Backup/restore test
 
 ### 8.4 CI/CD Pipeline
 ```yaml
@@ -463,14 +649,31 @@ export default function () {
 name: Test
 on: [push, pull_request]
 jobs:
-  test:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: smartrt_test
+          POSTGRES_USER: smartrt
+          POSTGRES_PASSWORD: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements/dev.txt
+      - run: python manage.py test --settings=config.settings.test
+      - run: pytest --cov=backend --cov-report=xml
+      - run: bandit -r backend/
+  frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
       - run: npm ci
       - run: npm run test:unit
-      - run: npm run test:integration
       - run: npm run test:coverage
 ```
 
@@ -480,19 +683,32 @@ jobs:
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| Backend Unit (Auth) | 14 | ⬜ |
-| Backend Unit (Warga) | 14 | ⬜ |
-| Backend Unit (Keuangan) | 12 | ⬜ |
-| Backend Unit (Middleware) | 9 | ⬜ |
-| Backend Integration | 35+ | ⬜ |
+| Backend Unit (Auth) | 18 | ⬜ |
+| Backend Unit (Warga) | 9 | ⬜ |
+| Backend Unit (Keuangan) | 8 | ⬜ |
+| Backend Unit (Permissions) | 9 | ⬜ |
+| Backend Unit (Serializers) | 6 | ⬜ |
+| Backend Unit (File Upload) | 8 | ⬜ |
+| Backend Unit (Audit Log) | 10 | ⬜ |
+| Backend Integration (Auth) | 12 | ⬜ |
+| Backend Integration (Warga) | 17 | ⬜ |
+| Backend Integration (Keuangan) | 16 | ⬜ |
+| Backend Integration (Pengaduan) | 11 | ⬜ |
+| Backend Integration (Other) | 44 | ⬜ |
+| Security (Object-Level) | 10 | ⬜ |
+| Security (Masking) | 10 | ⬜ |
+| Security (Audit Log) | 12 | ⬜ |
+| Security (File Upload) | 14 | ⬜ |
+| Security (JWT/Auth) | 10 | ⬜ |
+| Security (OWASP Top 10) | 17 | ⬜ |
+| Security (Backup) | 6 | ⬜ |
 | Frontend Unit (Stores) | 8 | ⬜ |
 | Frontend Unit (Hooks) | 8 | ⬜ |
 | Frontend Unit (Components) | 40+ | ⬜ |
 | Frontend Integration (Pages) | 10 | ⬜ |
 | Performance | 4 scenarios | ⬜ |
-| Security | 10 checks | ⬜ |
 | PWA | 8 checks | ⬜ |
-| **Total** | **150+** | |
+| **Total** | **300+** | |
 
 ---
 
@@ -501,3 +717,4 @@ jobs:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial test plan |
+| 1.1.0 | 2026-06-07 | Migrated backend from Vitest/Supertest/Node to pytest/Django TestCase/DRF APITestCase. Added detailed security test sections: object-level permission tests (SEC-OBJ), field masking tests (SEC-MASK), audit log tests (SEC-AUDIT), file upload security tests (SEC-FILE), JWT/auth security tests (SEC-JWT), OWASP Top 10 tests, backup/recovery tests. Added Django fixtures. Updated CI/CD pipeline for Django. Updated test counts. |
