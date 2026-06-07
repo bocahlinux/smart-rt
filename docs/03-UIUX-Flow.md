@@ -236,7 +236,19 @@
 
 ---
 
-## 4. Navigation Structure
+## 4. Sensitive Data Display Rules
+
+- Role warga tidak melihat NIK/no KK lengkap warga lain.
+- NIK ditampilkan sebagai `3201********1234`.
+- No KK ditampilkan sebagai `3201********5678`.
+- Nomor HP warga lain ditampilkan terbatas atau disembunyikan.
+- Bukti transfer hanya tampil untuk pemilik transaksi dan pengurus keuangan.
+- Pengaduan dengan kategori sensitif tidak tampil publik.
+- Export PDF/Excel hanya tersedia untuk pengurus/admin.
+
+---
+
+## 5. Navigation Structure
 
 ### 4.1 Desktop (Sidebar)
 ```
@@ -275,7 +287,7 @@
 
 ---
 
-## 5. Color Scheme
+## 6. Color Scheme
 
 | Usage | Color | Hex |
 |-------|-------|-----|
@@ -293,7 +305,7 @@
 
 ---
 
-## 6. Component Library
+## 7. Component Library
 
 ### 6.1 Common Components
 - **Button**: Primary, Secondary, Danger, Ghost, sizes (sm, md, lg)
@@ -318,7 +330,7 @@
 
 ---
 
-## 7. Responsive Breakpoints
+## 8. Responsive Breakpoints
 
 | Breakpoint | Width | Layout |
 |------------|-------|--------|
@@ -328,7 +340,7 @@
 
 ---
 
-## 8. PWA Features
+## 9. PWA Features
 
 | Feature | Description |
 |---------|-------------|
@@ -341,8 +353,9 @@
 
 ---
 
-## 9. Revision History
+## 10. Revision History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial UI/UX Flow |
+| 1.1.0 | 2026-06-07 | Added §4 Sensitive Data Display Rules. Renumbered §4-§9 → §5-§10. |
