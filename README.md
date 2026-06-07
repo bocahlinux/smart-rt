@@ -28,6 +28,7 @@
 - [Dokumentasi](#-dokumentasi)
 - [Roadmap](#-roadmap)
 - [Development Status](#-development-status)
+- [Security Policy](#-security-policy)
 - [Kontribusi](#-kontribusi)
 - [Lisensi](#-lisensi)
 - [Author](#-author)
@@ -319,6 +320,22 @@ Documentation ████████████████████  100%
 - ⬜ **v0.7.0** — Kegiatan & Polling
 - ⬜ **v0.8.0** — Dashboard & Laporan
 - ⬜ **v1.0.0** — Polish, Testing & Deployment
+
+---
+
+## 🔒 Security Policy
+
+Untuk detail lengkap tentang kebijakan keamanan dan privasi, lihat **[docs/11-SECURITY.md](docs/11-SECURITY.md)**.
+
+Ringkasan:
+- **Data Classification:** Public, Internal, Sensitive, Restricted
+- **Authentication:** SimpleJWT dengan access token (15-30 menit) + refresh token (7-14 hari, httpOnly cookie)
+- **Authorization:** RBAC + object-level permission untuk setiap endpoint
+- **Field Masking:** NIK, no KK, phone, email di-mask untuk role yang tidak berhak
+- **File Upload:** Validasi MIME magic bytes, extension, max 5MB, UUID filename
+- **Backup:** Terenkripsi GPG AES256
+- **Audit Log:** Semua operasi sensitif ticatat, field sensitif di-mask di log
+- **Incident Response:** Prosedur untuk data breach, compromised account, vulnerability
 
 ---
 
