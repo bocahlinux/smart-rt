@@ -89,6 +89,86 @@ GET /warga?search=ahmad&status=aktif&blok=A
 GET /transaksi?tipe=pemasukan&dari=2026-01-01&sampai=2026-06-30
 ```
 
+### 1.7 Error Code Dictionary
+
+Setiap response error **harus** menyertakan field `code` (machine-readable, UPPER_SNAKE_CASE dengan prefix modul) selain `message` (human-readable, Bahasa Indonesia). Frontend menggunakan `code` untuk logic (mis. redirect, retry, field highlight) dan `message`/i18n key untuk tampilan ke user.
+
+**Format error response:**
+```json
+{
+  "status": "error",
+  "code": "AUTH_INVALID_CREDENTIALS",
+  "message": "Email atau password salah",
+  "errors": [
+    { "field": "password", "code": "FIELD_REQUIRED", "message": "Password wajib diisi" }
+  ]
+}
+```
+
+**Konvensi penamaan:** `<MODUL>_<KONDISI>`, semua huruf besar, pemisah underscore. Modul mengacu pada prefix FR di SRS (AUTH, WARGA, KEUANGAN, PENGUMUMAN, FORUM, PENGADUAN, KEGIATAN, POLLING, FILE, PERMISSION, VALIDATION, RATE_LIMIT).
+
+| Code | HTTP Status | Arti |
+|------|-------------|------|
+| **AUTH_*** | | |
+| `AUTH_INVALID_CREDENTIALS` | 401 | Email/password salah |
+| `AUTH_ACCOUNT_NOT_VERIFIED` | 403 | Akun belum verifikasi email |
+| `AUTH_ACCOUNT_LOCKED` | 423 | Akun terkunci karena terlalu banyak percobaan login |
+| `AUTH_TOKEN_EXPIRED` | 401 | Access token kedaluwarsa |
+| `AUTH_TOKEN_INVALID` | 401 | Token tidak valid / malformed |
+| `AUTH_REFRESH_TOKEN_EXPIRED` | 401 | Refresh token kedaluwarsa, perlu login ulang |
+| `AUTH_REFRESH_TOKEN_REUSED` | 401 | Terdeteksi reuse refresh token (potensi pencurian token), semua sesi di-revoke |
+| `AUTH_EMAIL_ALREADY_REGISTERED` | 409 | Email sudah terdaftar |
+| `AUTH_PASSWORD_TOO_WEAK` | 422 | Password tidak memenuhi kebijakan (min 8 karakter, huruf besar, kecil, angka) |
+| **WARGA_*** | | |
+| `WARGA_NOT_FOUND` | 404 | Data warga tidak ditemukan |
+| `WARGA_NIK_DUPLICATE` | 409 | NIK sudah terdaftar |
+| `WARGA_KK_DUPLICATE` | 409 | Nomor KK sudah terdaftar untuk kepala keluarga lain |
+| `WARGA_NOT_VERIFIED` | 422 | Data warga belum diverifikasi pengurus |
+| `WARGA_IMPORT_FORMAT_INVALID` | 422 | Format file import (Excel) tidak sesuai template |
+| **KEUANGAN_*** | | |
+| `KEUANGAN_DUPLICATE_IURAN` | 409 | Iuran untuk periode tersebut sudah dibayar/diajukan |
+| `KEUANGAN_TRANSAKSI_LOCKED` | 422 | Transaksi sudah dikonfirmasi, tidak bisa diubah/dihapus |
+| `KEUANGAN_SALDO_INSUFFICIENT` | 422 | Saldo tidak cukup untuk transaksi pengeluaran |
+| **PENGUMUMAN_*** | | |
+| `PENGUMUMAN_SCHEDULE_IN_PAST` | 422 | Jadwal publikasi tidak boleh di masa lalu |
+| **FORUM_*** | | |
+| `FORUM_THREAD_LOCKED` | 422 | Thread dikunci, tidak bisa menambah komentar |
+| `FORUM_CONTENT_FLAGGED` | 422 | Konten terdeteksi melanggar aturan komunitas |
+| **PENGADUAN_*** | | |
+| `PENGADUAN_ALREADY_CLOSED` | 422 | Pengaduan sudah ditutup, tidak bisa diubah |
+| **KEGIATAN_*** | | |
+| `KEGIATAN_RSVP_CLOSED` | 422 | Periode RSVP sudah berakhir |
+| `KEGIATAN_CAPACITY_FULL` | 422 | Kuota peserta kegiatan penuh |
+| **POLLING_*** | | |
+| `POLLING_ALREADY_VOTED` | 409 | Pengguna sudah memberikan suara pada polling ini |
+| `POLLING_CLOSED` | 422 | Periode polling sudah berakhir |
+| **FILE_*** | | |
+| `FILE_TYPE_NOT_ALLOWED` | 422 | Tipe/ekstensi file tidak diizinkan |
+| `FILE_TOO_LARGE` | 422 | Ukuran file melebihi batas maksimum (5MB) |
+| `FILE_MIME_MISMATCH` | 422 | MIME type tidak sesuai isi file (gagal validasi magic bytes) |
+| **PERMISSION_*** | | |
+| `PERMISSION_DENIED` | 403 | Role tidak memiliki akses ke aksi/resource ini |
+| `PERMISSION_DENIED_OBJECT_LEVEL` | 403 | Pengguna tidak memiliki akses ke objek spesifik ini (mis. data warga lain) |
+| **VALIDATION_*** | | |
+| `VALIDATION_ERROR` | 400 | Kesalahan validasi input umum (lihat array `errors`) |
+| `FIELD_REQUIRED` | 400 | Field wajib diisi (digunakan di dalam array `errors`) |
+| `FIELD_INVALID_FORMAT` | 400 | Format field tidak valid (mis. email, nomor telepon) |
+| **RATE_LIMIT_*** | | |
+| `RATE_LIMIT_EXCEEDED` | 429 | Terlalu banyak permintaan, coba lagi nanti |
+
+> Catatan: Tabel ini adalah daftar awal dan **wajib diperluas** setiap kali endpoint baru ditambahkan. Setiap kode error baru harus didaftarkan di sini sebelum dipakai di kode (lihat 10-AI-RULES.md — dokumentasi & kode harus sinkron).
+
+### 1.8 API Versioning Strategy
+
+- **Skema versi:** URL path versioning — `/api/v1/...`, `/api/v2/...`. Versi mayor dinaikkan hanya untuk **breaking change** (mis. mengubah struktur response, menghapus/mengganti nama field, mengubah tipe data, mengubah alur autentikasi).
+- **Non-breaking change** (menambah field baru yang opsional, menambah endpoint baru, menambah parameter query opsional) **tidak** memerlukan versi baru.
+- **Kebijakan dukungan versi lama:** Versi API yang di-deprecate tetap didukung minimal **6 bulan** sejak versi baru dirilis, untuk memberi waktu klien (web, PWA, kemungkinan aplikasi mobile di masa depan) bermigrasi.
+- **Pemberitahuan deprecation:**
+  - Header response `Deprecation: true` dan `Sunset: <tanggal-berakhir-dukungan>` pada endpoint yang akan di-deprecate.
+  - Pengumuman di `CHANGELOG.md` dan (jika relevan) banner di admin panel.
+- **Dokumentasi:** Setiap rilis versi baru wajib memperbarui dokumen ini (06-API-CONTRACT.md) dengan tabel perbedaan ringkas antara versi lama dan baru.
+- **Saat ini:** Proyek berada di `v1` — belum ada rencana `v2`. Bagian ini menjadi acuan jika/ketika kebutuhan versi baru muncul.
+
 ---
 
 ## 2. Auth Endpoints
@@ -1313,3 +1393,4 @@ Content-Type: multipart/form-data
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial API contract |
 | 1.1.0 | 2026-06-07 | Expanded auth annotations to 5 roles: Sekretaris (CRUD warga, verifikasi, pengumuman, forum moderation), Bendahara (CRUD keuangan, konfirmasi iuran, dashboard keuangan). Updated field visibility table to 6 columns. Fixed typo "lokai" → "lokasi". |
+| 1.2.0 | 2026-06-07 | Added §1.7 Error Code Dictionary (machine-readable `code` field per module: AUTH, WARGA, KEUANGAN, PENGUMUMAN, FORUM, PENGADUAN, KEGIATAN, POLLING, FILE, PERMISSION, VALIDATION, RATE_LIMIT). Added §1.8 API Versioning Strategy (URL path versioning, breaking-change policy, 6-month deprecation window, Deprecation/Sunset headers). |

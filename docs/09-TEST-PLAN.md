@@ -1,6 +1,6 @@
 # Smart-RT — Test Plan
 
-**Version:** 1.1.0
+**Version:** 1.3.0
 **Date:** June 7, 2026
 **Status:** Draft
 
@@ -665,23 +665,99 @@ export default function () {
 
 ---
 
-## 8. Test Execution Plan
+## 8. E2E Test Scenarios (Manual)
 
-### 8.1 Pre-Development
+E2E test menguji **alur lengkap dari sudut pandang pengguna**, lintas modul, untuk memastikan fitur benar-benar berfungsi end-to-end (bukan sekadar lolos unit/integration test). Dijalankan manual pada tiap pre-release (lihat §9.3), dengan kandidat otomasi menggunakan Playwright untuk skenario kritis di masa depan.
+
+### 8.1 Format Skenario
+Setiap skenario dicatat dengan: **ID, Role, Precondition, Steps, Expected Result, Pass/Fail**.
+
+### 8.2 Skenario Kritis per Role
+
+**E2E-01 — Warga: Registrasi sampai mengajukan pengaduan**
+| Step | Aksi | Expected Result |
+|------|------|-----------------|
+| 1 | Buka halaman registrasi, isi data diri, submit | Akun dibuat, email verifikasi dikirim |
+| 2 | Klik link verifikasi di email | Akun terverifikasi, redirect ke login |
+| 3 | Login dengan akun baru | Berhasil masuk ke dashboard Warga |
+| 4 | Lihat profil — cek NIK/KK ditampilkan ter-mask sesuai role | Field sensitif termask sesuai 11-SECURITY.md §3 |
+| 5 | Buka menu Pengaduan, isi form, lampirkan foto, submit | Pengaduan tersimpan dengan status "Baru" |
+| 6 | Tunggu pengurus mengubah status pengaduan | Warga menerima notifikasi update status |
+| 7 | Buka detail pengaduan | Riwayat status & tanggapan pengurus tampil |
+
+**E2E-02 — Bendahara: Input transaksi sampai laporan keuangan**
+| Step | Aksi | Expected Result |
+|------|------|-----------------|
+| 1 | Login sebagai Bendahara | Masuk ke dashboard Keuangan |
+| 2 | Buat kategori transaksi baru | Kategori tersimpan |
+| 3 | Input transaksi pemasukan & pengeluaran | Saldo dashboard ter-update real-time |
+| 4 | Buka daftar pengajuan iuran warga (bukti transfer ter-upload) | Daftar menampilkan status "Menunggu konfirmasi" |
+| 5 | Buka bukti transfer, klik "Konfirmasi" | Status berubah "Lunas", warga menerima notifikasi |
+| 6 | Coba edit transaksi yang sudah dikonfirmasi | Sistem menolak dengan `KEUANGAN_TRANSAKSI_LOCKED` |
+| 7 | Generate laporan keuangan bulanan (PDF) | File PDF terunduh, data sesuai dashboard |
+
+**E2E-03 — Ketua RT (Admin): Pengumuman, forum moderation, polling**
+| Step | Aksi | Expected Result |
+|------|------|-----------------|
+| 1 | Login sebagai Admin | Masuk dashboard Pengurus dengan akses penuh |
+| 2 | Buat pengumuman dengan jadwal publikasi di masa depan | Pengumuman berstatus "Terjadwal", muncul otomatis pada waktunya |
+| 3 | Buka Forum, pin & lock sebuah thread | Thread tampil "dipinkan" & komentar baru ditolak |
+| 4 | Hapus komentar yang melanggar aturan | Komentar terhapus (soft delete), tercatat di audit log |
+| 5 | Buat polling baru dengan periode aktif | Polling tampil di halaman Warga |
+| 6 | Setelah warga vote, lihat hasil polling | Grafik hasil & jumlah suara akurat, tidak bisa vote dua kali |
+
+**E2E-04 — Sekretaris: Verifikasi data warga & ekspor**
+| Step | Aksi | Expected Result |
+|------|------|-----------------|
+| 1 | Login sebagai Sekretaris | Masuk dashboard dengan akses CRUD warga |
+| 2 | Buka data warga baru berstatus "Belum diverifikasi" | Data tampil lengkap (Sekretaris punya akses penuh) |
+| 3 | Verifikasi data warga | Status berubah "Terverifikasi", warga menerima notifikasi |
+| 4 | Import data warga via Excel dengan 1 baris ber-NIK duplikat | Sistem menolak baris duplikat, melaporkan error per baris |
+| 5 | Export data warga ke Excel | File terunduh, field sensitif sesuai izin role Sekretaris |
+
+**E2E-05 — Pengurus: Kegiatan & RSVP**
+| Step | Aksi | Expected Result |
+|------|------|-----------------|
+| 1 | Login sebagai Pengurus, buat kegiatan dengan kuota peserta | Kegiatan tampil di kalender warga |
+| 2 | Login sebagai Warga, RSVP kegiatan | Status RSVP tersimpan, kuota berkurang |
+| 3 | RSVP setelah kuota penuh | Sistem menolak dengan `KEGIATAN_CAPACITY_FULL` |
+| 4 | Pengurus melihat daftar peserta & ekspor | Daftar peserta akurat sesuai RSVP |
+
+**E2E-06 — Lintas role: Akses tidak sah (negative test)**
+| Step | Aksi | Expected Result |
+|------|------|-----------------|
+| 1 | Login sebagai Warga, coba akses URL detail data warga lain langsung via API/browser | Ditolak `403 PERMISSION_DENIED_OBJECT_LEVEL`, tidak ada kebocoran data |
+| 2 | Login sebagai Warga, coba akses endpoint dashboard keuangan pengurus | Ditolak `403 PERMISSION_DENIED` |
+| 3 | Logout, lalu gunakan kembali access token lama | Ditolak `401 AUTH_TOKEN_EXPIRED`/blacklisted |
+
+### 8.3 Kriteria Pass/Fail
+- **Pass:** Semua step menghasilkan expected result, tidak ada error console/log yang tidak tertangani, tidak ada kebocoran data sensitif.
+- **Fail:** Salah satu step gagal — dicatat sebagai bug dengan severity (Critical/High/Medium/Low mengikuti klasifikasi di 11-SECURITY.md §11), di-link ke issue tracker, dan E2E diulang setelah fix.
+- Skenario E2E-06 (negative test) **wajib lulus 100%** sebelum rilis — kegagalan di sini diklasifikasikan minimal **High**.
+
+### 8.4 Tools & Otomasi (Rencana)
+- Saat ini: dijalankan manual mengikuti tabel di atas, dicatat di spreadsheet/issue tracker.
+- Kandidat otomasi (opsional, tidak blocking untuk MVP): Playwright untuk E2E-01, E2E-02, E2E-06 (skenario paling kritis & sering regresi).
+
+---
+
+## 9. Test Execution Plan
+
+### 9.1 Pre-Development
 - [ ] Setup test environment (pytest, Vitest, RTL)
 - [ ] Create test fixtures and mocks
 - [ ] Setup test database (smartrt_test)
 - [ ] Configure CI/CD pipeline
 - [ ] Setup bandit (Python security linter)
 
-### 8.2 During Development
+### 9.2 During Development
 - [ ] Write unit tests alongside code (TDD)
 - [ ] Write integration tests after API complete
 - [ ] Write security tests for each phase
 - [ ] Run tests before every commit (pre-commit hook)
 - [ ] Maintain coverage > 80%
 
-### 8.3 Pre-Release
+### 9.3 Pre-Release
 - [ ] Run full test suite
 - [ ] Security testing (OWASP ZAP + manual)
 - [ ] Performance testing (k6)
@@ -691,7 +767,7 @@ export default function () {
 - [ ] User acceptance testing (UAT)
 - [ ] Backup/restore test
 
-### 8.4 CI/CD Pipeline
+### 9.4 CI/CD Pipeline
 ```yaml
 # .github/workflows/test.yml
 name: Test
@@ -727,7 +803,7 @@ jobs:
 
 ---
 
-## 9. Test Summary
+## 10. Test Summary
 
 | Category | Tests | Status |
 |----------|-------|--------|
@@ -760,10 +836,11 @@ jobs:
 
 ---
 
-## 10. Revision History
+## 11. Revision History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial test plan |
 | 1.1.0 | 2026-06-07 | Migrated backend from Vitest/Supertest/Node to pytest/Django TestCase/DRF APITestCase. Added detailed security test sections: object-level permission tests (SEC-OBJ), field masking tests (SEC-MASK), audit log tests (SEC-AUDIT), file upload security tests (SEC-FILE), JWT/auth security tests (SEC-JWT), OWASP Top 10 tests, backup/recovery tests. Added Django fixtures. Updated CI/CD pipeline for Django. Updated test counts. |
 | 1.2.0 | 2026-06-07 | Expanded to 5-role system: added sekretaris_user and bendahara_user fixtures. Added permission unit tests for IsSekretaris and IsBendahara (UT-PERM-05 to UT-PERM-08). Added integration tests for Sekretaris (CRUD warga, verifikasi, export) and Bendahara (CRUD keuangan, konfirmasi iuran), with Sekretaris blocked from keuangan mutations. Added object-level permission tests (SEC-OBJ-09 to SEC-OBJ-16) and field masking tests (SEC-MASK-08, SEC-MASK-09) for Sekretaris & Bendahara. Added serializer tests (UT-SER-07, UT-SER-08). Updated test counts. |
+| 1.3.0 | 2026-06-07 | Added §8 E2E Test Scenarios (Manual): detailed step-by-step flows per role (E2E-01 Warga registration to pengaduan, E2E-02 Bendahara transaksi & laporan, E2E-03 Admin pengumuman/forum/polling, E2E-04 Sekretaris verifikasi & export, E2E-05 Pengurus kegiatan & RSVP, E2E-06 cross-role negative/IDOR test), pass/fail criteria, and automation candidates. Renumbered subsequent sections (Test Execution Plan → §9, Test Summary → §10, Revision History → §11). |

@@ -245,6 +245,8 @@ docker compose up --build
 | [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | Test Plan & Coverage |
 | [10-AI-RULES.md](docs/10-AI-RULES.md) | AI Development Rules |
 | [11-SECURITY.md](docs/11-SECURITY.md) | Security & Privacy Policy |
+| [12-CICD.md](docs/12-CICD.md) | CI/CD Pipeline & Deployment |
+| [13-MONITORING.md](docs/13-MONITORING.md) | Monitoring & Observability |
 
 ---
 
