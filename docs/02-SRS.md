@@ -144,9 +144,24 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 - JWT token expiration: 24 jam
 - Role-based access control (RBAC) di setiap endpoint
 - Input validation & sanitization di semua form
-- SQL injection prevention via ORM (Prisma)
+- SQL injection prevention via Django ORM
 - XSS prevention via output encoding
 - Rate limiting: 100 requests/menit per IP
+
+### 3.2.1 Data Protection Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| SEC-01 | Sistem harus melakukan masking NIK dan no KK pada list view untuk role warga. | High |
+| SEC-02 | Sistem hanya boleh menampilkan data lengkap warga kepada admin/pengurus yang berwenang. | High |
+| SEC-03 | Warga hanya boleh melihat data profil miliknya sendiri kecuali data publik yang memang disetujui. | High |
+| SEC-04 | Semua perubahan pada data warga wajib tercatat di audit log. | High |
+| SEC-05 | Semua file upload wajib divalidasi MIME type, extension, ukuran, dan disimpan dengan nama random. | High |
+| SEC-06 | Bukti transfer hanya boleh dilihat oleh pemilik, bendahara, pengurus berwenang, dan admin. | High |
+| SEC-07 | Pengaduan pribadi hanya boleh dilihat oleh pelapor dan pengurus berwenang. | High |
+| SEC-08 | Backup database wajib terenkripsi. | High |
+| SEC-09 | Secret key, JWT signing key, database password, dan credential lain wajib berasal dari environment variable. | High |
+| SEC-10 | API harus mencegah IDOR dengan object-level permission. | High |
 
 ### 3.3 Availability
 - Target uptime: 99.5%
@@ -286,3 +301,4 @@ Smart-RT adalah platform digital berbasis web + PWA untuk pengelolaan RT yang me
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial SRS |
+| 1.1.0 | 2026-06-07 | Koreksi SQL injection prevention via Django ORM. Tambah §3.2.1 Data Protection Requirements (SEC-01 s/d SEC-10). |
