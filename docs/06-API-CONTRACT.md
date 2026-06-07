@@ -1,7 +1,7 @@
 # Smart-RT — API Contract
 
-**Version:** 1.2.1
-**Date:** June 6, 2026
+**Version:** 1.3.0
+**Date:** June 8, 2026
 **Base URL:** `/api/v1`
 **Status:** Draft
 
@@ -168,6 +168,22 @@ Setiap response error **harus** menyertakan field `code` (machine-readable, UPPE
   - Pengumuman di `CHANGELOG.md` dan (jika relevan) banner di admin panel.
 - **Dokumentasi:** Setiap rilis versi baru wajib memperbarui dokumen ini (06-API-CONTRACT.md) dengan tabel perbedaan ringkas antara versi lama dan baru.
 - **Saat ini:** Proyek berada di `v1` — belum ada rencana `v2`. Bagian ini menjadi acuan jika/ketika kebutuhan versi baru muncul.
+
+---
+
+## 1.9 System Endpoints
+
+### 1.9.1 Health Check
+```
+GET /healthz
+```
+**Auth:** Not required (public)
+**Deskripsi:** Cek kesiapan service backend (dipakai oleh smoke test CI/CD — lihat 12-CICD.md §6 — dan monitoring uptime — lihat 13-MONITORING.md). Tidak melakukan query database; hanya menandakan proses Django sudah up dan menerima request.
+
+**Response 200:**
+```json
+{ "status": "ok" }
+```
 
 ---
 
@@ -1395,3 +1411,4 @@ Content-Type: multipart/form-data
 | 1.1.0 | 2026-06-07 | Expanded auth annotations to 5 roles: Sekretaris (CRUD warga, verifikasi, pengumuman, forum moderation), Bendahara (CRUD keuangan, konfirmasi iuran, dashboard keuangan). Updated field visibility table to 6 columns. Fixed typo "lokai" → "lokasi". |
 | 1.2.0 | 2026-06-07 | Added §1.7 Error Code Dictionary (machine-readable `code` field per module: AUTH, WARGA, KEUANGAN, PENGUMUMAN, FORUM, PENGADUAN, KEGIATAN, POLLING, FILE, PERMISSION, VALIDATION, RATE_LIMIT). Added §1.8 API Versioning Strategy (URL path versioning, breaking-change policy, 6-month deprecation window, Deprecation/Sunset headers). |
 | 1.2.1 | 2026-06-07 | Fixed header version to match Revision History (was showing 1.0.0). |
+| 1.3.0 | 2026-06-08 | Added §1.9 System Endpoints: `GET /healthz` (public health check, used by CI/CD smoke test in 12-CICD.md and uptime monitoring in 13-MONITORING.md — was referenced there but not yet documented in the API Contract). |
