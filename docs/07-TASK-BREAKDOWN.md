@@ -1,8 +1,8 @@
 # Smart-RT — Task Breakdown
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Date:** June 7, 2026
-**Estimated Total:** 9 phases, ~18-22 hari kerja
+**Estimated Total:** 10 phases, ~16 hari kerja
 **Status:** Not started
 
 ---
@@ -375,3 +375,4 @@ Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 
 |---------|------|---------|
 || 1.0.0 | 2026-06-06 | Initial Task Breakdown |
 || 1.1.0 | 2026-06-07 | Migrated from Express/Prisma/TypeScript to Django/DRF/Python. Added security tasks per phase (token config, rate limit, object-level permission, field masking, file upload validation, audit log). Added security checklist per phase. Added security test tasks. Updated task counts and estimates. |
+|| 1.2.0 | 2026-06-08 | Fixed duplicate task IDs in Phase 2 (2.15) and Phase 3 (3.2, 3.9). Renumbered affected tasks. Normalized all table rows to use 2 pipes (||). Updated phase count from 9 to 10. Adjusted total tasks from 169 to 170 and estimated days to ~16. |
