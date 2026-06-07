@@ -133,24 +133,49 @@ Satu platform digital yang:
 
 ---
 
-## 6. Tech Stack
+## 6. Data Privacy & Protection
+
+### 6.1 Data yang Tergolong Sensitif
+
+- NIK
+- No. KK
+- Alamat lengkap
+- Nomor HP
+- Email
+- Foto profil
+- Bukti transfer
+- Data keuangan warga
+- Data pengaduan pribadi
+
+### 6.2 Prinsip Perlindungan Data
+
+- **Data minimization** — Hanya kumpulkan data yang benar-benar diperlukan
+- **Least privilege access** — Setiap role hanya bisa akses data yang sesuai perannya
+- **Masking data sensitif** — Tampilkan data sensitif secara terbatas (misal: NIK ditampilkan sebagai `3201****1234`)
+- **Auditability** — Semua akses dan perubahan data sensitif tercatat di audit log
+- **User consent** — Warga harus memberikan persetujuan saat mendaftar untuk pengelolaan data pribadi
+- **Backup terenkripsi** — Semua backup database harus terenkripsi
+
+---
+
+## 7. Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, Vite 8, TypeScript 6, Tailwind CSS 4 |
 | PWA | Vite PWA Plugin, Workbox |
-| Backend | Node.js 20, Express 5, TypeScript 6 |
+| Backend | Django 5, Django REST Framework, Python 3.12 |
 | Database | PostgreSQL 16 |
-| ORM | Prisma |
-| Auth | JWT (jsonwebtoken), bcrypt |
-| File Upload | Multer (local storage) |
+| ORM | Django ORM (bawaan) |
+| Auth | JWT (djangorestframework-simplejwt) |
+| File Upload | Django FileField / django-storages |
 | Notifikasi | Web Push API |
-| PDF Generation | Puppeteer / PDFKit |
-| Deployment | Docker, Docker Compose |
-
+| PDF Generation | WeasyPrint / ReportLab |
+| Validation | Django Validators + DRF Serializers |
+| Deployment | Docker, Docker Compose, Nginx |
 ---
 
-## 7. Success Metrics
+## 8. Success Metrics
 
 | Metric | Target |
 |--------|--------|
@@ -163,7 +188,7 @@ Satu platform digital yang:
 
 ---
 
-## 8. Risk Assessment
+## 9. Risk Assessment
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
@@ -175,8 +200,9 @@ Satu platform digital yang:
 
 ---
 
-## 9. Revision History
+## 10. Revision History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial PRD |
+| 1.1.0 | 2026-06-07 | Added §6 Data Privacy & Protection. Renumbered §7-§9 → §8-§10. |
