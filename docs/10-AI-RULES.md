@@ -7,6 +7,8 @@
 
 ---
 
+> **Security Reference:** Untuk semua kebijakan keamanan dan privasi, lihat **[docs/11-SECURITY.md](docs/11-SECURITY.md)** sebagai source of truth. Dokumen ini memuat data classification, permission matrix, field visibility matrix, auth policy, file upload security, backup security, audit logging, dan incident response.
+
 ## 1. Project Context
 
 - **Nama:** Smart-RT
@@ -241,3 +243,4 @@ chore: update dependencies
 |---------|------|---------|
 | 1.0.0 | 2026-06-07 | Initial AI rules |
 | 1.1.0 | 2026-06-07 | Added Canonical Stack, Documentation & Source of Truth, Security & Privacy, API Consistency, and Implementation Workflow sections. Renumbered all sections. |
+| 1.2.0 | 2026-06-08 | Added Security Reference pointer to docs/11-SECURITY.md. |

@@ -243,6 +243,7 @@ docker compose up --build
 | [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | Coding Standard & Conventions |
 | [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | Test Plan & Coverage |
 | [10-AI-RULES.md](docs/10-AI-RULES.md) | AI Development Rules |
+| [11-SECURITY.md](docs/11-SECURITY.md) | Security & Privacy Policy |
 
 ---
 
@@ -302,10 +303,11 @@ Documentation ████████████████████  100%
 
 ### Completed Milestones
 
-- ✅ **v0.1.0** — Documentation & Planning (June 7, 2026)
-  - 10 documentation files (PRD, SRS, UI/UX, SDD, Database, API Contract, Task Breakdown, Coding Standard, Test Plan, AI Rules)
+- ✅ **v0.1.0** — Documentation & Planning (June 7-8, 2026)
+  - 11 documentation files (PRD, SRS, UI/UX, SDD, Database, API Contract, Task Breakdown, Coding Standard, Test Plan, AI Rules, **Security & Privacy Policy**)
   - README.md with professional layout
   - AI Development Rules v1.1.0
+  - Security document as single source of truth for all security policies
 
 ### Upcoming Milestones
 
