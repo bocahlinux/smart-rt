@@ -1,6 +1,6 @@
 # Smart-RT — AI Development Rules
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Date:** June 7, 2026
 **Untuk:** AI Assistant
 **Status:** Active
@@ -43,51 +43,94 @@ smart-rt/
 
 ---
 
-## 2. Development Rules
+## 2. Canonical Stack
 
-### 2.1 Keputusan
+- Backend: Django 5.x + Django REST Framework
+- Auth: SimpleJWT
+- Database: PostgreSQL 16 via Django ORM
+- Frontend: React + Vite + TypeScript
+- Styling: Tailwind CSS
+- PDF: WeasyPrint
+- Deployment: Docker Compose + Nginx
+
+---
+
+## 3. Development Rules
+
+### 3.1 Keputusan
 - **KAMU TIDAK BOLEH PUTUSKAN SENDIRI** untuk keputusan non-trivial
 - Selalu konsultasi dengan user (Yudha/BocahLinux) sebelum memilih approach
 - Untuk keputusan low-risk, langsung lapor hasilnya
 
-### 2.2 Kualitas
+### 3.2 Kualitas
 - **Quality over speed** — pelan tapi pasti
 - Tidak boleh ada bug minor maupun major
 - Pastikan perubahan tidak break fase sebelumnya
 - Regression check setelah setiap task
 
-### 2.3 Memory & Skills
+### 3.3 Memory & Skills
 - Update memory setelah task kompleks
 - Update skill jika menemukan pattern baru
 - Jangan biarkan docs stale
 
 ---
 
-## 3. Backend Code Generation Rules (Django)
+## 4. Documentation & Source of Truth Rules
 
-### 3.1 Model
+- Sebelum mengerjakan task, baca dokumen relevan sesuai urutan:
+  1. PRD
+  2. SRS
+  3. UI/UX Flow
+  4. SDD
+  5. Database
+  6. API Contract
+  7. Task Breakdown
+  8. Coding Standard
+  9. Test Plan
+  10. AI Rules
+- Jika ada konflik antar dokumen, jangan ambil keputusan sendiri.
+- Laporkan konflik dengan file dan section terkait.
+- Tunggu keputusan user sebelum implementasi.
+- Setelah keputusan dibuat, update dokumen agar konsisten.
+
+---
+
+## 5. Security & Privacy Rules
+
+- Data warga seperti NIK, no KK, alamat, nomor HP, email, dan foto adalah data sensitif.
+- Jangan expose data sensitif ke role yang tidak berhak.
+- Gunakan RBAC di semua endpoint.
+- Perubahan data sensitif wajib dicatat di audit log.
+- Upload file wajib validasi MIME type, extension, dan ukuran.
+- Secret, token, password, dan private key tidak boleh masuk repository.
+
+---
+
+## 6. Backend Code Generation Rules (Django)
+
+### 6.1 Model
 - Selalu gunakan Django ORM, tidak raw SQL
 - Selalu buat migration untuk schema change
 - Gunakan `select_related` / `prefetch_related` untuk optimasi query
 - Selalu handle relasi dengan benar (on_delete, related_name)
 
-### 3.2 Serializer
+### 6.2 Serializer
 - Validasi input di serializer, bukan di view
 - Gunakan `read_only_fields` untuk field auto-generated
 - Custom validation dengan `validate_{field_name}`
 
-### 3.3 View
+### 6.3 View
 - Gunakan ViewSet, bukan APIView manual
 - Override `get_queryset` untuk filter/search
 - Override `get_permissions` untuk RBAC
 - Gunakan `@action` untuk custom endpoint
 
-### 3.4 Error Handling
+### 6.4 Error Handling
 - Raise `NotFound` untuk data tidak ditemukan
 - Raise `ValidationError` untuk input tidak valid
 - Selalu return format: `{ status: "error", message: "...", errors: [] }`
 
-### 3.5 Testing
+### 6.5 Testing
 - Write tests alongside code (TDD)
 - Gunakan Django TestCase & APITestCase
 - Test edge cases, bukan cuma happy path
@@ -95,32 +138,32 @@ smart-rt/
 
 ---
 
-## 4. Frontend Code Generation Rules (React)
+## 7. Frontend Code Generation Rules (React)
 
-### 4.1 Component
+### 7.1 Component
 - Selalu TypeScript, no `any`
 - Komponen harus reusable
 - Mobile-first responsive design
 - Selalu handle loading & error state
 
-### 4.2 State Management
+### 7.2 State Management
 - Zustand untuk global state
 - Local state untuk UI-only state
 - Jangan over-engineer state
 
-### 4.3 API Client
+### 7.3 API Client
 - Axios dengan interceptors
 - Base URL dari env variable (`import.meta.env.VITE_API_BASE_URL`)
 - Error handling terpusat
 
-### 4.4 Styling
+### 7.4 Styling
 - Tailwind CSS utility classes
 - Tidak inline styles
 - Dark mode support
 
 ---
 
-## 5. Database Rules
+## 8. Database Rules
 
 - Selalu gunakan Django ORM
 - Selalu buat migration untuk schema change
@@ -130,7 +173,15 @@ smart-rt/
 
 ---
 
-## 6. File Naming Rules
+## 9. API Consistency Rules
+
+- Semua endpoint wajib mengikuti Standard Response Format di docs/06-API-CONTRACT.md.
+- Pagination, error format, dan status code harus konsisten.
+- Jika format response perlu berubah, update API Contract terlebih dahulu atau minta approval user.
+
+---
+
+## 10. File Naming Rules
 
 - **Python:** `snake_case.py` (models.py, serializers.py, views.py)
 - **Django apps:** lowercase (accounts, keuangan)
@@ -141,7 +192,7 @@ smart-rt/
 
 ---
 
-## 7. Git Conventions
+## 11. Git Conventions
 
 ### Branch Naming
 - `main` — Production-ready
@@ -162,7 +213,20 @@ chore: update dependencies
 
 ---
 
-## 8. Communication Style
+## 12. Implementation Workflow
+
+- Implementasi mengikuti phase di Task Breakdown.
+- Jangan lompat phase tanpa approval.
+- Setiap task selesai harus mencakup:
+  - code implementation
+  - migration jika schema berubah
+  - test relevan
+  - docs update jika behavior/API/schema berubah
+  - regression check
+
+---
+
+## 13. Communication Style
 
 - Progress pakai **checklist format**
 - Bahasa: **mix Indonesian-English**, casual tapi profesional
@@ -171,8 +235,9 @@ chore: update dependencies
 
 ---
 
-## 9. Revision History
+## 14. Revision History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-07 | Initial AI rules |
+| 1.1.0 | 2026-06-07 | Added Canonical Stack, Documentation & Source of Truth, Security & Privacy, API Consistency, and Implementation Workflow sections. Renumbered all sections. |
