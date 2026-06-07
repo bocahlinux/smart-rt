@@ -1,6 +1,6 @@
 # Smart-RT — API Contract
 
-**Version:** 1.0.0
+**Version:** 1.2.1
 **Date:** June 6, 2026
 **Base URL:** `/api/v1`
 **Status:** Draft
@@ -1394,3 +1394,4 @@ Content-Type: multipart/form-data
 | 1.0.0 | 2026-06-06 | Initial API contract |
 | 1.1.0 | 2026-06-07 | Expanded auth annotations to 5 roles: Sekretaris (CRUD warga, verifikasi, pengumuman, forum moderation), Bendahara (CRUD keuangan, konfirmasi iuran, dashboard keuangan). Updated field visibility table to 6 columns. Fixed typo "lokai" → "lokasi". |
 | 1.2.0 | 2026-06-07 | Added §1.7 Error Code Dictionary (machine-readable `code` field per module: AUTH, WARGA, KEUANGAN, PENGUMUMAN, FORUM, PENGADUAN, KEGIATAN, POLLING, FILE, PERMISSION, VALIDATION, RATE_LIMIT). Added §1.8 API Versioning Strategy (URL path versioning, breaking-change policy, 6-month deprecation window, Deprecation/Sunset headers). |
+| 1.2.1 | 2026-06-07 | Fixed header version to match Revision History (was showing 1.0.0). |

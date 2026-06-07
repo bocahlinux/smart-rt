@@ -1,7 +1,7 @@
 # Smart-RT — Product Requirements Document (PRD)
 
-**Version:** 1.0.0
-**Date:** June 6, 2026
+**Version:** 1.2.0
+**Date:** June 8, 2026
 **Author:** OWL (Hermes Agent) for YCC
 **Status:** Draft
 
@@ -213,3 +213,4 @@ Satu platform digital yang:
 | 1.0.0 | 2026-06-06 | Initial PRD |
 | 1.1.0 | 2026-06-07 | Added §6 Data Privacy & Protection |
 | 1.2.0 | 2026-06-08 | Expanded roles to 5 (Admin, Sekretaris, Bendahara, Pengurus, Warga) |
+| 1.2.1 | 2026-06-08 | Fixed header version/date to match Revision History (was showing 1.0.0 / June 6, 2026). |
