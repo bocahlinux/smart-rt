@@ -55,7 +55,7 @@ Satu platform digital yang:
 
 ### 4.1 Multi-Role Authentication
 - Register & login dengan email/no. HP
-- 3 role: Admin (Ketua RT), Pengurus, Warga
+- 5 role: Admin (Ketua RT), Sekretaris, Bendahara, Pengurus, Warga
 - Warga perlu verifikasi oleh pengurus (approve/reject)
 - JWT-based authentication
 
