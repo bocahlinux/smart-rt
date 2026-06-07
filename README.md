@@ -60,7 +60,7 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 - Register dengan email/no. HP → akun status `pending`
 - Verifikasi oleh pengurus → approve untuk aktifkan akun
 - Login hanya bisa setelah akun aktif
-- 3 role: **Admin** (Ketua RT), **Pengurus**, **Warga**
+- 5 role: **Admin** (Ketua RT), **Sekretaris**, **Bendahara**, **Pengurus**, **Warga**
 - JWT-based authentication
 
 ### 📋 Data Warga
@@ -185,7 +185,7 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 
 ### Prerequisites
 - Python 3.12+
-- Node.js 20+
+- Node.js 20+ (untuk frontend tooling: Vite/React)
 - PostgreSQL 16+
 - Docker & Docker Compose (opsional)
 
@@ -304,7 +304,7 @@ Documentation ████████████████████  100%
 
 ### Completed Milestones
 
-- ✅ **v0.1.0** — Documentation & Planning (June 7-8, 2026)
+- ✅ **v0.1.0** — Documentation & Planning (June 7, 2026)
   - 11 documentation files (PRD, SRS, UI/UX, SDD, Database, API Contract, Task Breakdown, Coding Standard, Test Plan, AI Rules, **Security & Privacy Policy**)
   - README.md with professional layout
   - AI Development Rules v1.1.0
@@ -334,7 +334,7 @@ Ringkasan:
 - **Field Masking:** NIK, no KK, phone, email di-mask untuk role yang tidak berhak
 - **File Upload:** Validasi MIME magic bytes, extension, max 5MB, UUID filename
 - **Backup:** Terenkripsi GPG AES256
-- **Audit Log:** Semua operasi sensitif ticatat, field sensitif di-mask di log
+- **Audit Log:** Semua operasi sensitif tercatat, field sensitif di-mask di log
 - **Incident Response:** Prosedur untuk data breach, compromised account, vulnerability
 
 ---
