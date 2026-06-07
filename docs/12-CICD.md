@@ -8,7 +8,7 @@
 
 ## 1. Tujuan
 
-Dokumen ini melengkapi 09-TEST-PLAN.md §9.4 (yang berisi contoh workflow pengujian dasar) dengan **pipeline CI/CD lengkap**: dari lint & test, build image, hingga deploy ke staging/production. Tujuannya agar AI/developer tahu persis tahapan otomasi yang harus disiapkan di Phase 0 dan disempurnakan di Phase 9 (lihat 07-TASK-BREAKDOWN.md).
+Dokumen ini melengkapi 09-TEST-PLAN.md §9.4 (yang berisi contoh workflow pengujian dasar) dengan **pipeline CI/CD lengkap**: dari lint & test, build image, hingga deploy ke staging/production. Tujuannya agar AI/developer tahu persis tahapan otomasi yang harus disiapkan di Phase 1 dan disempurnakan di Phase 10 (lihat 07-TASK-BREAKDOWN.md).
 
 ---
 
@@ -347,7 +347,7 @@ jobs:
 
 ---
 
-## 10. Checklist Implementasi (Phase 0 & Phase 9)
+## 10. Checklist Implementasi (Phase 1 & Phase 10)
 
 - [ ] Setup branch protection rules untuk `main` dan `develop`
 - [ ] Buat GitHub Environments `staging` dan `production` (dengan required reviewers untuk production)
