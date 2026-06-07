@@ -17,9 +17,12 @@ Production: https://smartrt.yourdomain.com/api/v1
 
 ### 1.2 Authentication
 
-Semua endpoint (kecuali Public) memerlukan header:
+Semua endpoint protected memerlukan access token via header:
+```http
+Authorization: Bearer <access_token>
 ```
-Authorization: Bearer *** Strategy:**
+
+**Token Strategy:**
 - **Access token:** Short-lived (15-30 menit). Disimpan di frontend memory/state (Zustand). Dikirim via `Authorization: Bearer` header.
 - **Refresh token:** Long-lived (7-14 hari). Disimpan di httpOnly Secure SameSite cookie. **Dilarang** disimpan di localStorage.
 - **Token rotation:** Setiap refresh menghasilkan access token + refresh token baru. Refresh token lama di-blacklist.
@@ -252,11 +255,11 @@ PUT /auth/password
 ```
 GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 ```
-**Auth:** Sekretaris/Admin
-**Object-level:** Warga hanya melihat data publik sendiri (NIK/no KK di-mask).
-**Field Visibility:** Bendahara melihat sama seperti Pengurus (full fields).
+**Auth:** Admin/Sekretaris/Bendahara/Pengurus/Warga
+**Object-level:** Queryset dan field response wajib di-scope berdasarkan role. Warga hanya melihat data publik/own profile; NIK/no KK di-mask untuk role yang tidak berhak.
+**Field Visibility:** Mengikuti `docs/11-SECURITY.md` — Admin/Sekretaris full, Bendahara/Pengurus terbatas/masked.
 
-**Response 200 (Admin/Pengurus):**
+**Response 200 (Admin/Sekretaris):**
 ```json
 {
   "status": "success",
@@ -279,7 +282,7 @@ GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 }
 ```
 
-**Response 200 (Warga — melihat profil sendiri):**
+**Response 200 (Warga — list profil sendiri):**
 ```json
 {
   "status": "success",
@@ -302,16 +305,16 @@ GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 | Field | Admin | Sekretaris | Bendahara | Pengurus | Warga (own) | Warga (other) |
 |-------|-------|------------|-----------|----------|-------------|---------------|
 | id | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| nik | ✅ | ✅ | ✅ | ✅ | ✅ (masked) | ❌ |
-| noKk | ✅ | ✅ | ✅ | ✅ | ✅ (masked) | ❌ |
+| nik | ✅ full | ✅ full | ✅ masked | ✅ masked | ✅ full | ❌ |
+| noKk | ✅ full | ✅ full | ✅ masked | ✅ masked | ✅ full | ❌ |
 | namaLengkap | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | blok | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | noRumah | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| phone | ✅ | ✅ | ✅ | ✅ | ✅ (own only) | ❌ |
-| email | ✅ | ✅ | ✅ | ✅ | ✅ (own only) | ❌ |
-| alamat | ✅ | ✅ | ✅ | ✅ | ✅ (own only) | ❌ |
+| phone | ✅ | ✅ | ✅ masked | ✅ masked | ✅ own only | ❌ |
+| email | ✅ | ✅ | ❌ | ❌ | ✅ own only | ❌ |
+| alamat | ✅ | ✅ | ✅ terbatas | ✅ terbatas (blok/noRumah only) | ✅ own only | ❌ |
 | status | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| foto | ✅ | ✅ | ✅ | ✅ | ✅ (own only) | ❌ |
+| foto | ✅ | ✅ | ✅ | ✅ masked | ✅ own only | ❌ |
 
 ---
 
@@ -319,10 +322,10 @@ GET /warga?page=1&limit=20&search=ahmad&status=aktif&blok=A
 ```
 GET /warga/:id
 ```
-**Auth:** Sekretaris/Admin
-**Object-level:** Admin/Pengurus/Sekretaris/Bendahara bisa akses semua. Warga hanya bisa akses profil sendiri.
+**Auth:** Admin/Sekretaris/Bendahara/Pengurus/Warga
+**Object-level:** Admin/Sekretaris bisa akses full; Bendahara/Pengurus menerima field terbatas/masked; Warga hanya bisa akses profil sendiri atau data publik yang diizinkan.
 
-**Response 200 (Admin/Pengurus):**
+**Response 200 (Admin/Sekretaris):**
 ```json
 {
   "status": "success",
@@ -353,13 +356,13 @@ GET /warga/:id
 }
 ```
 
-**Response 200 (Warga — profil sendiri):**
+**Response 200 (Warga — profil sendiri, full own data):**
 ```json
 {
   "status": "success",
   "data": {
     "id": "uuid",
-    "nikMasked": "3201********0001",
+    "nik": "3201010101010001",
     "namaLengkap": "Ahmad Fauzi",
     "tempatLahir": "Palangkaraya",
     "tanggalLahir": "1990-05-15",
@@ -368,7 +371,7 @@ GET /warga/:id
     "statusPerkawinan": "KAWIN",
     "pendidikan": "S1",
     "pekerjaan": "PNS",
-    "noKkMasked": "3201********0001",
+    "noKk": "3201010101010001",
     "hubunganKeluarga": "kepala_keluarga",
     "alamat": "Jl. Merdeka No. 10",
     "blok": "A",
@@ -514,7 +517,7 @@ PUT /warga/:id/verify
 ```
 GET /keuangan?page=1&limit=20&tipe=pemasukan&dari=2026-01-01&sampai=2026-06-30
 ```
-**Auth:** Bendahara/Sekretaris/Admin
+**Auth:** Bendahara/Admin
 **Response 200:**
 ```json
 {
@@ -542,7 +545,7 @@ GET /keuangan?page=1&limit=20&tipe=pemasukan&dari=2026-01-01&sampai=2026-06-30
 ```
 POST /keuangan
 ```
-**Auth:** Bendahara/Sekretaris/Admin
+**Auth:** Bendahara/Admin
 **Body:**
 ```json
 {
@@ -568,7 +571,7 @@ POST /keuangan
 ```
 PUT /keuangan/:id
 ```
-**Auth:** Bendahara/Sekretaris/Admin
+**Auth:** Bendahara/Admin
 **Body:** Same as Create (partial)
 **Response 200**
 
@@ -590,7 +593,7 @@ POST   /keuangan/kategori          — Create { "nama": "Sumbangan", "tipe": "pe
 PUT    /keuangan/kategori/:id      — Update
 DELETE /keuangan/kategori/:id      — Delete (Admin only)
 ```
-**Auth:** Bendahara/Sekretaris/Admin
+**Auth:** Bendahara/Admin
 
 ---
 
@@ -618,7 +621,7 @@ Content-Type: multipart/form-data
 | Max file size | 5 MB |
 | Filename storage | Random UUID (original filename tidak disimpan) |
 | Storage path | `bukti-iuran/{uuid}/{random_filename}` |
-| Access control | Private — hanya pemilik, bendahara, pengurus berwenang, admin |
+| Access control | Private — hanya pemilik, bendahara, admin |
 | URL access | Signed URL atau protected route via Django |
 
 **Response 201:**
@@ -631,9 +634,9 @@ Content-Type: multipart/form-data
     "tahun": 2026,
     "jumlah": 50000,
     "status": "pending",
-    "buktiUrl": null  // URL hanya bisa diakses oleh pemilik/pengurus
+    "buktiUrl": null  // URL hanya bisa diakses oleh pemilik/bendahara/admin
   },
-  "message": "Bukti transfer berhasil diupload. Menunggu konfirmasi pengurus."
+  "message": "Bukti transfer berhasil diupload. Menunggu konfirmasi bendahara."
 }
 ```
 
@@ -645,7 +648,7 @@ Content-Type: multipart/form-data
 ```
 PUT /iuran/:id/confirm
 ```
-**Auth:** Bendahara/Sekretaris/Admin
+**Auth:** Bendahara/Admin
 **Body:**
 ```json
 { "status": "lunas", "keterangan": "Pembayaran valid" }
@@ -679,7 +682,7 @@ GET /iuran/saya?tahun=2026
 ```
 GET /keuangan/dashboard?tahun=2026
 ```
-**Auth:** Bendahara/Sekretaris/Admin
+**Auth:** Bendahara/Admin
 **Response 200:**
 ```json
 {
@@ -702,7 +705,7 @@ GET /keuangan/dashboard?tahun=2026
 ```
 GET /keuangan/laporan?dari=2026-01-01&sampai=2026-06-30&format=pdf
 ```
-**Auth:** Bendahara/Sekretaris/Admin
+**Auth:** Bendahara/Admin
 **Response:** PDF file download
 
 ---
@@ -1111,7 +1114,7 @@ GET /polling?status=aktif
     {
       "id": "uuid",
       "pertanyaan": "Kapan waktu kerja bakti?",
-      "deadline": "2026-06-08T23:59:59Z",
+      "deadline": "2026-06-07T23:59:59Z",
       "createdBy": { "namaLengkap": "Ketua RT" },
       "hasVoted": false
     }
@@ -1134,7 +1137,7 @@ GET /polling/:id
     "id": "uuid",
     "pertanyaan": "Kapan waktu kerja bakti?",
     "opsi": ["Sabtu pagi", "Minggu pagi", "Sabtu sore"],
-    "deadline": "2026-06-08T23:59:59Z",
+    "deadline": "2026-06-07T23:59:59Z",
     "results": { "Sabtu pagi": 10, "Minggu pagi": 5, "Sabtu sore": 2 },
     "totalVotes": 17,
     "hasVoted": false
@@ -1154,7 +1157,7 @@ POST /polling
 {
   "pertanyaan": "Kapan waktu kerja bakti?",
   "opsi": ["Sabtu pagi", "Minggu pagi", "Sabtu sore"],
-  "deadline": "2026-06-08T23:59:59Z"
+  "deadline": "2026-06-07T23:59:59Z"
 }
 ```
 **Response 201**
@@ -1309,4 +1312,4 @@ Content-Type: multipart/form-data
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-06 | Initial API contract |
-| 1.1.0 | 2026-06-08 | Expanded auth annotations to 5 roles: Sekretaris (CRUD warga, verifikasi, pengumuman, forum moderation), Bendahara (CRUD keuangan, konfirmasi iuran, dashboard keuangan). Updated field visibility table to 6 columns. Fixed typo "lokai" → "lokasi". |
+| 1.1.0 | 2026-06-07 | Expanded auth annotations to 5 roles: Sekretaris (CRUD warga, verifikasi, pengumuman, forum moderation), Bendahara (CRUD keuangan, konfirmasi iuran, dashboard keuangan). Updated field visibility table to 6 columns. Fixed typo "lokai" → "lokasi". |
