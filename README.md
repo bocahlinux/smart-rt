@@ -12,7 +12,7 @@
 
 **Platform digital modern untuk pengelolaan Rukun Tetangga (RT).**
 
-[Fitur](#-fitur) • [Tech Stack](#-tech-stack) • [Instalasi](#-instalasi) • [Dokumentasi](#-dokumentasi) • [Kontribusi](#-kontribusi)
+[Fitur](#-fitur) • [Tech Stack](#-tech-stack) • [Instalasi](#-instalasi) • [Dokumentasi](#-dokumentasi) • [Status](#-development-status) • [Kontribusi](#-kontribusi)
 
 </div>
 
@@ -27,6 +27,7 @@
 - [Instalasi](#-instalasi)
 - [Dokumentasi](#-dokumentasi)
 - [Roadmap](#-roadmap)
+- [Development Status](#-development-status)
 - [Kontribusi](#-kontribusi)
 - [Lisensi](#-lisensi)
 - [Author](#-author)
@@ -259,6 +260,63 @@ docker compose up --build
 | 7 | Kegiatan & Polling | ⬜ Pending |
 | 8 | Dashboard & Laporan | ⬜ Pending |
 | 9 | Polish, Testing & Deployment | ⬜ Pending |
+
+---
+
+## 📊 Development Status
+
+> **Last updated:** June 7, 2026
+
+### Overall Progress
+
+```
+Phase 0-1    ░░░░░░░░░░░░░░░░░░░░  0%
+Documentation ████████████████████  100%  ✅
+```
+
+### Status Legend
+
+| Icon | Meaning |
+|------|---------|
+| ⬜ | Not started |
+| 🔄 | In progress |
+| ✅ | Completed |
+| ⏸️ | On hold |
+| ❌ | Cancelled |
+
+### Phase Progress
+
+| Phase | Fokus | Status | Notes |
+|-------|-------|--------|-------|
+| — | Documentation & Planning | ✅ Done | All 10 docs complete, README, AI Rules |
+| 0 | Project Setup | ⬜ Pending | — |
+| 1 | Authentication & Role System | ⬜ Pending | — |
+| 2 | Data Warga | ⬜ Pending | — |
+| 3 | Keuangan RT | ⬜ Pending | — |
+| 4 | Pengumuman & Notifikasi | ⬜ Pending | — |
+| 5 | Forum Diskusi | ⬜ Pending | — |
+| 6 | Pengaduan Warga | ⬜ Pending | — |
+| 7 | Kegiatan & Polling | ⬜ Pending | — |
+| 8 | Dashboard & Laporan | ⬜ Pending | — |
+| 9 | Polish, Testing & Deployment | ⬜ Pending | — |
+
+### Completed Milestones
+
+- ✅ **v0.1.0** — Documentation & Planning (June 7, 2026)
+  - 10 documentation files (PRD, SRS, UI/UX, SDD, Database, API Contract, Task Breakdown, Coding Standard, Test Plan, AI Rules)
+  - README.md with professional layout
+  - AI Development Rules v1.1.0
+
+### Upcoming Milestones
+
+- ⬜ **v0.2.0** — Project Setup & Auth System
+- ⬜ **v0.3.0** — Data Warga
+- ⬜ **v0.4.0** — Keuangan RT
+- ⬜ **v0.5.0** — Pengumuman & Notifikasi
+- ⬜ **v0.6.0** — Forum & Pengaduan
+- ⬜ **v0.7.0** — Kegiatan & Polling
+- ⬜ **v0.8.0** — Dashboard & Laporan
+- ⬜ **v1.0.0** — Polish, Testing & Deployment
 
 ---
 
