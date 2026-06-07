@@ -1,7 +1,7 @@
 # Smart-RT — Task Breakdown
 
-**Version:** 1.3.0
-**Date:** June 7, 2026
+**Version:** 1.3.1
+**Date:** June 8, 2026
 **Estimated Total:** 10 phases, ~16 hari kerja
 **Status:** Not started
 
@@ -13,19 +13,19 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| 1.1 | Create project directory structure (monorepo: frontend + backend) | 30m | ⬜ |
-| 1.2 | Initialize backend (Django + DRF + Python 3.12) | 45m | ⬜ |
-| 1.3 | Initialize frontend (Vite + React + TypeScript) | 30m | ⬜ |
-| 1.4 | Setup Tailwind CSS 4 | 20m | ⬜ |
-| 1.5 | Setup PostgreSQL connection (Django settings + .env) | 30m | ⬜ |
-| 1.6 | Setup Django apps structure (accounts, keuangan, pengumuman, forum, pengaduan, kegiatan, polling, audit, notifications) | 30m | ⬜ |
-| 1.7 | Setup SimpleJWT (access + refresh token config) | 20m | ⬜ |
-| 1.8 | Setup ESLint + Prettier (frontend) + Ruff/Black (backend) | 20m | ⬜ |
-| 1.9 | Setup Docker + docker-compose.yml (Django + PostgreSQL + Nginx) | 30m | ⬜ |
-| 1.10 | Setup PWA plugin (Vite PWA) | 20m | ⬜ |
-| 1.11 | Create .env.example for frontend & backend | 10m | ⬜ |
-| 1.12 | Setup pytest + APITestCase base config | 20m | ⬜ |
-| 1.13 | GitHub repo initialization + initial push | 20m | ⬜ |
+| 1.1 | Create project directory structure (monorepo: frontend + backend) | 30m | ✅ |
+| 1.2 | Initialize backend (Django + DRF + Python 3.12) | 45m | ✅ |
+| 1.3 | Initialize frontend (Vite + React + TypeScript) | 30m | ✅ |
+| 1.4 | Setup Tailwind CSS 4 | 20m | ✅ |
+| 1.5 | Setup PostgreSQL connection (Django settings + .env) | 30m | ✅ |
+| 1.6 | Setup Django apps structure (accounts, keuangan, pengumuman, forum, pengaduan, kegiatan, polling, audit, notifications) | 30m | ✅ |
+| 1.7 | Setup SimpleJWT (access + refresh token config) | 20m | ✅ |
+| 1.8 | Setup ESLint + Prettier (frontend) + Ruff/Black (backend) | 20m | ✅ |
+| 1.9 | Setup Docker + docker-compose.yml (Django + PostgreSQL + Nginx) | 30m | ✅ |
+| 1.10 | Setup PWA plugin (Vite PWA) | 20m | ✅ |
+| 1.11 | Create .env.example for frontend & backend | 10m | ✅ |
+| 1.12 | Setup pytest + APITestCase base config | 20m | ✅ |
+| 1.13 | GitHub repo initialization + initial push | 20m | ✅ |
 
 ---
 
@@ -377,3 +377,4 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 | 1.1.0 | 2026-06-07 | Migrated from Express/Prisma/TypeScript to Django/DRF/Python. Added security tasks per phase (token config, rate limit, object-level permission, field masking, file upload validation, audit log). Added security checklist per phase. Added security test tasks. Updated task counts and estimates. |
 | 1.2.0 | 2026-06-08 | Fixed duplicate task IDs in Phase 2 (2.15) and Phase 3 (3.2, 3.9). Renumbered affected tasks. Normalized all table rows to use 2 pipes (|). Updated phase count from 9 to 10. Adjusted total tasks from 169 to 170 and estimated days to ~16. |
 | 1.3.0 | 2026-06-08 | Renumbered all phases from 0-9 to 1-10. Updated phase headers, task IDs, summary table, security checklist, and execution order accordingly. |
+| 1.3.1 | 2026-06-08 | Marked all Phase 1 (Project Setup) tasks 1.1-1.13 as completed (✅). |

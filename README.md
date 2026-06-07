@@ -254,7 +254,7 @@ docker compose up --build
 
 | Phase | Fokus | Status |
 |-------|-------|--------|
-| 1 | Project Setup | ⬜ Pending |
+| 1 | Project Setup | ✅ Done |
 | 2 | Authentication & Role System | ⬜ Pending |
 | 3 | Data Warga | ⬜ Pending |
 | 4 | Keuangan RT | ⬜ Pending |
@@ -269,12 +269,13 @@ docker compose up --build
 
 ## 📊 Development Status
 
-> **Last updated:** June 7, 2026
+> **Last updated:** June 8, 2026
 
 ### Overall Progress
 
 ```
-Phase 1-2    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1       ████████████████████  100%  ✅
+Phase 2-10    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -293,7 +294,7 @@ Documentation ████████████████████  100%
 | Phase | Fokus | Status | Notes |
 |-------|-------|--------|-------|
 | — | Documentation & Planning | ✅ Done | All 13 docs complete, README, AI Rules |
-| 1 | Project Setup | ⬜ Pending | — |
+| 1 | Project Setup | ✅ Done | Backend (Django+DRF) & frontend (React+Vite) scaffolded, Docker/Compose, lint tooling, pytest config |
 | 2 | Authentication & Role System | ⬜ Pending | — |
 | 3 | Data Warga | ⬜ Pending | — |
 | 4 | Keuangan RT | ⬜ Pending | — |
@@ -311,10 +312,15 @@ Documentation ████████████████████  100%
   - README.md with professional layout
   - AI Development Rules v1.5.0
   - Security document as single source of truth for all security policies
+- ✅ **v0.1.1** — Project Setup (June 8, 2026)
+  - Backend scaffold: Django 5 + DRF + SimpleJWT + Argon2, split settings (dev/prod/test), 9 app skeletons (accounts, keuangan, pengumuman, forum, pengaduan, kegiatan, polling, audit, notifications), `GET /healthz`
+  - Frontend scaffold: React 19 + Vite + TypeScript, Tailwind CSS 4, PWA plugin, Zustand, react-router-dom, axios client
+  - Tooling: Ruff/Black/Bandit (backend) & ESLint/Prettier (frontend), pytest + pytest-django config
+  - Docker: multi-stage Dockerfiles, docker-compose (db/backend/frontend/nginx), nginx reverse proxy
 
 ### Upcoming Milestones
 
-- ⬜ **v0.2.0** — Project Setup & Auth System
+- ⬜ **v0.2.0** — Authentication & Role System
 - ⬜ **v0.3.0** — Data Warga
 - ⬜ **v0.4.0** — Keuangan RT
 - ⬜ **v0.5.0** — Pengumuman & Notifikasi
