@@ -1,6 +1,6 @@
 # Smart-RT — Security & Privacy Policy
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Date:** June 8, 2026
 **Status:** Active
 **Author:** BocahLinux
@@ -129,9 +129,9 @@ Admin (Ketua RT)
 | **Pengaduan** | | | | | |
 | Create pengaduan | ✅ | ✅ | ✅ | ✅ | ✅ |
 | View own pengaduan | ✅ | ✅ | ✅ | ✅ | ✅ |
-| View other pengaduan | ✅ | ✅ | ❌ | ✅ | ❌ (unless publik) |
-| View sensitif pengaduan | ✅ | ✅ | ❌ | ✅ | ❌ |
-| Update status | ✅ | ✅ | ❌ | ✅ | ❌ |
+|| View other pengaduan | ✅ | ✅ | ❌ | ✅ | ❌ (unless publik) |
+|| View sensitif pengaduan | ✅ | ✅ (jika ditugaskan) | ❌ | ✅ (jika ditugaskan) | ❌ |
+|| Update status | ✅ | ✅ | ❌ | ✅ | ❌ |
 | **Kegiatan** | | | | | |
 | CRUD kegiatan | ✅ | ✅ | ❌ | ✅ | ❌ |
 | RSVP | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -146,7 +146,7 @@ Admin (Ketua RT)
 | Pengurus dashboard | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Warga dashboard | ❌ | ❌ | ❌ | ❌ | ✅ (own data only) |
 | **Audit Log** | | | | | |
-| View audit log | ✅ | ❌ | ❌ | ❌ | ❌ |
+|| View audit log | ✅ | ✅ (terbatas) | ✅ (terbatas) | ❌ | ❌ |
 
 ---
 
@@ -165,13 +165,13 @@ Detail field-level visibility untuk endpoint data warga:
 | jenis_kelamin | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
 | agama | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
 | status_perkawinan | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| pendidikan | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| pekerjaan | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| alamat | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| blok | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| no_rumah | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| phone | ✅ | ✅ | ✅ | ✅ masked | ✅ | ❌ |
-| email | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+|| pendidikan | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+|| pekerjaan | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+|| alamat | ✅ | ✅ | ✅ terbatas | ✅ terbatas (blok/no_rumah only) | ✅ (own) | ❌ |
+|| blok | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+|| no_rumah | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+|| phone | ✅ | ✅ | ✅ masked | ✅ masked | ✅ | ❌ |
+|| email | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
 | status | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | foto | ✅ | ✅ | ✅ | ✅ masked | ✅ | ❌ |
 | created_at | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
@@ -463,13 +463,13 @@ pg_dump -U smartrt smartrt | gzip | gpg --symmetric --cipher-algo AES256 \
 | Full request body with sensitive fields | Data exposure |
 
 ### 9.3 Audit Log Access
-| Role | Access |
-|------|--------|
-| Admin | Full access to audit log |
-| Sekretaris | ❌ Cannot access audit log |
-| Bendahara | ❌ Cannot access audit log |
-| Pengurus | ❌ Cannot access audit log |
-| Warga | ❌ Cannot access audit log |
+|| Role | Access |
+||------|--------|
+|| Admin | Full access to audit log |
+|| Sekretaris | ✅ Terbatas — hanya log terkait data warga & pengaduan (tidak lihat log keuangan) |
+|| Bendahara | ✅ Terbatas — hanya log terkait keuangan (tidak lihat log data warga) |
+|| Pengurus | ❌ Cannot access audit log |
+|| Warga | ❌ Cannot access audit log |
 
 ---
 
@@ -623,4 +623,5 @@ Setiap insiden Critical/High harus memiliki:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-08 | Initial Security & Privacy Policy |
-| 1.1.0 | 2026-06-08 | Expanded from 3 roles to 5 roles (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated all permission matrices, field visibility matrices, data classification access rules, permission classes, and security tests. Added role hierarchy diagram. |
+|| 1.1.0 | 2026-06-08 | Expanded from 3 roles to 5 roles (Admin, Sekretaris, Bendahara, Pengurus, Warga). Updated all permission matrices, field visibility matrices, data classification access rules, permission classes, and security tests. Added role hierarchy diagram. |
+|| 1.2.0 | 2026-06-08 | Refined field visibility matrix: alamat akses terbatas untuk Bendahara/Pengurus/Warga; phone Bendahara → masked. Updated pengaduan permissions: Sekretaris/Pengurus hanya jika ditugaskan. Updated audit log access: Sekretaris (terbatas — log data warga/pengaduan), Bendahara (terbatas — log keuangan). |
