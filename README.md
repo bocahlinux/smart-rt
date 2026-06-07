@@ -55,9 +55,10 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 ## 🚀 Fitur
 
 ### 👤 Multi-Role Authentication
-- Register & login dengan email/no. HP
+- Register dengan email/no. HP → akun status `pending`
+- Verifikasi oleh pengurus → approve untuk aktifkan akun
+- Login hanya bisa setelah akun aktif
 - 3 role: **Admin** (Ketua RT), **Pengurus**, **Warga**
-- Verifikasi warga oleh pengurus
 - JWT-based authentication
 
 ### 📋 Data Warga
