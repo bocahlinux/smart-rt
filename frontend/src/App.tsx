@@ -10,6 +10,9 @@ import { KeuanganDashboardPage } from './components/keuangan/KeuanganDashboardPa
 import { KeuanganListPage } from './components/keuangan/KeuanganListPage'
 import { LaporanPage } from './components/keuangan/LaporanPage'
 import { TransaksiFormPage } from './components/keuangan/TransaksiFormPage'
+import { PengumumanDetailPage } from './components/pengumuman/PengumumanDetailPage'
+import { PengumumanFormPage } from './components/pengumuman/PengumumanFormPage'
+import { PengumumanListPage } from './components/pengumuman/PengumumanListPage'
 import { WargaDetailPage } from './components/warga/WargaDetailPage'
 import { WargaFormPage } from './components/warga/WargaFormPage'
 import { WargaKKPage } from './components/warga/WargaKKPage'
@@ -39,6 +42,12 @@ function App() {
           <Route path="/keuangan/laporan" element={<LaporanPage />} />
           <Route path="/keuangan/iuran" element={<IuranKonfirmasiPage />} />
           <Route path="/iuran/upload" element={<IuranUploadPage />} />
+
+          {/* Phase 5: Pengumuman & Notifikasi */}
+          <Route path="/pengumuman" element={<PengumumanListPage />} />
+          <Route path="/pengumuman/baru" element={<PengumumanFormPage />} />
+          <Route path="/pengumuman/:id" element={<PengumumanDetailPage />} />
+          <Route path="/pengumuman/:id/edit" element={<PengumumanFormPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
