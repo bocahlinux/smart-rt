@@ -44,13 +44,18 @@ def mask_email(value: str | None) -> str | None:
     return f"{visible}***@{domain}"
 
 
-def success_response(data=None, message=None, status_code=200):
-    """Bentuk response sukses standar — lihat docs/06-API-CONTRACT.md §1.3."""
+def success_response(data=None, message=None, status_code=200, **extra):
+    """Bentuk response sukses standar — lihat docs/06-API-CONTRACT.md §1.3.
+
+    `extra` memungkinkan field top-level tambahan seperti `pagination` tanpa
+    mengubah signature yang sudah dipakai di modul lain.
+    """
     payload = {"status": "success"}
     if data is not None:
         payload["data"] = data
     if message is not None:
         payload["message"] = message
+    payload.update(extra)
     return Response(payload, status=status_code)
 
 
