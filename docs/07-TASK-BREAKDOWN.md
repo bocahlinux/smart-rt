@@ -1,9 +1,9 @@
 # Smart-RT — Task Breakdown
 
-**Version:** 1.5.0
+**Version:** 1.6.0
 **Date:** June 14, 2026
 **Estimated Total:** 10 phases, ~16 hari kerja
-**Status:** Phase 3 complete (3/10)
+**Status:** Phase 4 complete (4/10)
 
 ---
 
@@ -103,27 +103,27 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| 4.1 | Database schema: kategori_transaksi, transaksi, iuran_warga | 30m | ⬜ |
-| 4.2 | CRUD endpoints for transaksi (bendahara/admin only) | 45m | ⬜ |
-| 4.3 | Kategori transaksi CRUD | 20m | ⬜ |
-| 4.4 | Iuran bulanan auto-generate | 30m | ⬜ |
-| 4.5 | Upload bukti transfer endpoint | 30m | ⬜ |
-| 4.6 | Konfirmasi/tolak iuran endpoint | 20m | ⬜ |
-| 4.7 | Dashboard saldo endpoint | 20m | ⬜ |
-| 4.8 | Laporan keuangan endpoint (PDF via WeasyPrint) | 45m | ⬜ |
-| 4.9 | **Security:** Restrict bukti transfer access (only pemilik, bendahara, admin) | 20m | ⬜ |
-| 4.10 | **Security:** Bendahara cannot access data warga CRUD → 403 | 10m | ⬜ |
-| 4.11 | **Security:** Audit every confirmation/rejection of iuran (by bendahara) | 15m | ⬜ |
-| 4.12 | **Security:** Object-level permission (bendahara only access keuangan module) | 20m | ⬜ |
-| 4.13 | Frontend: Keuangan list page | 45m | ⬜ |
-| 4.14 | Frontend: Transaksi form | 30m | ⬜ |
-| 4.15 | Frontend: Upload bukti transfer (warga) | 30m | ⬜ |
-| 4.16 | Frontend: Konfirmasi iuran (pengurus) | 20m | ⬜ |
-| 4.17 | Frontend: Grafik pemasukan/pengeluaran | 45m | ⬜ |
-| 4.18 | Frontend: Laporan view + download PDF | 30m | ⬜ |
-| 4.19 | **Security Tests:** Warga cannot access other warga bukti transfer → 403 | 15m | ⬜ |
-| 4.20 | **Security Tests:** Invalid file type upload → 415, oversized file → 413 | 15m | ⬜ |
-| 4.21 | **Security Tests:** Audit log for confirmation/rejection | 10m | ⬜ |
+| 4.1 | Database schema: kategori_transaksi, transaksi, iuran_warga | 30m | ✅ |
+| 4.2 | CRUD endpoints for transaksi (bendahara/admin only) | 45m | ✅ |
+| 4.3 | Kategori transaksi CRUD | 20m | ✅ |
+| 4.4 | Iuran bulanan auto-generate | 30m | ✅ |
+| 4.5 | Upload bukti transfer endpoint | 30m | ✅ |
+| 4.6 | Konfirmasi/tolak iuran endpoint | 20m | ✅ |
+| 4.7 | Dashboard saldo endpoint | 20m | ✅ |
+| 4.8 | Laporan keuangan endpoint (PDF via WeasyPrint) | 45m | ✅ |
+| 4.9 | **Security:** Restrict bukti transfer access (only pemilik, bendahara, admin) | 20m | ✅ |
+| 4.10 | **Security:** Bendahara cannot access data warga CRUD → 403 | 10m | ✅ |
+| 4.11 | **Security:** Audit every confirmation/rejection of iuran (by bendahara) | 15m | ✅ |
+| 4.12 | **Security:** Object-level permission (bendahara only access keuangan module) | 20m | ✅ |
+| 4.13 | Frontend: Keuangan list page | 45m | ✅ |
+| 4.14 | Frontend: Transaksi form | 30m | ✅ |
+| 4.15 | Frontend: Upload bukti transfer (warga) | 30m | ✅ |
+| 4.16 | Frontend: Konfirmasi iuran (pengurus) | 20m | ✅ |
+| 4.17 | Frontend: Grafik pemasukan/pengeluaran | 45m | ✅ |
+| 4.18 | Frontend: Laporan view + download PDF | 30m | ✅ |
+| 4.19 | **Security Tests:** Warga cannot access other warga bukti transfer → 403 | 15m | ✅ |
+| 4.20 | **Security Tests:** Invalid file type upload → 415, oversized file → 413 | 15m | ✅ |
+| 4.21 | **Security Tests:** Audit log for confirmation/rejection | 10m | ✅ |
 
 ---
 
@@ -276,7 +276,7 @@
 | 1 | Project Setup | 1 | 13 | ✅ |
 | 2 | Authentication & Role System | 2 | 23 | ✅ |
 | 3 | Data Warga | 2.5 | 25 | ✅ |
-| 4 | Keuangan RT | 2 | 21 | ⬜ |
+| 4 | Keuangan RT | 2 | 21 | ✅ |
 | 5 | Pengumuman & Notifikasi | 1 | 11 | ⬜ |
 | 6 | Forum Diskusi | 1.5 | 14 | ⬜ |
 | 7 | Pengaduan Warga | 1.5 | 16 | ⬜ |
@@ -380,3 +380,4 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 | 1.3.1 | 2026-06-08 | Marked all Phase 1 (Project Setup) tasks 1.1-1.13 as completed (✅). |
 | 1.4.0 | 2026-06-07 | Marked all Phase 2 (Authentication & Role System) tasks 2.1-2.23 as completed (✅). |
 | 1.5.0 | 2026-06-14 | Marked all Phase 3 (Data Warga) tasks 3.1-3.25 as completed (✅). Backend: WargaProfile model, CRUD ViewSet, role-based serializers, field masking, object-level permission, soft-delete, audit log, import/export Excel+PDF, 23/23 security tests passing. Frontend: WargaListPage, WargaDetailPage, WargaFormPage, WargaKKPage, wargaService, warga types, App.tsx routes. |
+| 1.6.0 | 2026-06-14 | Marked all Phase 4 (Keuangan RT) tasks 4.1-4.21 as completed (✅). Backend: KategoriTransaksi, Transaksi, IuranWarga models + migration; CRUD ViewSets; file upload validation (magic bytes, MIME, extension, size 5MB); object-level permission warga hanya akses iuran sendiri; audit log konfirmasi/tolak; laporan PDF (WeasyPrint); dashboard saldo; 24/24 security tests passing. Frontend: KeuanganDashboardPage (grafik bar), KeuanganListPage, TransaksiFormPage, IuranUploadPage, IuranKonfirmasiPage (modal), LaporanPage, keuanganService, keuangan types, App.tsx routes. |
