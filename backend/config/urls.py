@@ -15,8 +15,8 @@ api_v1_patterns = [
     path("auth/", include("accounts.urls")),
     path("warga/", include("accounts.warga_urls")),
     path("", include("keuangan.urls")),
-    # Routing modul lain (pengumuman, dst.) ditambahkan pada phase terkait
-    # mengikuti docs/06-API-CONTRACT.md.
+    path("", include("pengumuman.urls")),
+    path("", include("notifications.urls")),
 ]
 
 urlpatterns = [

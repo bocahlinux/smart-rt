@@ -1,4 +1,14 @@
-from rest_framework import permissions  # noqa: F401
+from rest_framework import permissions
 
-# Custom permission (RBAC + object-level) untuk app ini.
-# Lihat docs/11-SECURITY.md & docs/08-CODING-STANDART.md §3.2.
+
+class IsPengurusOrAdmin(permissions.BasePermission):
+    """Hanya pengurus, sekretaris, atau admin yang boleh write pengumuman."""
+
+    PENGURUS_ROLES = {"admin", "pengurus", "sekretaris"}
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user.role in self.PENGURUS_ROLES

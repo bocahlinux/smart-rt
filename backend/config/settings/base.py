@@ -193,3 +193,8 @@ REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
 REFRESH_TOKEN_COOKIE_PATH = "/api/v1/auth"
 REFRESH_TOKEN_COOKIE_SAMESITE = "Strict"
 REFRESH_TOKEN_COOKIE_SECURE = not DEBUG
+
+# Web Push VAPID — lihat docs/07-TASK-BREAKDOWN.md §5.4
+VAPID_PRIVATE_PEM = env("VAPID_PRIVATE_PEM", default="").replace("\\n", "\n")
+VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
+VAPID_CLAIM_EMAIL = env("VAPID_CLAIM_EMAIL", default="mailto:admin@smartrt.local")

@@ -1,3 +1,12 @@
-from django.contrib import admin  # noqa: F401
+from django.contrib import admin
 
-# Registrasi Django admin untuk app ini akan diimplementasikan pada phase terkait.
+from .models import Pengumuman
+
+
+@admin.register(Pengumuman)
+class PengumumanAdmin(admin.ModelAdmin):
+    list_display = ["judul", "kategori", "is_published", "scheduled_at", "created_by", "created_at"]
+    list_filter = ["kategori", "is_published"]
+    search_fields = ["judul", "isi"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    ordering = ["-created_at"]

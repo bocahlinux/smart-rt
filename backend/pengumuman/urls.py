@@ -1,5 +1,14 @@
+from django.urls import path
+
+from .views import PengumumanDetailView, PengumumanListCreateView
+
 app_name = "pengumuman"
 
-# Routing untuk app ini akan diimplementasikan pada phase terkait
-# mengikuti docs/06-API-CONTRACT.md.
-urlpatterns = []
+urlpatterns = [
+    path("pengumuman/", PengumumanListCreateView.as_view(), name="list-create"),
+    path(
+        "pengumuman/<uuid:pk>/",
+        PengumumanDetailView.as_view(),
+        name="detail",
+    ),
+]

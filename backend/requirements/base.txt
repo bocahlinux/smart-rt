@@ -9,3 +9,4 @@ django-filter>=24.2,<25.0
 openpyxl>=3.1,<4.0
 weasyprint>=62.0,<63.0
 gunicorn>=22.0,<23.0
+pywebpush>=2.0,<3.0
