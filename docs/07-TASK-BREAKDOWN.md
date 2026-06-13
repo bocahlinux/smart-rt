@@ -1,9 +1,9 @@
 # Smart-RT — Task Breakdown
 
-**Version:** 1.6.0
+**Version:** 1.7.0
 **Date:** June 14, 2026
 **Estimated Total:** 10 phases, ~16 hari kerja
-**Status:** Phase 4 complete (4/10)
+**Status:** Phase 5 complete (5/10)
 
 ---
 
@@ -133,17 +133,17 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| 5.1 | Database schema: pengumuman | 15m | ⬜ |
-| 5.2 | CRUD endpoints for pengumuman | 30m | ⬜ |
-| 5.3 | Penjadwalan pengumuman | 20m | ⬜ |
-| 5.4 | Push notification service (Web Push) | 45m | ⬜ |
-| 5.5 | **Security:** Validate upload file type/size for pengumuman images | 15m | ⬜ |
-| 5.6 | **Security:** Restrict pengumuman CRUD to pengurus/admin | 10m | ⬜ |
-| 5.7 | Frontend: Pengumuman list page | 30m | ⬜ |
-| 5.8 | Frontend: Pengumuman detail page | 20m | ⬜ |
-| 5.9 | Frontend: Pengumuman form (pengurus) | 30m | ⬜ |
-| 5.10 | Frontend: Push notification subscription | 20m | ⬜ |
-| 5.11 | **Security Tests:** Warga cannot create/update/delete pengumuman → 403 | 10m | ⬜ |
+| 5.1 | Database schema: pengumuman | 15m | ✅ |
+| 5.2 | CRUD endpoints for pengumuman | 30m | ✅ |
+| 5.3 | Penjadwalan pengumuman | 20m | ✅ |
+| 5.4 | Push notification service (Web Push) | 45m | ✅ |
+| 5.5 | **Security:** Validate upload file type/size for pengumuman images | 15m | ✅ |
+| 5.6 | **Security:** Restrict pengumuman CRUD to pengurus/admin | 10m | ✅ |
+| 5.7 | Frontend: Pengumuman list page | 30m | ✅ |
+| 5.8 | Frontend: Pengumuman detail page | 20m | ✅ |
+| 5.9 | Frontend: Pengumuman form (pengurus) | 30m | ✅ |
+| 5.10 | Frontend: Push notification subscription | 20m | ✅ |
+| 5.11 | **Security Tests:** Warga cannot create/update/delete pengumuman → 403 | 10m | ✅ |
 
 ---
 
@@ -277,7 +277,7 @@
 | 2 | Authentication & Role System | 2 | 23 | ✅ |
 | 3 | Data Warga | 2.5 | 25 | ✅ |
 | 4 | Keuangan RT | 2 | 21 | ✅ |
-| 5 | Pengumuman & Notifikasi | 1 | 11 | ⬜ |
+| 5 | Pengumuman & Notifikasi | 1 | 11 | ✅ |
 | 6 | Forum Diskusi | 1.5 | 14 | ⬜ |
 | 7 | Pengaduan Warga | 1.5 | 16 | ⬜ |
 | 8 | Kegiatan & Polling | 1.5 | 15 | ⬜ |
@@ -332,9 +332,13 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 - [ ] Tests: invalid file type → 415, oversized → 413
 
 ### Phase 5 — Pengumuman
-- [ ] File upload validation for images
-- [ ] CRUD restricted to pengurus/admin
-- [ ] Tests: warga cannot create pengumuman → 403
+- [x] File upload validation for images (ext, MIME, magic bytes, 5MB max)
+- [x] CRUD restricted to pengurus/admin/sekretaris
+- [x] Penjadwalan (scheduled_at) — warga hanya lihat yang sudah published
+- [x] Web Push notification via pywebpush + VAPID
+- [x] In-app Notification model (broadcast saat pengumuman dibuat)
+- [x] Random UUID filename untuk gambar upload
+- [x] Tests: warga cannot create/update/delete pengumuman → 403 (19/19 passing)
 
 ### Phase 6 — Forum
 - [ ] Object-level permission (owner edit own content)
@@ -381,3 +385,4 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 | 1.4.0 | 2026-06-07 | Marked all Phase 2 (Authentication & Role System) tasks 2.1-2.23 as completed (✅). |
 | 1.5.0 | 2026-06-14 | Marked all Phase 3 (Data Warga) tasks 3.1-3.25 as completed (✅). Backend: WargaProfile model, CRUD ViewSet, role-based serializers, field masking, object-level permission, soft-delete, audit log, import/export Excel+PDF, 23/23 security tests passing. Frontend: WargaListPage, WargaDetailPage, WargaFormPage, WargaKKPage, wargaService, warga types, App.tsx routes. |
 | 1.6.0 | 2026-06-14 | Marked all Phase 4 (Keuangan RT) tasks 4.1-4.21 as completed (✅). Backend: KategoriTransaksi, Transaksi, IuranWarga models + migration; CRUD ViewSets; file upload validation (magic bytes, MIME, extension, size 5MB); object-level permission warga hanya akses iuran sendiri; audit log konfirmasi/tolak; laporan PDF (WeasyPrint); dashboard saldo; 24/24 security tests passing. Frontend: KeuanganDashboardPage (grafik bar), KeuanganListPage, TransaksiFormPage, IuranUploadPage, IuranKonfirmasiPage (modal), LaporanPage, keuanganService, keuangan types, App.tsx routes. |
+| 1.7.0 | 2026-06-14 | Marked all Phase 5 (Pengumuman & Notifikasi) tasks 5.1-5.11 as completed (✅). Backend: Pengumuman model (FileField, scheduled_at, is_published), Notification + PushSubscription models + migrations; CRUD views (IsPengurusOrAdmin permission); file upload validation (magic bytes, extension, 5MB); penjadwalan (warga hanya lihat yang published dan jadwalnya sudah tiba); Web Push via pywebpush + VAPID; broadcast_pengumuman service (in-app + web push); 19/19 security tests passing. Frontend: PengumumanListPage, PengumumanDetailPage, PengumumanFormPage, NotificationBell, PushNotificationSubscription; pengumumanService (CRUD + push API), pengumuman types; App.tsx routes. |

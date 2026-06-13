@@ -86,11 +86,15 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 - Audit log setiap konfirmasi/penolakan iuran oleh bendahara
 - Kategori transaksi: pemasukan & pengeluaran
 
-### 📢 Pengumuman & Notifikasi _(Phase 5 — coming soon)_
-- Buat pengumuman dengan kategori
-- Push notification ke warga (Web Push PWA)
-- Penjadwalan pengumuman
-- Riwayat pengumuman
+### 📢 Pengumuman & Notifikasi ✅
+- Buat pengumuman dengan 5 kategori (penting, acara, info, keamanan, lainnya)
+- **Penjadwalan**: pengumuman bisa dijadwal — warga hanya melihat yang sudah published dan jadwalnya sudah tiba
+- Upload gambar lampiran (JPEG/PNG/WebP, maks 5 MB) dengan validasi magic bytes
+- **Web Push notification**: integrasi pywebpush + VAPID — kirim push ke semua browser yang subscribe
+- **In-app notification**: setiap pengumuman baru otomatis membuat notifikasi untuk semua warga
+- **CRUD dibatasi**: hanya pengurus, sekretaris, dan admin yang bisa buat/ubah/hapus pengumuman
+- NotificationBell component dengan badge unread count dan polling otomatis
+- Audit log setiap create/update/delete pengumuman
 
 ### 💬 Forum Diskusi _(Phase 6 — coming soon)_
 - Thread per topik dengan kategori
@@ -137,6 +141,7 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 | **django-cors-headers** | 4.x | CORS middleware |
 | **openpyxl** | 3.x | Excel import/export |
 | **WeasyPrint** | 62.x | PDF export |
+| **pywebpush** | 2.x | Web Push notifications via VAPID |
 | **gunicorn** | 22.x | Production WSGI server |
 
 ### Frontend
@@ -273,7 +278,7 @@ docker compose up --build
 | 2 | Authentication & Role System | ✅ Done |
 | 3 | Data Warga | ✅ Done |
 | 4 | Keuangan RT | ✅ Done |
-| 5 | Pengumuman & Notifikasi | ⬜ Pending |
+| 5 | Pengumuman & Notifikasi | ✅ Done |
 | 6 | Forum Diskusi | ⬜ Pending |
 | 7 | Pengaduan Warga | ⬜ Pending |
 | 8 | Kegiatan & Polling | ⬜ Pending |
@@ -289,8 +294,8 @@ docker compose up --build
 ### Overall Progress
 
 ```
-Phase 1-4     ████████░░░░░░░░░░░░  40%  ✅
-Phase 5-10    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-5     ██████████░░░░░░░░░░  50%  ✅
+Phase 6-10    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -313,7 +318,7 @@ Documentation ████████████████████  100%
 | 2 | Authentication & Role System | ✅ Done | JWT auth (access+refresh, rotation & blacklist), RBAC permissions, Argon2 hashing, rate limiting, field masking, security test suite |
 | 3 | Data Warga | ✅ Done | WargaProfile model (soft-delete, UUID PK), AuditLog model, 5 role-based serializers, field masking NIK/KK/phone/email, object-level permission, import/export Excel+PDF, 23/23 security tests passing, frontend WargaListPage/DetailPage/FormPage/KKPage |
 | 4 | Keuangan RT | ✅ Done | KategoriTransaksi + Transaksi + IuranWarga models; CRUD bendahara/admin; upload bukti transfer (magic bytes + MIME + size validation); object-level permission warga; audit log konfirmasi; dashboard + grafik; laporan PDF; 24/24 security tests; frontend KeuanganListPage/DashboardPage/TransaksiFormPage/IuranUploadPage/IuranKonfirmasiPage/LaporanPage |
-| 5 | Pengumuman & Notifikasi | ⬜ Pending | — |
+| 5 | Pengumuman & Notifikasi | ✅ Done | Pengumuman CRUD; penjadwalan; gambar upload (magic bytes + MIME + 5MB); IsPengurusOrAdmin; in-app Notification + Web Push (pywebpush + VAPID); broadcast saat create; NotificationBell; PushSubscription; 19/19 security tests |
 | 6 | Forum Diskusi | ⬜ Pending | — |
 | 7 | Pengaduan Warga | ⬜ Pending | — |
 | 8 | Kegiatan & Polling | ⬜ Pending | — |
@@ -358,9 +363,22 @@ Documentation ████████████████████  100%
   - Frontend: `KeuanganListPage` (tabel transaksi + filter), `KeuanganDashboardPage` (summary cards + grafik bar chart), `TransaksiFormPage`, `IuranUploadPage` (form upload + riwayat), `IuranKonfirmasiPage` (modal konfirmasi), `LaporanPage` (download PDF), 6 routes di App.tsx
   - Security tests: `test_keuangan_security.py` — **24/24 passing** (object-level iuran, file upload rejection, audit log, RBAC bendahara)
 
+- ✅ **v0.5.0** — Pengumuman & Notifikasi (June 14, 2026)
+  - Backend: `Pengumuman` model (UUID PK, FileField gambar, scheduled_at, is_published), `Notification` + `PushSubscription` models, migrations applied
+  - `PengumumanListCreateView` + `PengumumanDetailView`: CRUD dengan `IsPengurusOrAdmin` permission; warga hanya lihat yang published dan jadwalnya sudah tiba
+  - File upload security: magic bytes (JPEG/PNG/WebP), ekstensi whitelist, MIME check, 5MB max — `FileField` (bukan `ImageField`) agar tidak conflict dengan Pillow validation
+  - Penjadwalan: `scheduled_at` → `is_published=False` jika di masa depan; auto publish oleh pengurus/admin
+  - Web Push: `pywebpush` + VAPID keys (`VAPID_PRIVATE_PEM`, `VAPID_PUBLIC_KEY` di settings); `broadcast_pengumuman()` service kirim push ke semua `PushSubscription`
+  - In-app Notification: setiap create pengumuman baru otomatis membuat `Notification` untuk semua user aktif
+  - Endpoints: `GET/POST /pengumuman/`, `GET/PUT/DELETE /pengumuman/:id/`, `GET /notifications/`, `PUT /notifications/:id/read/`, `PUT /notifications/read-all/`, `POST/DELETE /notifications/push/subscribe|unsubscribe/`, `GET /notifications/push/vapid-public-key/`
+  - Audit log setiap create/update/delete pengumuman (menggunakan `new_data` field AuditLog)
+  - Frontend: `PengumumanListPage` (filter kategori + pagination), `PengumumanDetailPage`, `PengumumanFormPage` (create/edit + gambar preview), `NotificationBell` (dropdown + badge unread + mark read + polling 60s), `PushNotificationSubscription` (SW + PushManager API)
+  - `pengumumanService.ts`: semua API calls + `urlBase64ToUint8Array` helper untuk VAPID key
+  - 4 routes di `App.tsx`: `/pengumuman`, `/pengumuman/baru`, `/pengumuman/:id`, `/pengumuman/:id/edit`
+  - Security tests: `test_pengumuman_security.py` — **19/19 passing** (warga cannot write, pengurus/admin CRUD, sekretaris create, image validation, notification access control)
+
 ### Upcoming Milestones
 
-- ⬜ **v0.5.0** — Pengumuman & Notifikasi
 - ⬜ **v0.6.0** — Forum & Pengaduan
 - ⬜ **v0.7.0** — Kegiatan & Polling
 - ⬜ **v0.8.0** — Dashboard & Laporan
