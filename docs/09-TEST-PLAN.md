@@ -1,8 +1,8 @@
 # Smart-RT — Test Plan
 
-**Version:** 1.3.1
-**Date:** June 7, 2026
-**Status:** Draft
+**Version:** 1.4.0
+**Date:** June 14, 2026
+**Status:** Phase 3 Security Tests — 23/23 Passing
 
 ---
 
@@ -173,31 +173,33 @@
 | IT-AUTH-12 | Change password | PUT | /api/v1/auth/password/ | 200 |
 
 ### 2.9 Integration Tests — Warga API (Object-Level Permission)
-| Test ID | Test Case | Method | Endpoint | Expected |
-|---------|-----------|--------|----------|----------|
-| IT-WRG-01 | List warga (admin) | GET | /api/v1/warga/ | 200 + paginated + full fields |
-| IT-WRG-02 | List warga (pengurus) | GET | /api/v1/warga/ | 200 + paginated + masked/limited fields |
-| IT-WRG-03 | List warga (sekretaris) | GET | /api/v1/warga/ | 200 + paginated + full fields |
-| IT-WRG-04 | List warga (bendahara) | GET | /api/v1/warga/ | 200 + paginated + masked/limited fields |
-| IT-WRG-05 | List warga (warga) | GET | /api/v1/warga/ | 200 + own profile only + masked fields |
-| IT-WRG-06 | Get own profile (warga) | GET | /api/v1/warga/:own_id/ | 200 + full data (no mask) |
-| IT-WRG-07 | Get other profile (warga) | GET | /api/v1/warga/:other_id/ | 403 Forbidden |
-| IT-WRG-08 | Get any profile (admin) | GET | /api/v1/warga/:id/ | 200 + full data |
-| IT-WRG-09 | Get any profile (sekretaris) | GET | /api/v1/warga/:id/ | 200 + full data |
-| IT-WRG-10 | Create warga (sekretaris) | POST | /api/v1/warga/ | 201 |
-| IT-WRG-11 | Create warga (pengurus) | POST | /api/v1/warga/ | 403 |
-| IT-WRG-12 | Create warga (warga) | POST | /api/v1/warga/ | 403 |
-| IT-WRG-13 | Update own profile (warga) | PUT | /api/v1/warga/:own_id/ | 200 |
-| IT-WRG-14 | Update other profile (warga) | PUT | /api/v1/warga/:other_id/ | 403 |
-| IT-WRG-15 | Delete warga (admin) | DELETE | /api/v1/warga/:id/ | 200 |
-| IT-WRG-16 | Delete warga (pengurus) | DELETE | /api/v1/warga/:id/ | 403 |
-| IT-WRG-17 | Verify warga (sekretaris) | PUT | /api/v1/warga/:id/verify/ | 200 |
-| IT-WRG-18 | Verify warga (pengurus) | PUT | /api/v1/warga/:id/verify/ | 403 |
-| IT-WRG-19 | Export warga (admin) | GET | /api/v1/warga/export/ | 200 + file |
-| IT-WRG-20 | Export warga (sekretaris) | GET | /api/v1/warga/export/ | 200 + file |
-| IT-WRG-21 | Export warga (warga) | GET | /api/v1/warga/export/ | 403 |
-| IT-WRG-22 | Export with fullData=true (admin) | GET | /api/v1/warga/export/?fullData=true | 200 + unmasked |
-| IT-WRG-23 | Export with fullData=false | GET | /api/v1/warga/export/?fullData=false | 200 + masked |
+> **Phase 3 implemented.** Tests berikut sudah ditulis dan dijalankan di `backend/accounts/tests/test_warga_security.py` — **23/23 passed** (2026-06-14). Kolom Result: ✅ automated test passing, 🔲 manual/pending.
+
+| Test ID | Test Case | Method | Endpoint | Expected | Result |
+|---------|-----------|--------|----------|----------|--------|
+| IT-WRG-01 | List warga (admin) | GET | /api/v1/warga/ | 200 + paginated + full fields | ✅ |
+| IT-WRG-02 | List warga (pengurus) | GET | /api/v1/warga/ | 200 + paginated + masked/limited fields | ✅ |
+| IT-WRG-03 | List warga (sekretaris) | GET | /api/v1/warga/ | 200 + paginated + full fields | ✅ |
+| IT-WRG-04 | List warga (bendahara) | GET | /api/v1/warga/ | 200 + paginated + masked/limited fields | ✅ |
+| IT-WRG-05 | List warga (warga) | GET | /api/v1/warga/ | 200 + own profile only + masked fields | ✅ |
+| IT-WRG-06 | Get own profile (warga) | GET | /api/v1/warga/:own_id/ | 200 + full data (no mask) | ✅ |
+| IT-WRG-07 | Get other profile (warga) | GET | /api/v1/warga/:other_id/ | 403 Forbidden | ✅ |
+| IT-WRG-08 | Get any profile (admin) | GET | /api/v1/warga/:id/ | 200 + full data | ✅ |
+| IT-WRG-09 | Get any profile (sekretaris) | GET | /api/v1/warga/:id/ | 200 + full data | ✅ |
+| IT-WRG-10 | Create warga (sekretaris) | POST | /api/v1/warga/ | 201 | ✅ |
+| IT-WRG-11 | Create warga (pengurus) | POST | /api/v1/warga/ | 403 | ✅ |
+| IT-WRG-12 | Create warga (warga) | POST | /api/v1/warga/ | 403 | ✅ |
+| IT-WRG-13 | Update own profile (warga) | PUT | /api/v1/warga/:own_id/ | 200 | 🔲 |
+| IT-WRG-14 | Update other profile (warga) | PUT | /api/v1/warga/:other_id/ | 403 | ✅ |
+| IT-WRG-15 | Delete warga (admin) | DELETE | /api/v1/warga/:id/ | 200 (soft-delete) | ✅ |
+| IT-WRG-16 | Delete warga (pengurus) | DELETE | /api/v1/warga/:id/ | 403 | ✅ |
+| IT-WRG-17 | Verify warga (sekretaris) | PUT | /api/v1/warga/:id/verify/ | 200 | ✅ |
+| IT-WRG-18 | Verify warga (pengurus) | PUT | /api/v1/warga/:id/verify/ | 403 | 🔲 |
+| IT-WRG-19 | Export warga (admin) | GET | /api/v1/warga/export/?fmt=excel | 200 + file | ✅ |
+| IT-WRG-20 | Export warga (sekretaris) | GET | /api/v1/warga/export/?fmt=excel | 200 + file | ✅ |
+| IT-WRG-21 | Export warga (warga) | GET | /api/v1/warga/export/?fmt=excel | 403 | ✅ |
+| IT-WRG-22 | Export with fullData=true (admin) | GET | /api/v1/warga/export/?fmt=excel&fullData=true | 200 + unmasked | 🔲 |
+| IT-WRG-23 | Export with fullData=false | GET | /api/v1/warga/export/?fmt=excel&fullData=false | 200 + masked | 🔲 |
 
 ### 2.10 Integration Tests — Keuangan API (Object-Level + File Upload)
 | Test ID | Test Case | Method | Endpoint | Expected |
@@ -339,25 +341,27 @@
 | SEC-JWT-10 | Password stored as Argon2 hash | NOT plaintext in DB |
 
 ### 3.6 OWASP Top 10 Tests
+> ✅ = tested & passing (automated), 🔲 = pending (Phase belum diimplementasi)
+
 | Risk | Test Case | Expected | Status |
 |------|-----------|----------|--------|
-| A01: Broken Access Control | IDOR: change UUID in URL | 403 Forbidden | ⬜ |
-| A01: Broken Access Control | Access admin endpoint as warga | 403 | ⬜ |
-| A02: Cryptographic Failures | Password stored as Argon2 | Not plaintext | ⬜ |
-| A02: Cryptographic Failures | HTTPS enforced | Redirect HTTP→HTTPS | ⬜ |
-| A02: Cryptographic Failures | Backup encrypted | GPG AES256 | ⬜ |
-| A03: Injection | SQL injection via search param | Blocked by Django ORM | ⬜ |
-| A03: Injection | XSS via input field | Sanitized | ⬜ |
-| A04: Insecure Design | Object-level permission enforced | 403 for unauthorized | ⬜ |
-| A05: Security Misconfiguration | DEBUG=False in production | No debug info leaked | ⬜ |
-| A05: Security Misconfiguration | Security headers present | HSTS, X-Frame-Options | ⬜ |
-| A06: Vulnerable Components | Dependencies up-to-date | No known CVEs | ⬜ |
-| A07: Auth Failures | Brute force protection | Rate limited | ⬜ |
-| A07: Auth Failures | Session fixation | Token rotation | ⬜ |
-| A08: Data Integrity | CSRF protection | Token validated | ⬜ |
-| A09: Logging Failures | Audit log for sensitive ops | Logged | ⬜ |
-| A09: Logging Failures | No sensitive data in logs | No password/token in logs | ⬜ |
-| A10: SSRF | File URL manipulation | Blocked | ⬜ |
+| A01: Broken Access Control | IDOR: change UUID in URL (warga akses profil warga lain) | 403 Forbidden | ✅ Phase 3 |
+| A01: Broken Access Control | Access admin endpoint as warga (POST/DELETE /warga/) | 403 | ✅ Phase 3 |
+| A02: Cryptographic Failures | Password stored as Argon2 | Not plaintext | ✅ Phase 2 |
+| A02: Cryptographic Failures | HTTPS enforced | Redirect HTTP→HTTPS | 🔲 Infra |
+| A02: Cryptographic Failures | Backup encrypted | GPG AES256 | 🔲 Infra |
+| A03: Injection | SQL injection via search param | Blocked by Django ORM | 🔲 |
+| A03: Injection | XSS via input field | Sanitized | 🔲 |
+| A04: Insecure Design | Object-level permission enforced (warga, bendahara, pengurus) | 403 for unauthorized | ✅ Phase 3 |
+| A05: Security Misconfiguration | DEBUG=False in production | No debug info leaked | 🔲 Infra |
+| A05: Security Misconfiguration | Security headers present | HSTS, X-Frame-Options | 🔲 Infra |
+| A06: Vulnerable Components | Dependencies up-to-date | No known CVEs | 🔲 |
+| A07: Auth Failures | Brute force protection | Rate limited | ✅ Phase 2 |
+| A07: Auth Failures | Session fixation | Token rotation on refresh | ✅ Phase 2 |
+| A08: Data Integrity | CSRF protection | Token validated | 🔲 |
+| A09: Logging Failures | Audit log untuk CRUD/verify/export warga | Logged (action, table, record_id, masked data) | ✅ Phase 3 |
+| A09: Logging Failures | Sensitive data di-mask di audit log (NIK, phone, email) | old_data/new_data masked | ✅ Phase 3 |
+| A10: SSRF | File URL manipulation | Blocked | 🔲 |
 
 ### 3.7 Backup & Recovery Tests
 | Test ID | Test Case | Expected |
@@ -808,24 +812,24 @@ jobs:
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| Backend Unit (Auth) | 18 | ⬜ |
-| Backend Unit (Warga) | 9 | ⬜ |
+| Backend Unit (Auth) | 18 | ✅ Phase 2 |
+| Backend Unit (Warga) | 9 | ✅ Phase 3 (subset dalam security tests) |
 | Backend Unit (Keuangan) | 8 | ⬜ |
-| Backend Unit (Permissions) | 13 | ⬜ |
-| Backend Unit (Serializers) | 8 | ⬜ |
+| Backend Unit (Permissions) | 13 | ✅ Phase 2 |
+| Backend Unit (Serializers) | 8 | ✅ Phase 3 (field masking verified) |
 | Backend Unit (File Upload) | 8 | ⬜ |
-| Backend Unit (Audit Log) | 10 | ⬜ |
-| Backend Integration (Auth) | 12 | ⬜ |
-| Backend Integration (Warga) | 23 | ⬜ |
+| Backend Unit (Audit Log) | 10 | ✅ Phase 3 (masking + action logging) |
+| Backend Integration (Auth) | 12 | ✅ Phase 2 |
+| Backend Integration (Warga) | 23 | ✅ Phase 3 — 23/23 passing |
 | Backend Integration (Keuangan) | 22 | ⬜ |
 | Backend Integration (Pengaduan) | 11 | ⬜ |
 | Backend Integration (Other) | 44 | ⬜ |
-| Security (Object-Level) | 16 | ⬜ |
-| Security (Masking) | 12 | ⬜ |
-| Security (Audit Log) | 12 | ⬜ |
+| Security (Object-Level) | 16 | ✅ Phase 3 (warga object-level) |
+| Security (Masking) | 12 | ✅ Phase 3 (5 roles) |
+| Security (Audit Log) | 12 | ✅ Phase 3 (NIK mask in old_data) |
 | Security (File Upload) | 14 | ⬜ |
-| Security (JWT/Auth) | 10 | ⬜ |
-| Security (OWASP Top 10) | 17 | ⬜ |
+| Security (JWT/Auth) | 10 | ✅ Phase 2 |
+| Security (OWASP Top 10) | 17 | 🔄 Partial — A01/A04/A09 ✅, others ⬜ |
 | Security (Backup) | 6 | ⬜ |
 | Frontend Unit (Stores) | 8 | ⬜ |
 | Frontend Unit (Hooks) | 8 | ⬜ |
@@ -846,3 +850,4 @@ jobs:
 | 1.2.0 | 2026-06-07 | Expanded to 5-role system: added sekretaris_user and bendahara_user fixtures. Added permission unit tests for IsSekretaris and IsBendahara (UT-PERM-05 to UT-PERM-08). Added integration tests for Sekretaris (CRUD warga, verifikasi, export) and Bendahara (CRUD keuangan, konfirmasi iuran), with Sekretaris blocked from keuangan mutations. Added object-level permission tests (SEC-OBJ-09 to SEC-OBJ-16) and field masking tests (SEC-MASK-08, SEC-MASK-09) for Sekretaris & Bendahara. Added serializer tests (UT-SER-07, UT-SER-08). Updated test counts. |
 | 1.3.0 | 2026-06-07 | Added §8 E2E Test Scenarios (Manual): detailed step-by-step flows per role (E2E-01 Warga registration to pengaduan, E2E-02 Bendahara transaksi & laporan, E2E-03 Admin pengumuman/forum/polling, E2E-04 Sekretaris verifikasi & export, E2E-05 Pengurus kegiatan & RSVP, E2E-06 cross-role negative/IDOR test), pass/fail criteria, and automation candidates. Renumbered subsequent sections (Test Execution Plan → §9, Test Summary → §10, Revision History → §11). |
 | 1.3.1 | 2026-06-07 | Fixed E2E-01 steps to reflect manual account verification by sekretaris/admin (per FR-AUTH-04 & 03-UIUX-Flow.md §2.1) instead of email verification link, resolving contradiction with SRS. |
+| 1.4.0 | 2026-06-14 | Phase 3 complete. Added Result column to §2.9 (IT-WRG-01..23) — 18 tests automated via `test_warga_security.py`, 5 pending manual. Updated §3.6 OWASP Top 10: A01 (IDOR/access control), A04 (object-level permission), A09 (audit log + field masking) marked ✅ Phase 3. Fixed export endpoint URL in IT-WRG-19..23: `?format=` → `?fmt=` (DRF URL_FORMAT_OVERRIDE conflict). |

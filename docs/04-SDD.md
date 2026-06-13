@@ -1,9 +1,9 @@
 # Smart-RT — System Design Document (SDD)
 
-**Version:** 1.2.0
-**Date:** June 8, 2026
+**Version:** 1.3.0
+**Date:** June 14, 2026
 **Based on:** PRD v1.1.0, SRS v1.1.0
-**Status:** Draft
+**Status:** Phase 3 Implemented
 
 ---
 
@@ -429,3 +429,4 @@ VITE_API_URL=https://smartrt.yourdomain.com/api/v1
 | 1.0.0 | 2026-06-06 | Initial SDD |
 | 1.1.0 | 2026-06-07 | Major security rewrite: token storage (access in-memory, refresh in httpOnly cookie), object-level permission rules, IDOR prevention, Django password hasher (Argon2/PBKDF2), file upload validation detail, data protection rules. Added auth token/refresh endpoint. Updated API auth column to Object-level where applicable. |
 | 1.2.0 | 2026-06-08 | Added Background Jobs/Scheduler to Technology Stack — chose Django-Q2 (over Celery) for async tasks (notifications, scheduled pengumuman, kegiatan reminders, soft-delete hard-purge job) and periodic tasks, since it needs no external broker (Redis/RabbitMQ) and fits the single-VPS Docker Compose deployment in 12-CICD.md. Resolves previously undocumented background-job technology gap. |
+| 1.3.0 | 2026-06-14 | Phase 3 implemented. Backend: `WargaProfile` model (UUID PK, soft-delete, 5 DB indexes), `AuditLog` model, `log_action()` service dengan field masking untuk NIK/no_kk/phone/email/alamat. `WargaViewSet` (CRUD + search/filter + pagination + object-level permission), 5 role-based serializers, `WargaFilter`, explicit URL patterns (menghindari konflik DRF router dengan export/import paths). Frontend: `WargaListPage`, `WargaDetailPage`, `WargaFormPage`, `WargaKKPage`, `wargaService`, warga TypeScript types, App.tsx routes. |

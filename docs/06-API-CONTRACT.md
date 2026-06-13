@@ -1,9 +1,9 @@
 # Smart-RT — API Contract
 
-**Version:** 1.3.0
-**Date:** June 8, 2026
+**Version:** 1.4.0
+**Date:** June 14, 2026
 **Base URL:** `/api/v1`
-**Status:** Draft
+**Status:** Phase 3 Implemented
 
 ---
 
@@ -571,8 +571,8 @@ Content-Type: multipart/form-data
 
 ### 3.7 Export Warga
 ```
-GET /warga/export?format=excel&status=aktif
-GET /warga/export?format=pdf&blok=A
+GET /warga/export?fmt=excel&status=aktif
+GET /warga/export?fmt=pdf&blok=A
 ```
 **Auth:** Sekretaris/Admin only
 **Object-level:** Warga tidak bisa akses export.
@@ -580,7 +580,7 @@ GET /warga/export?format=pdf&blok=A
 **Query Params:**
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
-| format | string | Yes | `excel` or `pdf` |
+| fmt | string | Yes | `excel` or `pdf`. **Catatan:** Menggunakan `fmt` (bukan `format`) untuk menghindari konflik dengan DRF `URL_FORMAT_OVERRIDE` yang mencegat query param `?format=`. |
 | status | string | No | Filter by status |
 | blok | string | No | Filter by blok |
 | fullData | boolean | No | Default `false`. Jika `true` dan role = admin, export menyertakan data sensitif lengkap (NIK, no KK, alamat, phone, email). Jika `false`, field sensitif di-mask. |
@@ -1412,3 +1412,4 @@ Content-Type: multipart/form-data
 | 1.2.0 | 2026-06-07 | Added §1.7 Error Code Dictionary (machine-readable `code` field per module: AUTH, WARGA, KEUANGAN, PENGUMUMAN, FORUM, PENGADUAN, KEGIATAN, POLLING, FILE, PERMISSION, VALIDATION, RATE_LIMIT). Added §1.8 API Versioning Strategy (URL path versioning, breaking-change policy, 6-month deprecation window, Deprecation/Sunset headers). |
 | 1.2.1 | 2026-06-07 | Fixed header version to match Revision History (was showing 1.0.0). |
 | 1.3.0 | 2026-06-08 | Added §1.9 System Endpoints: `GET /healthz` (public health check, used by CI/CD smoke test in 12-CICD.md and uptime monitoring in 13-MONITORING.md — was referenced there but not yet documented in the API Contract). |
+| 1.4.0 | 2026-06-14 | Phase 3 implemented. Fixed §3.7 Export query param: `?format=` → `?fmt=` — DRF `URL_FORMAT_OVERRIDE` (default key `format`) intercepts `?format=excel` before it reaches the view, causing 404. Using `?fmt=` bypasses this. Implementation note added to param table. |

@@ -1,9 +1,9 @@
 # Smart-RT — Task Breakdown
 
-**Version:** 1.3.1
-**Date:** June 8, 2026
+**Version:** 1.5.0
+**Date:** June 14, 2026
 **Estimated Total:** 10 phases, ~16 hari kerja
-**Status:** Not started
+**Status:** Phase 3 complete (3/10)
 
 ---
 
@@ -69,31 +69,31 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| 3.1 | Database schema: warga_profiles table (Django model) | 30m | ⬜ |
-| 3.2 | CRUD endpoints for warga (ViewSet) | 60m | ⬜ |
-| 3.3 | Search & filter endpoint | 30m | ⬜ |
-| 3.4 | Pagination endpoint | 20m | ⬜ |
-| 3.5 | Import from Excel endpoint (sekretaris/admin only) | 45m | ⬜ |
-| 3.6 | Export to Excel endpoint (sekretaris/admin only) | 30m | ⬜ |
-| 3.7 | Export to PDF — kartu keluarga (sekretaris/admin only) | 45m | ⬜ |
-| 3.8 | Warga verification endpoint (approve/reject) — sekretaris/admin | 20m | ⬜ |
-| 3.9 | Audit log for data changes (create/update/delete/verify) | 30m | ⬜ |
-| 3.10 | **Security:** Implement object-level permission (warga hanya lihat profil sendiri) | 30m | ⬜ |
-| 3.11 | **Security:** Implement field masking (NIK, no KK, phone, email per role) | 30m | ⬜ |
-| 3.12 | **Security:** Restrict export to sekretaris/admin only | 15m | ⬜ |
-| 3.13 | **Security:** Bendahara sees only masked warga data | 15m | ⬜ |
-| 3.14 | **Security:** Audit every export event (action: export, table: warga) | 15m | ⬜ |
-| 3.15 | **Security:** Mask sensitive fields by default in export (fullData=true only for admin) | 20m | ⬜ |
-| 3.16 | Frontend: Warga list page (table + filter) | 60m | ⬜ |
-| 3.17 | Frontend: Warga detail page (field visibility per role) | 45m | ⬜ |
-| 3.18 | Frontend: Warga form (create/edit) | 60m | ⬜ |
-| 3.19 | Frontend: Import/Export buttons (pengurus only) | 20m | ⬜ |
-| 3.20 | Frontend: Kartu keluarga view | 30m | ⬜ |
-| 3.21 | **Security Tests:** Warga cannot access other warga private data → 403 | 20m | ⬜ |
-| 3.22 | **Security Tests:** Field masking verification per role (5 roles) | 20m | ⬜ |
-| 3.23 | **Security Tests:** Export without sekretaris role → 403 | 10m | ⬜ |
-| 3.24 | **Security Tests:** Bendahara cannot CRUD warga data → 403 | 10m | ⬜ |
-| 3.25 | **Security Tests:** Audit log entries for all CRUD operations | 15m | ⬜ |
+| 3.1 | Database schema: warga_profiles table (Django model) | 30m | ✅ |
+| 3.2 | CRUD endpoints for warga (ViewSet) | 60m | ✅ |
+| 3.3 | Search & filter endpoint | 30m | ✅ |
+| 3.4 | Pagination endpoint | 20m | ✅ |
+| 3.5 | Import from Excel endpoint (sekretaris/admin only) | 45m | ✅ |
+| 3.6 | Export to Excel endpoint (sekretaris/admin only) | 30m | ✅ |
+| 3.7 | Export to PDF — kartu keluarga (sekretaris/admin only) | 45m | ✅ |
+| 3.8 | Warga verification endpoint (approve/reject) — sekretaris/admin | 20m | ✅ |
+| 3.9 | Audit log for data changes (create/update/delete/verify) | 30m | ✅ |
+| 3.10 | **Security:** Implement object-level permission (warga hanya lihat profil sendiri) | 30m | ✅ |
+| 3.11 | **Security:** Implement field masking (NIK, no KK, phone, email per role) | 30m | ✅ |
+| 3.12 | **Security:** Restrict export to sekretaris/admin only | 15m | ✅ |
+| 3.13 | **Security:** Bendahara sees only masked warga data | 15m | ✅ |
+| 3.14 | **Security:** Audit every export event (action: export, table: warga) | 15m | ✅ |
+| 3.15 | **Security:** Mask sensitive fields by default in export (fullData=true only for admin) | 20m | ✅ |
+| 3.16 | Frontend: Warga list page (table + filter) | 60m | ✅ |
+| 3.17 | Frontend: Warga detail page (field visibility per role) | 45m | ✅ |
+| 3.18 | Frontend: Warga form (create/edit) | 60m | ✅ |
+| 3.19 | Frontend: Import/Export buttons (sekretaris/admin only) | 20m | ✅ |
+| 3.20 | Frontend: Kartu keluarga view | 30m | ✅ |
+| 3.21 | **Security Tests:** Warga cannot access other warga private data → 403 | 20m | ✅ |
+| 3.22 | **Security Tests:** Field masking verification per role (5 roles) | 20m | ✅ |
+| 3.23 | **Security Tests:** Export without sekretaris role → 403 | 10m | ✅ |
+| 3.24 | **Security Tests:** Bendahara cannot CRUD warga data → 403 | 10m | ✅ |
+| 3.25 | **Security Tests:** Audit log entries for all CRUD operations | 15m | ✅ |
 
 ---
 
@@ -273,9 +273,9 @@
 
 | Phase | Name | Est. Days | Tasks | Status |
 |-------|------|-----------|-------|--------|
-| 1 | Project Setup | 1 | 13 | ⬜ |
-| 2 | Authentication & Role System | 2 | 23 | ⬜ |
-| 3 | Data Warga | 2.5 | 25 | ⬜ |
+| 1 | Project Setup | 1 | 13 | ✅ |
+| 2 | Authentication & Role System | 2 | 23 | ✅ |
+| 3 | Data Warga | 2.5 | 25 | ✅ |
 | 4 | Keuangan RT | 2 | 21 | ⬜ |
 | 5 | Pengumuman & Notifikasi | 1 | 11 | ⬜ |
 | 6 | Forum Diskusi | 1.5 | 14 | ⬜ |
@@ -379,3 +379,4 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 | 1.3.0 | 2026-06-08 | Renumbered all phases from 0-9 to 1-10. Updated phase headers, task IDs, summary table, security checklist, and execution order accordingly. |
 | 1.3.1 | 2026-06-08 | Marked all Phase 1 (Project Setup) tasks 1.1-1.13 as completed (✅). |
 | 1.4.0 | 2026-06-07 | Marked all Phase 2 (Authentication & Role System) tasks 2.1-2.23 as completed (✅). |
+| 1.5.0 | 2026-06-14 | Marked all Phase 3 (Data Warga) tasks 3.1-3.25 as completed (✅). Backend: WargaProfile model, CRUD ViewSet, role-based serializers, field masking, object-level permission, soft-delete, audit log, import/export Excel+PDF, 23/23 security tests passing. Frontend: WargaListPage, WargaDetailPage, WargaFormPage, WargaKKPage, wargaService, warga types, App.tsx routes. |

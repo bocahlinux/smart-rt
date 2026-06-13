@@ -56,57 +56,62 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 
 ## 🚀 Fitur
 
-### 👤 Multi-Role Authentication
+### 👤 Multi-Role Authentication ✅
 - Register dengan email/no. HP → akun status `pending`
-- Verifikasi oleh pengurus → approve untuk aktifkan akun
+- Verifikasi manual oleh sekretaris/admin → approve untuk aktifkan akun
 - Login hanya bisa setelah akun aktif
 - 5 role: **Admin** (Ketua RT), **Sekretaris**, **Bendahara**, **Pengurus**, **Warga**
-- JWT-based authentication
+- JWT access token (in-memory) + refresh token (httpOnly cookie, rotasi otomatis + blacklist)
+- Rate limiting login: 10 percobaan / 5 menit
+- Password hashing Argon2
 
-### 📋 Data Warga
+### 📋 Data Warga ✅
 - Data lengkap: NIK, nama, TTL, jenis kelamin, agama, status perkawinan, pendidikan, pekerjaan, no. HP, email, foto
-- Data keluarga: No. KK, hubungan, alamat lengkap
-- Import dari Excel, export ke Excel/PDF
-- Kartu keluarga digital
-- Audit log perubahan data
+- Data keluarga: No. KK, hubungan keluarga, alamat lengkap, blok, no. rumah
+- **Field masking per role**: admin/sekretaris lihat full NIK; bendahara/pengurus lihat NIK masked (`3201****0001`); warga hanya lihat profil sendiri
+- **Object-level permission**: warga tidak bisa mengakses data warga lain (→ 403)
+- Import dari Excel (.xlsx, max 5MB), export ke Excel/PDF
+- Kartu Keluarga digital — kelompok berdasarkan no. KK
+- Verifikasi warga oleh sekretaris/admin
+- **Soft-delete**: data tidak langsung dihapus, tercatat siapa yang menghapus
+- Audit log lengkap untuk semua operasi CRUD/verify/export/import
 
-### 💰 Keuangan RT
+### 💰 Keuangan RT _(Phase 4 — coming soon)_
 - Pencatatan pemasukan & pengeluaran
 - Upload bukti transfer + konfirmasi manual
 - Dashboard saldo real-time
 - Laporan keuangan otomatis (PDF)
 - Grafik pemasukan vs pengeluaran
 
-### 📢 Pengumuman & Notifikasi
+### 📢 Pengumuman & Notifikasi _(Phase 5 — coming soon)_
 - Buat pengumuman dengan kategori
 - Push notification ke warga (Web Push PWA)
 - Penjadwalan pengumuman
 - Riwayat pengumuman
 
-### 💬 Forum Diskusi
+### 💬 Forum Diskusi _(Phase 6 — coming soon)_
 - Thread per topik dengan kategori
 - Komentar & balasan
-- Voting/polling dalam thread
 - Moderasi oleh pengurus
 
-### 📝 Pengaduan Warga
+### 📝 Pengaduan Warga _(Phase 6 — coming soon)_
 - Form pengaduan dengan upload foto
 - Tracking status: Diterima → Diproses → Selesai / Ditolak
 - Notifikasi perubahan status
 - Riwayat pengaduan
 
-### 📅 Kegiatan & Kalender
+### 📅 Kegiatan & Kalender _(Phase 8 — coming soon)_
 - Kalender kegiatan RT
 - RSVP/tanda hadir
 - Notifikasi reminder
 - Dokumentasi foto
 
-### 📊 Polling & Voting
-- Buat poling dengan deadline
+### 📊 Polling & Voting _(Phase 8 — coming soon)_
+- Buat polling dengan deadline
 - 1 warga = 1 suara
 - Hasil real-time dengan grafik
 
-### 📈 Dashboard & Laporan
+### 📈 Dashboard & Laporan _(Phase 9 — coming soon)_
 - Dashboard pengurus: statistik warga, keuangan, pengaduan aktif
 - Dashboard warga: status iuran, pengumuman terbaru
 - Laporan otomatis (PDF)
@@ -118,30 +123,37 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 ### Backend
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| **Django** | 5.x | Web framework |
-| **Django REST Framework** | 3.x | API development |
 | **Python** | 3.12 | Programming language |
+| **Django** | 5.x | Web framework |
+| **Django REST Framework** | 3.15.x | API development |
+| **SimpleJWT** | 5.x | JWT authentication (access + refresh + rotation + blacklist) |
 | **PostgreSQL** | 16 | Database |
-| **Django ORM** | built-in | Object-relational mapping |
-| **SimpleJWT** | 5.x | JWT authentication |
-| **WeasyPrint** | 60.x | PDF generation |
+| **psycopg** | 3.x | PostgreSQL driver |
+| **argon2-cffi** | 23.x | Argon2 password hashing |
+| **django-filter** | 24.x | Search & filter endpoint |
+| **django-cors-headers** | 4.x | CORS middleware |
+| **openpyxl** | 3.x | Excel import/export |
+| **WeasyPrint** | 62.x | PDF export |
+| **gunicorn** | 22.x | Production WSGI server |
 
 ### Frontend
 | Technology | Version | Purpose |
 |-----------|---------|---------|
 | **React** | 19.x | UI library |
-| **Vite** | 8.x | Build tool |
 | **TypeScript** | 6.x | Type-safe JavaScript |
+| **Vite** | 8.x | Build tool |
 | **Tailwind CSS** | 4.x | Utility-first CSS |
-| **Zustand** | 5.x | State management |
-| **Vite PWA** | latest | Progressive Web App |
+| **Zustand** | 5.x | State management (in-memory only, no localStorage) |
+| **react-router-dom** | 7.x | Client-side routing |
+| **axios** | 1.x | HTTP client dengan 401→refresh interceptor |
+| **Vite PWA** | 1.x | Progressive Web App |
 
 ### DevOps
 | Technology | Purpose |
 |-----------|---------|
 | **Docker** | Containerization |
-| **Docker Compose** | Multi-service orchestration |
-| **Nginx** | Reverse proxy |
+| **Docker Compose** | Multi-service orchestration (db, backend, frontend, nginx) |
+| **Nginx** | Reverse proxy + static file serving |
 
 ---
 
@@ -232,21 +244,21 @@ docker compose up --build
 
 ## 📚 Dokumen
 
-| Dokumen | Deskripsi |
-|---------|-----------|
-| [01-PRD.md](docs/01-PRD.md) | Product Requirements Document |
-| [02-SRS.md](docs/02-SRS.md) | Software Requirements Specification |
-| [03-UIUX-Flow.md](docs/03-UIUX-Flow.md) | UI/UX Flow & Design |
-| [04-SDD.md](docs/04-SDD.md) | System Design Document |
-| [05-DATABASE.md](docs/05-DATABASE.md) | Database Design & Django Models |
-| [06-API-CONTRACT.md](docs/06-API-CONTRACT.md) | API Contract Specification |
-| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | Task Breakdown & Estimation |
-| [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | Coding Standard & Conventions |
-| [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | Test Plan & Coverage |
-| [10-AI-RULES.md](docs/10-AI-RULES.md) | AI Development Rules |
-| [11-SECURITY.md](docs/11-SECURITY.md) | Security & Privacy Policy |
-| [12-CICD.md](docs/12-CICD.md) | CI/CD Pipeline & Deployment |
-| [13-MONITORING.md](docs/13-MONITORING.md) | Monitoring & Observability |
+| Dokumen | Versi | Deskripsi |
+|---------|-------|-----------|
+| [01-PRD.md](docs/01-PRD.md) | v1.1.0 | Product Requirements Document |
+| [02-SRS.md](docs/02-SRS.md) | v1.1.0 | Software Requirements Specification |
+| [03-UIUX-Flow.md](docs/03-UIUX-Flow.md) | v1.0.0 | UI/UX Flow & Design |
+| [04-SDD.md](docs/04-SDD.md) | v1.3.0 | System Design Document |
+| [05-DATABASE.md](docs/05-DATABASE.md) | v1.0.0 | Database Design & Django Models |
+| [06-API-CONTRACT.md](docs/06-API-CONTRACT.md) | v1.4.0 | API Contract Specification |
+| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v1.5.0 | Task Breakdown & Estimation |
+| [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | v1.0.0 | Coding Standard & Conventions |
+| [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | v1.4.0 | Test Plan & Coverage |
+| [10-AI-RULES.md](docs/10-AI-RULES.md) | v1.5.0 | AI Development Rules |
+| [11-SECURITY.md](docs/11-SECURITY.md) | v1.0.0 | Security & Privacy Policy |
+| [12-CICD.md](docs/12-CICD.md) | v1.0.0 | CI/CD Pipeline & Deployment |
+| [13-MONITORING.md](docs/13-MONITORING.md) | v1.0.0 | Monitoring & Observability |
 
 ---
 
@@ -256,7 +268,7 @@ docker compose up --build
 |-------|-------|--------|
 | 1 | Project Setup | ✅ Done |
 | 2 | Authentication & Role System | ✅ Done |
-| 3 | Data Warga | ⬜ Pending |
+| 3 | Data Warga | ✅ Done |
 | 4 | Keuangan RT | ⬜ Pending |
 | 5 | Pengumuman & Notifikasi | ⬜ Pending |
 | 6 | Forum Diskusi | ⬜ Pending |
@@ -269,13 +281,13 @@ docker compose up --build
 
 ## 📊 Development Status
 
-> **Last updated:** June 7, 2026
+> **Last updated:** June 14, 2026
 
 ### Overall Progress
 
 ```
-Phase 1-2     ████████████████████  100%  ✅
-Phase 3-10    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-3     ██████░░░░░░░░░░░░░░  30%  ✅
+Phase 4-10    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -296,7 +308,7 @@ Documentation ████████████████████  100%
 | — | Documentation & Planning | ✅ Done | All 13 docs complete, README, AI Rules |
 | 1 | Project Setup | ✅ Done | Backend (Django+DRF) & frontend (React+Vite) scaffolded, Docker/Compose, lint tooling, pytest config |
 | 2 | Authentication & Role System | ✅ Done | JWT auth (access+refresh, rotation & blacklist), RBAC permissions, Argon2 hashing, rate limiting, field masking, security test suite |
-| 3 | Data Warga | ⬜ Pending | — |
+| 3 | Data Warga | ✅ Done | WargaProfile model (soft-delete, UUID PK), AuditLog model, 5 role-based serializers, field masking NIK/KK/phone/email, object-level permission, import/export Excel+PDF, 23/23 security tests passing, frontend WargaListPage/DetailPage/FormPage/KKPage |
 | 4 | Keuangan RT | ⬜ Pending | — |
 | 5 | Pengumuman & Notifikasi | ⬜ Pending | — |
 | 6 | Forum Diskusi | ⬜ Pending | — |
@@ -321,10 +333,17 @@ Documentation ████████████████████  100%
   - Backend: custom `User` model (UUID, 5-role RBAC), register/login/refresh/logout/me/change-password endpoints, JWT access+refresh with rotation & blacklist (incl. `AUTH_REFRESH_TOKEN_REUSED` session-revocation), Argon2 password hashing, password strength validators, login rate limiting (10/5min), role-based serializers with field masking (NIK/KK/phone/email)
   - Frontend: Zustand auth store (in-memory token only), axios client with 401→refresh→retry interceptor, Login/Register pages, `ProtectedRoute` with httpOnly-cookie session restoration
   - Security tests: full auth flow, token edge cases (expired/invalid/reused), rate limit, password strength — `accounts/tests/test_security.py` (10/10 passing)
+- ✅ **v0.3.0** — Data Warga (June 14, 2026)
+  - Backend: `WargaProfile` model (UUID PK, soft-delete, 5 DB indexes), `AuditLog` model + `log_action()` dengan field masking (NIK → `****`, phone, email, alamat)
+  - 5 role-based serializers: admin/sekretaris (full), bendahara/pengurus (masked NIK/KK/phone), warga (own full), public (minimal)
+  - `WargaViewSet`: CRUD + search/filter (`WargaFilter`) + pagination + object-level permission (warga → 403 bukan 404)
+  - Endpoints: verify warga, export Excel (openpyxl) + PDF (WeasyPrint), import Excel (max 5MB)
+  - URL patterns explicit — menghindari konflik DRF router dengan path `export/` dan `import/`; export pakai `?fmt=` bukan `?format=` (DRF URL_FORMAT_OVERRIDE conflict)
+  - Frontend: `WargaListPage` (table+filter+pagination+import/export), `WargaDetailPage` (field per role+verify), `WargaFormPage` (create/edit), `WargaKKPage` (Kartu Keluarga grouped by noKk), 5 routes di App.tsx
+  - Security tests: `test_warga_security.py` — **23/23 passing** (object-level, field masking, export permission, CRUD permission, audit log)
 
 ### Upcoming Milestones
 
-- ⬜ **v0.3.0** — Data Warga
 - ⬜ **v0.4.0** — Keuangan RT
 - ⬜ **v0.5.0** — Pengumuman & Notifikasi
 - ⬜ **v0.6.0** — Forum & Pengaduan
