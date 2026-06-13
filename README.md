@@ -76,12 +76,15 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 - **Soft-delete**: data tidak langsung dihapus, tercatat siapa yang menghapus
 - Audit log lengkap untuk semua operasi CRUD/verify/export/import
 
-### 💰 Keuangan RT _(Phase 4 — coming soon)_
-- Pencatatan pemasukan & pengeluaran
-- Upload bukti transfer + konfirmasi manual
-- Dashboard saldo real-time
-- Laporan keuangan otomatis (PDF)
-- Grafik pemasukan vs pengeluaran
+### 💰 Keuangan RT ✅
+- Pencatatan pemasukan & pengeluaran per kategori
+- Upload bukti transfer + konfirmasi/tolak manual oleh bendahara
+- Dashboard saldo real-time dengan grafik bulanan (bar chart)
+- Laporan keuangan otomatis (PDF via WeasyPrint)
+- **File upload security**: validasi MIME type, magic bytes, ekstensi, dan ukuran (maks 5MB)
+- **Object-level permission**: warga hanya akses iuran miliknya sendiri
+- Audit log setiap konfirmasi/penolakan iuran oleh bendahara
+- Kategori transaksi: pemasukan & pengeluaran
 
 ### 📢 Pengumuman & Notifikasi _(Phase 5 — coming soon)_
 - Buat pengumuman dengan kategori
@@ -252,7 +255,7 @@ docker compose up --build
 | [04-SDD.md](docs/04-SDD.md) | v1.3.0 | System Design Document |
 | [05-DATABASE.md](docs/05-DATABASE.md) | v1.0.0 | Database Design & Django Models |
 | [06-API-CONTRACT.md](docs/06-API-CONTRACT.md) | v1.4.0 | API Contract Specification |
-| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v1.5.0 | Task Breakdown & Estimation |
+| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v1.6.0 | Task Breakdown & Estimation |
 | [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | v1.0.0 | Coding Standard & Conventions |
 | [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | v1.4.0 | Test Plan & Coverage |
 | [10-AI-RULES.md](docs/10-AI-RULES.md) | v1.5.0 | AI Development Rules |
@@ -269,7 +272,7 @@ docker compose up --build
 | 1 | Project Setup | ✅ Done |
 | 2 | Authentication & Role System | ✅ Done |
 | 3 | Data Warga | ✅ Done |
-| 4 | Keuangan RT | ⬜ Pending |
+| 4 | Keuangan RT | ✅ Done |
 | 5 | Pengumuman & Notifikasi | ⬜ Pending |
 | 6 | Forum Diskusi | ⬜ Pending |
 | 7 | Pengaduan Warga | ⬜ Pending |
@@ -286,8 +289,8 @@ docker compose up --build
 ### Overall Progress
 
 ```
-Phase 1-3     ██████░░░░░░░░░░░░░░  30%  ✅
-Phase 4-10    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-4     ████████░░░░░░░░░░░░  40%  ✅
+Phase 5-10    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -309,7 +312,7 @@ Documentation ████████████████████  100%
 | 1 | Project Setup | ✅ Done | Backend (Django+DRF) & frontend (React+Vite) scaffolded, Docker/Compose, lint tooling, pytest config |
 | 2 | Authentication & Role System | ✅ Done | JWT auth (access+refresh, rotation & blacklist), RBAC permissions, Argon2 hashing, rate limiting, field masking, security test suite |
 | 3 | Data Warga | ✅ Done | WargaProfile model (soft-delete, UUID PK), AuditLog model, 5 role-based serializers, field masking NIK/KK/phone/email, object-level permission, import/export Excel+PDF, 23/23 security tests passing, frontend WargaListPage/DetailPage/FormPage/KKPage |
-| 4 | Keuangan RT | ⬜ Pending | — |
+| 4 | Keuangan RT | ✅ Done | KategoriTransaksi + Transaksi + IuranWarga models; CRUD bendahara/admin; upload bukti transfer (magic bytes + MIME + size validation); object-level permission warga; audit log konfirmasi; dashboard + grafik; laporan PDF; 24/24 security tests; frontend KeuanganListPage/DashboardPage/TransaksiFormPage/IuranUploadPage/IuranKonfirmasiPage/LaporanPage |
 | 5 | Pengumuman & Notifikasi | ⬜ Pending | — |
 | 6 | Forum Diskusi | ⬜ Pending | — |
 | 7 | Pengaduan Warga | ⬜ Pending | — |
@@ -342,9 +345,21 @@ Documentation ████████████████████  100%
   - Frontend: `WargaListPage` (table+filter+pagination+import/export), `WargaDetailPage` (field per role+verify), `WargaFormPage` (create/edit), `WargaKKPage` (Kartu Keluarga grouped by noKk), 5 routes di App.tsx
   - Security tests: `test_warga_security.py` — **23/23 passing** (object-level, field masking, export permission, CRUD permission, audit log)
 
+- ✅ **v0.4.0** — Keuangan RT (June 14, 2026)
+  - Backend: `KategoriTransaksi`, `Transaksi`, `IuranWarga` models (UUID PK, DB indexes), migration applied
+  - CRUD ViewSets: `KategoriTransaksiViewSet` (bendahara/admin), `TransaksiViewSet` (CRUD + laporan PDF)
+  - `IuranWargaViewSet`: upload bukti transfer (warga), konfirmasi/tolak (bendahara/admin), riwayat iuran, list semua iuran
+  - **File upload security**: magic bytes detection (JPEG/PNG/WebP/PDF), ekstensi whitelist, MIME type check, size limit 5MB — semua tanpa `imghdr` (dihapus di Python 3.13)
+  - Object-level permission: warga hanya bisa upload/akses iuran miliknya sendiri (403 untuk iuran warga lain)
+  - Audit log: setiap create transaksi, konfirmasi/tolak iuran, upload iuran tercatat di AuditLog
+  - Dashboard endpoint: saldo total, pemasukan, pengeluaran, ringkasan bulanan
+  - Laporan PDF (WeasyPrint): filter by periode, download dengan HTML template
+  - `keuangan.urls`: explicit URL patterns (UUID regex) menghindari ambiguitas routing
+  - Frontend: `KeuanganListPage` (tabel transaksi + filter), `KeuanganDashboardPage` (summary cards + grafik bar chart), `TransaksiFormPage`, `IuranUploadPage` (form upload + riwayat), `IuranKonfirmasiPage` (modal konfirmasi), `LaporanPage` (download PDF), 6 routes di App.tsx
+  - Security tests: `test_keuangan_security.py` — **24/24 passing** (object-level iuran, file upload rejection, audit log, RBAC bendahara)
+
 ### Upcoming Milestones
 
-- ⬜ **v0.4.0** — Keuangan RT
 - ⬜ **v0.5.0** — Pengumuman & Notifikasi
 - ⬜ **v0.6.0** — Forum & Pengaduan
 - ⬜ **v0.7.0** — Kegiatan & Polling
