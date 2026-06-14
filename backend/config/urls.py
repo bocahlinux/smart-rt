@@ -17,6 +17,7 @@ api_v1_patterns = [
     path("", include("keuangan.urls")),
     path("", include("pengumuman.urls")),
     path("", include("notifications.urls")),
+    path("", include("forum.urls")),
 ]
 
 urlpatterns = [
