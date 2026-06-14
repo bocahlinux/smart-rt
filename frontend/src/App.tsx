@@ -10,6 +10,12 @@ import { ThreadFormPage } from './components/forum/ThreadFormPage'
 import { PengaduanDetailPage } from './components/pengaduan/PengaduanDetailPage'
 import { PengaduanFormPage } from './components/pengaduan/PengaduanFormPage'
 import { PengaduanListPage } from './components/pengaduan/PengaduanListPage'
+import { KegiatanDetailPage } from './components/kegiatan/KegiatanDetailPage'
+import { KegiatanFormPage } from './components/kegiatan/KegiatanFormPage'
+import { KegiatanListPage } from './components/kegiatan/KegiatanListPage'
+import { PollingDetailPage } from './components/polling/PollingDetailPage'
+import { PollingFormPage } from './components/polling/PollingFormPage'
+import { PollingListPage } from './components/polling/PollingListPage'
 import { IuranKonfirmasiPage } from './components/keuangan/IuranKonfirmasiPage'
 import { IuranUploadPage } from './components/keuangan/IuranUploadPage'
 import { KeuanganDashboardPage } from './components/keuangan/KeuanganDashboardPage'
@@ -65,6 +71,15 @@ function App() {
           <Route path="/pengaduan" element={<PengaduanListPage />} />
           <Route path="/pengaduan/baru" element={<PengaduanFormPage />} />
           <Route path="/pengaduan/:id" element={<PengaduanDetailPage />} />
+
+          {/* Phase 8: Kegiatan & Polling */}
+          <Route path="/kegiatan" element={<KegiatanListPage />} />
+          <Route path="/kegiatan/baru" element={<KegiatanFormPage />} />
+          <Route path="/kegiatan/:id/edit" element={<KegiatanFormPage />} />
+          <Route path="/kegiatan/:id" element={<KegiatanDetailPage />} />
+          <Route path="/polling" element={<PollingListPage />} />
+          <Route path="/polling/baru" element={<PollingFormPage />} />
+          <Route path="/polling/:id" element={<PollingDetailPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
