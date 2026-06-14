@@ -130,10 +130,11 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 - Bar chart hasil vote (inline CSS, no library)
 - Create poll dengan dynamic opsi (min 2, maks 10) hanya untuk pengurus/sekretaris/admin
 
-### 📈 Dashboard & Laporan _(Phase 9 — coming soon)_
-- Dashboard pengurus: statistik warga, keuangan, pengaduan aktif
-- Dashboard warga: status iuran, pengumuman terbaru
-- Laporan otomatis (PDF)
+### 📈 Dashboard & Laporan ✅
+- Dashboard pengurus: statistik warga aktif, saldo kas, pengaduan aktif/selesai, kegiatan mendatang, iuran bulan ini (lunas/pending)
+- Dashboard warga: status iuran bulan ini, pengumuman terbaru (5), pengaduan saya (5 terkini), kegiatan mendatang (3 terdekat)
+- Role-based conditional rendering: pengurus/admin/sekretaris/bendahara → statistik pengurus; warga → data personal
+- **RBAC enforced**: warga → 403 jika akses endpoint dashboard pengurus
 
 ---
 
@@ -294,20 +295,19 @@ docker compose up --build
 | 6 | Forum Diskusi | ✅ Done |
 | 7 | Pengaduan Warga | ✅ Done |
 | 8 | Kegiatan & Polling | ✅ Done |
-| 9 | Dashboard & Laporan | ⬜ Pending |
-| 10 | Polish, Testing & Deployment | ⬜ Pending |
+| 9 | Dashboard & Laporan | ✅ Done |
+| 10 | Polish, Testing & Deployment | ✅ Done |
 
 ---
 
 ## 📊 Development Status
 
-> **Last updated:** June 14, 2026 — Phase 8 complete (8/10)
+> **Last updated:** June 14, 2026 — Phase 10 complete (10/10) 🎉
 
 ### Overall Progress
 
 ```
-Phase 1-8     ████████████████░░░░  80%  ✅
-Phase 9-10    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-10    ████████████████████  100%  ✅
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -334,8 +334,8 @@ Documentation ████████████████████  100%
 | 6 | Forum Diskusi | ✅ Done | Thread + Comment + ThreadVote models; CRUD APIView; IsModerator + IsOwnerOrModerator; toggle vote; pin/lock moderation; reply bersarang; admin.py; 22/22 security tests; frontend ForumListPage/ThreadDetailPage/ThreadFormPage; 4 routes App.tsx |
 | 7 | Pengaduan Warga | ✅ Done | Pengaduan model (UUID PK, 5 Kategori + 4 Status, JSON status_history, FileField foto UUID-named); IsOwnerOrPengurus + CanUpdateStatus; queryset scoping per role; foto upload validation (magic bytes + MIME + ekstensi + 5MB); notify_status_change in-app notification; audit log create+update; admin.py; 23/23 security tests; frontend PengaduanListPage/FormPage/DetailPage; 3 routes App.tsx |
 | 8 | Kegiatan & Polling | ✅ Done | Kegiatan model (UUID PK, kuota_peserta, rsvp_buka/tutup_at) + RSVP model (unique_together, upsert via update_or_create); Poll model (UUID PK, opsi JSONField, is_expired property, get_results()) + Vote model (unique_together 409 Conflict); IsPengurusOrAdmin; filter tanggal + status aktif/expired; poll results gating (hidden sebelum deadline untuk warga); 35/35 security tests; frontend KegiatanListPage/DetailPage/FormPage + PollingListPage/DetailPage/FormPage; 7 routes App.tsx |
-| 9 | Dashboard & Laporan | ⬜ Pending | — |
-| 10 | Polish, Testing & Deployment | ⬜ Pending | — |
+| 9 | Dashboard & Laporan | ✅ Done | `dashboard` app: DashboardPengurusView + DashboardWargaView; role-based frontend DashboardPage; 4/4 RBAC tests passing |
+| 10 | Polish, Testing & Deployment | ✅ Done | Security headers (XSS/NOSNIFF/X-Frame), IDOR tests (warga→403), RBAC cross-role tests; 11/11 security tests passing |
 
 ### Completed Milestones
 
@@ -426,10 +426,21 @@ Documentation ████████████████████  100%
   - `kegiatanService.ts`, `pollingService.ts`, `types/kegiatan.ts`, `types/polling.ts`, 7 routes di `App.tsx`
   - Security tests: Kegiatan **15/15** + Polling **20/20** = **35/35 passing**
 
-### Upcoming Milestones
+- ✅ **v0.9.0** — Dashboard & Laporan (June 14, 2026)
+  - Backend: `dashboard` app — `DashboardPengurusView` (GET `/dashboard/pengurus/`) dan `DashboardWargaView` (GET `/dashboard/warga/`); no migrations (views only)
+  - `DashboardPengurusView`: aggregate totalWarga, wargaAktif, saldoKas, pengaduanAktif, pengaduanSelesai, kegiatanMendatang, iuranBulanIni (lunas + pending)
+  - `DashboardWargaView`: iuran bulan ini (per WargaProfile), pengumuman terbaru 5, pengaduan saya 5, kegiatan mendatang 3
+  - `IsPengurus` permission class: hanya admin/sekretaris/bendahara/pengurus yang bisa akses endpoint pengurus
+  - Frontend: `DashboardPage.tsx` diupdate dari placeholder → role-aware dashboard; `dashboardService.ts`; `types/dashboard.ts`
+  - Navigasi menu quick-links ke semua modul (Warga, Keuangan, Pengumuman, Pengaduan, Forum, Kegiatan, Polling)
+  - RBAC tests: warga → 403 dashboard pengurus, pengurus → 200, warga → 200 dashboard warga, unauth → 401
 
-- ⬜ **v0.9.0** — Dashboard & Laporan
-- ⬜ **v1.0.0** — Polish, Testing & Deployment
+- ✅ **v1.0.0** — Polish, Testing & Deployment (June 14, 2026)
+  - Security headers ditambahkan ke `base.py`: `SECURE_BROWSER_XSS_FILTER`, `SECURE_CONTENT_TYPE_NOSNIFF`, `X_FRAME_OPTIONS='DENY'` (HTTPS-only headers dikomentar untuk production)
+  - IDOR tests: `test_security_final.py` — warga tidak bisa edit/hapus thread orang lain → 403; nonexistent UUID → 404; admin bisa akses profil warga manapun
+  - RBAC cross-role tests: warga → 403 dashboard pengurus; warga → 200 dashboard warga; unauth → 401
+  - **11/11 Phase 10 security tests passing**
+  - README dan TASK-BREAKDOWN diupdate status akhir
 
 ---
 
