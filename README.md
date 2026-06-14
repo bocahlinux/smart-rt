@@ -293,7 +293,7 @@ docker compose up --build
 | 5 | Pengumuman & Notifikasi | ✅ Done |
 | 6 | Forum Diskusi | ✅ Done |
 | 7 | Pengaduan Warga | ✅ Done |
-| 8 | Kegiatan & Polling | ⬜ Pending |
+| 8 | Kegiatan & Polling | ✅ Done |
 | 9 | Dashboard & Laporan | ⬜ Pending |
 | 10 | Polish, Testing & Deployment | ⬜ Pending |
 
