@@ -7,6 +7,9 @@ import { RegisterPage } from './components/auth/RegisterPage'
 import { ForumListPage } from './components/forum/ForumListPage'
 import { ThreadDetailPage } from './components/forum/ThreadDetailPage'
 import { ThreadFormPage } from './components/forum/ThreadFormPage'
+import { PengaduanDetailPage } from './components/pengaduan/PengaduanDetailPage'
+import { PengaduanFormPage } from './components/pengaduan/PengaduanFormPage'
+import { PengaduanListPage } from './components/pengaduan/PengaduanListPage'
 import { IuranKonfirmasiPage } from './components/keuangan/IuranKonfirmasiPage'
 import { IuranUploadPage } from './components/keuangan/IuranUploadPage'
 import { KeuanganDashboardPage } from './components/keuangan/KeuanganDashboardPage'
@@ -57,6 +60,11 @@ function App() {
           <Route path="/forum/baru" element={<ThreadFormPage />} />
           <Route path="/forum/:id" element={<ThreadDetailPage />} />
           <Route path="/forum/:id/edit" element={<ThreadFormPage />} />
+
+          {/* Phase 7: Pengaduan Warga */}
+          <Route path="/pengaduan" element={<PengaduanListPage />} />
+          <Route path="/pengaduan/baru" element={<PengaduanFormPage />} />
+          <Route path="/pengaduan/:id" element={<PengaduanDetailPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
