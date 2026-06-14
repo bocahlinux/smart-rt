@@ -4,6 +4,9 @@ import { DashboardPage } from './components/auth/DashboardPage'
 import { LoginPage } from './components/auth/LoginPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { RegisterPage } from './components/auth/RegisterPage'
+import { ForumListPage } from './components/forum/ForumListPage'
+import { ThreadDetailPage } from './components/forum/ThreadDetailPage'
+import { ThreadFormPage } from './components/forum/ThreadFormPage'
 import { IuranKonfirmasiPage } from './components/keuangan/IuranKonfirmasiPage'
 import { IuranUploadPage } from './components/keuangan/IuranUploadPage'
 import { KeuanganDashboardPage } from './components/keuangan/KeuanganDashboardPage'
@@ -48,6 +51,12 @@ function App() {
           <Route path="/pengumuman/baru" element={<PengumumanFormPage />} />
           <Route path="/pengumuman/:id" element={<PengumumanDetailPage />} />
           <Route path="/pengumuman/:id/edit" element={<PengumumanFormPage />} />
+
+          {/* Phase 6: Forum Diskusi */}
+          <Route path="/forum" element={<ForumListPage />} />
+          <Route path="/forum/baru" element={<ThreadFormPage />} />
+          <Route path="/forum/:id" element={<ThreadDetailPage />} />
+          <Route path="/forum/:id/edit" element={<ThreadFormPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
