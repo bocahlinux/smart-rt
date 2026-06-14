@@ -43,10 +43,9 @@ export function ThreadFormPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  /* Pre-fill form saat mode edit */
+  /* Pre-fill form saat mode edit — loading sudah diinisialisasi true via useState(isEdit) */
   useEffect(() => {
     if (!isEdit || !id) return
-    setLoading(true)
     getThread(id)
       .then((thread) => {
         setForm({

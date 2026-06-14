@@ -67,9 +67,8 @@ export function PushNotificationSubscription() {
         auth: keys.auth ?? '',
       })
       setState('subscribed')
-    } catch (err) {
+    } catch {
       setError('Gagal mengaktifkan notifikasi.')
-      console.error(err)
     } finally {
       setWorking(false)
     }

@@ -1,6 +1,5 @@
 import apiClient from './apiClient'
 import type {
-  Thread,
   ThreadDetail,
   ThreadDetailResponse,
   ThreadKategori,

@@ -43,7 +43,7 @@ export function IuranKonfirmasiPage() {
   useEffect(() => {
     if (!canAccess) return
     load()
-  }, [filterStatus, filterTahun, canAccess])
+  }, [filterStatus, filterTahun, canAccess]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true)

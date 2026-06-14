@@ -63,7 +63,7 @@ export function KeuanganListPage() {
   useEffect(() => {
     listKategori().then(setKategoriList).catch(() => {})
     load(1)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleFilter(e: React.FormEvent) {
     e.preventDefault()

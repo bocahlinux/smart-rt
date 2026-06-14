@@ -72,7 +72,7 @@ export function PengaduanDetailPage() {
   useEffect(() => {
     if (!id) return
     load()
-  }, [id])
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true)

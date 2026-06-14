@@ -62,12 +62,18 @@ export function KeuanganDashboardPage() {
 
   useEffect(() => {
     if (!canAccess) return
-    setLoading(true)
-    setError('')
-    getDashboardKeuangan(tahun)
-      .then(setDashboard)
-      .catch(() => setError('Gagal memuat dashboard keuangan.'))
-      .finally(() => setLoading(false))
+    void (async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const data = await getDashboardKeuangan(tahun)
+        setDashboard(data)
+      } catch {
+        setError('Gagal memuat dashboard keuangan.')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [tahun, canAccess])
 
   if (!canAccess) {

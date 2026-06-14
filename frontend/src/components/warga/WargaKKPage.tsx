@@ -44,8 +44,6 @@ export function WargaKKPage() {
 
   useEffect(() => {
     if (!id) return
-    setLoading(true)
-
     getWarga(id)
       .then(async (w) => {
         setHead(w)

@@ -47,7 +47,7 @@ export function ForumListPage() {
 
   useEffect(() => {
     load()
-  }, [page, filterKategori])
+  }, [page, filterKategori]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true)

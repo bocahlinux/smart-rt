@@ -1,6 +1,5 @@
 import apiClient from './apiClient'
 import type {
-  Notification,
   NotificationListResponse,
   Pengumuman,
   PengumumanDetailResponse,

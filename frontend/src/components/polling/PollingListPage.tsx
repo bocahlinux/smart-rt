@@ -37,7 +37,7 @@ export function PollingListPage() {
 
   useEffect(() => {
     load()
-  }, [filter])
+  }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true)

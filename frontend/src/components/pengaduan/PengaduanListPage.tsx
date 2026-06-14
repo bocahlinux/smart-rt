@@ -59,7 +59,7 @@ export function PengaduanListPage() {
 
   useEffect(() => {
     load()
-  }, [page, filterStatus, filterKategori])
+  }, [page, filterStatus, filterKategori]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true)
@@ -190,7 +190,7 @@ export function PengaduanListPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {p.foto && (
                   <a
                     href={p.foto}

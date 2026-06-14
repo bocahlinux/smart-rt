@@ -56,7 +56,6 @@ export function WargaDetailPage() {
 
   useEffect(() => {
     if (!id) return
-    setLoading(true)
     getWarga(id)
       .then(setWarga)
       .catch(() => setError('Data warga tidak ditemukan atau tidak bisa diakses.'))

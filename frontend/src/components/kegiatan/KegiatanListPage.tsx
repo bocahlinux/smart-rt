@@ -36,11 +36,7 @@ export function KegiatanListPage() {
 
   const isModerator = user?.role && PENGURUS_ROLES.includes(user.role)
 
-  useEffect(() => {
-    load()
-  }, [])
-
-  async function load() {
+  const load = async () => {
     setLoading(true)
     setError('')
     try {
@@ -52,6 +48,10 @@ export function KegiatanListPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    void load()
+  }, []) // load only runs on mount — intentional
 
   const filtered = kegiatan.filter((k) => {
     if (filter === 'mendatang') return isMendatang(k.tanggal)

@@ -42,7 +42,7 @@ export function PengumumanListPage() {
 
   useEffect(() => {
     load()
-  }, [page, filterKategori])
+  }, [page, filterKategori]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true)
@@ -123,7 +123,7 @@ export function PengumumanListPage() {
                 <img
                   src={p.gambar}
                   alt={p.judul}
-                  className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                  className="w-20 h-20 object-cover rounded-lg shrink-0"
                 />
               )}
               <div className="flex-1 min-w-0">
@@ -141,7 +141,7 @@ export function PengumumanListPage() {
                     )}
                   </div>
                   {canWrite && (
-                    <div className="flex gap-2 flex-shrink-0">
+                    <div className="flex gap-2 shrink-0">
                       <Link
                         to={`/pengumuman/${p.id}/edit`}
                         className="text-xs text-blue-600 hover:underline"

@@ -23,6 +23,9 @@ export default defineConfig([
     rules: {
       'no-console': 'warn',
       '@typescript-eslint/no-explicit-any': 'error',
+      // react-hooks v7 experimental rules — too strict for common valid patterns
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
     },
   },
 ])

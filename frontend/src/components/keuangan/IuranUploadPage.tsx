@@ -4,9 +4,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
-import { useAuthStore } from '../../stores/authStore'
 import { getMyIuran, uploadIuran } from '../../services/keuanganService'
 import type { MyIuran } from '../../types/keuangan'
 
@@ -26,8 +24,6 @@ function formatRupiah(val: string | number): string {
 }
 
 export function IuranUploadPage() {
-  const { user } = useAuthStore()
-  const navigate = useNavigate()
   const currentYear = new Date().getFullYear()
 
   const [riwayat, setRiwayat] = useState<MyIuran[]>([])
@@ -40,12 +36,9 @@ export function IuranUploadPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const profileId = (user as unknown as { profileId?: string })?.profileId
-  // Gunakan ID dari warga profile — diambil dari data user jika tersedia
-
   useEffect(() => {
     loadRiwayat()
-  }, [tahun])
+  }, [tahun]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadRiwayat() {
     try {
