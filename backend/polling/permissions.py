@@ -1,4 +1,13 @@
-from rest_framework import permissions  # noqa: F401
+from rest_framework import permissions
 
-# Custom permission (RBAC + object-level) untuk app ini.
-# Lihat docs/11-SECURITY.md & docs/08-CODING-STANDART.md §3.2.
+PENGURUS_ROLES = {"admin", "sekretaris", "pengurus"}
+
+
+class IsPengurusOrAdmin(permissions.BasePermission):
+    """
+    Hanya admin, sekretaris, atau pengurus yang bisa CRUD poll.
+    Sesuai docs/11-SECURITY.md §2.3 (Polling CRUD).
+    """
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in PENGURUS_ROLES

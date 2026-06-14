@@ -1,5 +1,12 @@
+from django.urls import path
+
+from .views import PollDetailView, PollListCreateView, PollVoteView
+
 app_name = "polling"
 
-# Routing untuk app ini akan diimplementasikan pada phase terkait
-# mengikuti docs/06-API-CONTRACT.md.
-urlpatterns = []
+urlpatterns = [
+    path("", PollListCreateView.as_view(), name="poll-list"),
+    # path literal /vote/ SEBELUM <uuid:pk>/ untuk menghindari konflik routing
+    path("<uuid:pk>/vote/", PollVoteView.as_view(), name="poll-vote"),
+    path("<uuid:pk>/", PollDetailView.as_view(), name="poll-detail"),
+]

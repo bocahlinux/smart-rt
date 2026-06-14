@@ -1,5 +1,12 @@
+from django.urls import path
+
+from .views import KegiatanDetailView, KegiatanListCreateView, RSVPView
+
 app_name = "kegiatan"
 
-# Routing untuk app ini akan diimplementasikan pada phase terkait
-# mengikuti docs/06-API-CONTRACT.md.
-urlpatterns = []
+urlpatterns = [
+    # PENTING: path literal (rsvp) setelah list, SEBELUM <uuid:pk>
+    path("", KegiatanListCreateView.as_view(), name="kegiatan-list"),
+    path("<uuid:pk>/rsvp/", RSVPView.as_view(), name="kegiatan-rsvp"),
+    path("<uuid:pk>/", KegiatanDetailView.as_view(), name="kegiatan-detail"),
+]
