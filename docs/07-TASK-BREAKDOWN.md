@@ -1,9 +1,9 @@
 # Smart-RT — Task Breakdown
 
-**Version:** 1.9.0
+**Version:** 2.0.0
 **Date:** June 14, 2026
 **Estimated Total:** 10 phases, ~16 hari kerja
-**Status:** Phase 7 complete (7/10)
+**Status:** Phase 8 complete (8/10)
 
 ---
 
@@ -201,21 +201,21 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| 8.1 | Database schema: kegiatan, rsvp | 15m | ⬜ |
-| 8.2 | Kegiatan CRUD endpoints | 30m | ⬜ |
-| 8.3 | RSVP endpoint | 15m | ⬜ |
-| 8.4 | Database schema: polls, votes | 15m | ⬜ |
-| 8.5 | Poll CRUD endpoints | 30m | ⬜ |
-| 8.6 | Vote endpoint (1 user = 1 vote) | 20m | ⬜ |
-| 8.7 | **Security:** Restrict kegiatan/poll CRUD to pengurus/admin | 10m | ⬜ |
-| 8.8 | **Security:** Prevent double voting (unique_together constraint) | 10m | ⬜ |
-| 8.9 | **Security:** Poll results only visible after deadline or to pengurus | 10m | ⬜ |
-| 8.10 | Frontend: Kalender kegiatan | 45m | ⬜ |
-| 8.11 | Frontend: Kegiatan detail + RSVP | 20m | ⬜ |
-| 8.12 | Frontend: Poll list + vote | 30m | ⬜ |
-| 8.13 | Frontend: Poll result (grafik) | 20m | ⬜ |
-| 8.14 | **Security Tests:** Double vote → 409 Conflict | 10m | ⬜ |
-| 8.15 | **Security Tests:** Non-pengurus cannot create poll → 403 | 10m | ⬜ |
+| 8.1 | Database schema: kegiatan, rsvp | 15m | ✅ |
+| 8.2 | Kegiatan CRUD endpoints | 30m | ✅ |
+| 8.3 | RSVP endpoint (upsert — 1 RSVP per user per kegiatan) | 15m | ✅ |
+| 8.4 | Database schema: polls, votes | 15m | ✅ |
+| 8.5 | Poll CRUD endpoints | 30m | ✅ |
+| 8.6 | Vote endpoint (1 user = 1 vote) | 20m | ✅ |
+| 8.7 | **Security:** Restrict kegiatan/poll CRUD to pengurus/admin | 10m | ✅ |
+| 8.8 | **Security:** Prevent double voting (unique_together constraint) | 10m | ✅ |
+| 8.9 | **Security:** Poll results only visible after deadline or to pengurus | 10m | ✅ |
+| 8.10 | Frontend: Kegiatan list (filter mendatang/lampau) | 45m | ✅ |
+| 8.11 | Frontend: Kegiatan detail + RSVP (upsert, 3 pilihan) | 20m | ✅ |
+| 8.12 | Frontend: Poll list + vote + status indicator | 30m | ✅ |
+| 8.13 | Frontend: Poll result (bar chart sederhana) | 20m | ✅ |
+| 8.14 | **Security Tests:** Double vote → 409 Conflict | 10m | ✅ |
+| 8.15 | **Security Tests:** Non-pengurus cannot create poll → 403 | 10m | ✅ |
 
 ---
 

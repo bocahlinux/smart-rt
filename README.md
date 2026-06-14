@@ -116,16 +116,19 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 - Queryset scoping: warga lihat sendiri, pengurus/sekretaris/admin lihat semua
 - Audit log tercatat saat create dan update status
 
-### 📅 Kegiatan & Kalender _(Phase 8 — coming soon)_
-- Kalender kegiatan RT
-- RSVP/tanda hadir
-- Notifikasi reminder
-- Dokumentasi foto
+### 📅 Kegiatan & Kalender ✅
+- List kegiatan dengan filter mendatang/lampau
+- Detail kegiatan: tanggal, lokasi, penanggung jawab, kuota peserta
+- RSVP interaktif: Hadir / Masih Ragu / Tidak Hadir (upsert — 1 per user)
+- Daftar peserta RSVP per kegiatan
+- Create/edit/delete kegiatan (hanya pengurus/sekretaris/admin)
 
-### 📊 Polling & Voting _(Phase 8 — coming soon)_
-- Buat polling dengan deadline
-- 1 warga = 1 suara
-- Hasil real-time dengan grafik
+### 📊 Polling & Voting ✅
+- List polling dengan filter aktif/berakhir
+- Vote: 1 user = 1 vote, double vote → 409 Conflict
+- Hasil poll: tersembunyi sebelum deadline untuk warga, moderator bisa lihat kapan saja
+- Bar chart hasil vote (inline CSS, no library)
+- Create poll dengan dynamic opsi (min 2, maks 10) hanya untuk pengurus/sekretaris/admin
 
 ### 📈 Dashboard & Laporan _(Phase 9 — coming soon)_
 - Dashboard pengurus: statistik warga, keuangan, pengaduan aktif
@@ -269,7 +272,7 @@ docker compose up --build
 | [04-SDD.md](docs/04-SDD.md) | v1.3.0 | System Design Document |
 | [05-DATABASE.md](docs/05-DATABASE.md) | v1.0.0 | Database Design & Django Models |
 | [06-API-CONTRACT.md](docs/06-API-CONTRACT.md) | v1.4.0 | API Contract Specification |
-| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v1.9.0 | Task Breakdown & Estimation |
+| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v2.0.0 | Task Breakdown & Estimation |
 | [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | v1.0.0 | Coding Standard & Conventions |
 | [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | v1.4.0 | Test Plan & Coverage |
 | [10-AI-RULES.md](docs/10-AI-RULES.md) | v1.5.0 | AI Development Rules |
@@ -298,13 +301,13 @@ docker compose up --build
 
 ## 📊 Development Status
 
-> **Last updated:** June 14, 2026 — Phase 7 complete (7/10)
+> **Last updated:** June 14, 2026 — Phase 8 complete (8/10)
 
 ### Overall Progress
 
 ```
-Phase 1-7     ██████████████░░░░░░  70%  ✅
-Phase 8-10    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-8     ████████████████░░░░  80%  ✅
+Phase 9-10    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -330,7 +333,7 @@ Documentation ████████████████████  100%
 | 5 | Pengumuman & Notifikasi | ✅ Done | Pengumuman CRUD; penjadwalan; gambar upload (magic bytes + MIME + 5MB); IsPengurusOrAdmin; in-app Notification + Web Push (pywebpush + VAPID); broadcast saat create; NotificationBell; PushSubscription; 19/19 security tests |
 | 6 | Forum Diskusi | ✅ Done | Thread + Comment + ThreadVote models; CRUD APIView; IsModerator + IsOwnerOrModerator; toggle vote; pin/lock moderation; reply bersarang; admin.py; 22/22 security tests; frontend ForumListPage/ThreadDetailPage/ThreadFormPage; 4 routes App.tsx |
 | 7 | Pengaduan Warga | ✅ Done | Pengaduan model (UUID PK, 5 Kategori + 4 Status, JSON status_history, FileField foto UUID-named); IsOwnerOrPengurus + CanUpdateStatus; queryset scoping per role; foto upload validation (magic bytes + MIME + ekstensi + 5MB); notify_status_change in-app notification; audit log create+update; admin.py; 23/23 security tests; frontend PengaduanListPage/FormPage/DetailPage; 3 routes App.tsx |
-| 8 | Kegiatan & Polling | ⬜ Pending | — |
+| 8 | Kegiatan & Polling | ✅ Done | Kegiatan model (UUID PK, kuota_peserta, rsvp_buka/tutup_at) + RSVP model (unique_together, upsert via update_or_create); Poll model (UUID PK, opsi JSONField, is_expired property, get_results()) + Vote model (unique_together 409 Conflict); IsPengurusOrAdmin; filter tanggal + status aktif/expired; poll results gating (hidden sebelum deadline untuk warga); 35/35 security tests; frontend KegiatanListPage/DetailPage/FormPage + PollingListPage/DetailPage/FormPage; 7 routes App.tsx |
 | 9 | Dashboard & Laporan | ⬜ Pending | — |
 | 10 | Polish, Testing & Deployment | ⬜ Pending | — |
 
@@ -408,9 +411,23 @@ Documentation ████████████████████  100%
   - `pengaduanService.ts` (semua API calls + FormData upload), `types/pengaduan.ts`, 3 routes di `App.tsx`
   - Security tests: `test_pengaduan_security.py` — **23/23 passing** (PT-01 s/d PT-16)
 
+- ✅ **v0.8.0** — Kegiatan & Polling (June 14, 2026)
+  - Backend: `Kegiatan` model (UUID PK, kuota_peserta, rsvp_buka/tutup_at, penanggung_jawab SET_NULL, created_by PROTECT, 2 DB indexes) + `RSVP` model (unique_together kegiatan+user, 3 status choices, update_at auto)
+  - `Poll` model (UUID PK, opsi JSONField, deadline DateTimeField, is_expired property, get_results() dict method) + `Vote` model (unique_together poll+user, opsi_index int)
+  - CRUD Views: `KegiatanListCreateView`, `KegiatanDetailView`, `RSVPView` (upsert via update_or_create), `PollListCreateView`, `PollDetailView`, `PollVoteView`
+  - Permission: `IsPengurusOrAdmin` (kegiatan + polling) — warga & bendahara → 403
+  - RSVP upsert: 1 RSVP per user per kegiatan; re-POST → update status (bukan error)
+  - Double vote protection: `IntegrityError` unique_together → 409 Conflict dengan code `POLLING_ALREADY_VOTED`
+  - Poll result gating: `results` dan `totalVotes` = null jika belum expired dan bukan moderator
+  - Filter: `KegiatanFilter` (dari/sampai DateTimeFilter), `PollFilter` (status aktif|expired via deadline comparison)
+  - Audit log untuk create/update/delete kegiatan dan poll
+  - `admin.py`: KegiatanAdmin + RSVPAdmin + PollAdmin (is_expired indicator) + VoteAdmin
+  - Frontend: `KegiatanListPage` (filter mendatang/lampau), `KegiatanDetailPage` (RSVP 3 tombol + daftar peserta), `KegiatanFormPage` (create+edit), `PollingListPage` (filter aktif/expired + countdown), `PollingDetailPage` (vote + bar chart hasil), `PollingFormPage` (dynamic opsi)
+  - `kegiatanService.ts`, `pollingService.ts`, `types/kegiatan.ts`, `types/polling.ts`, 7 routes di `App.tsx`
+  - Security tests: Kegiatan **15/15** + Polling **20/20** = **35/35 passing**
+
 ### Upcoming Milestones
 
-- ⬜ **v0.8.0** — Kegiatan & Polling
 - ⬜ **v0.9.0** — Dashboard & Laporan
 - ⬜ **v1.0.0** — Polish, Testing & Deployment
 
