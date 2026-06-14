@@ -106,11 +106,15 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 - Thread pinned tampil di atas daftar
 - Filter per kategori & pagination
 
-### 📝 Pengaduan Warga _(Phase 7 — coming soon)_
-- Form pengaduan dengan upload foto
-- Tracking status: Diterima → Diproses → Selesai / Ditolak
-- Notifikasi perubahan status
-- Riwayat pengaduan
+### 📝 Pengaduan Warga ✅
+- Form pengaduan dengan upload foto (JPEG/PNG/WebP, max 5MB, magic bytes validation)
+- 5 kategori: Infrastruktur, Keamanan, Kebersihan, Sosial, Lainnya
+- **Object-level permission**: warga hanya bisa akses pengaduan miliknya (→ 403 untuk non-owner)
+- Status tracking: Diajukan → Diproses → Selesai / Ditolak dengan timeline history
+- Notifikasi in-app ke pelapor setiap kali status diperbarui
+- Filter by status dan kategori, pagination, `/pengaduan/saya/` endpoint
+- Queryset scoping: warga lihat sendiri, pengurus/sekretaris/admin lihat semua
+- Audit log tercatat saat create dan update status
 
 ### 📅 Kegiatan & Kalender _(Phase 8 — coming soon)_
 - Kalender kegiatan RT
@@ -265,7 +269,7 @@ docker compose up --build
 | [04-SDD.md](docs/04-SDD.md) | v1.3.0 | System Design Document |
 | [05-DATABASE.md](docs/05-DATABASE.md) | v1.0.0 | Database Design & Django Models |
 | [06-API-CONTRACT.md](docs/06-API-CONTRACT.md) | v1.4.0 | API Contract Specification |
-| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v1.8.0 | Task Breakdown & Estimation |
+| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v1.9.0 | Task Breakdown & Estimation |
 | [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | v1.0.0 | Coding Standard & Conventions |
 | [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | v1.4.0 | Test Plan & Coverage |
 | [10-AI-RULES.md](docs/10-AI-RULES.md) | v1.5.0 | AI Development Rules |
@@ -285,7 +289,7 @@ docker compose up --build
 | 4 | Keuangan RT | ✅ Done |
 | 5 | Pengumuman & Notifikasi | ✅ Done |
 | 6 | Forum Diskusi | ✅ Done |
-| 7 | Pengaduan Warga | ⬜ Pending |
+| 7 | Pengaduan Warga | ✅ Done |
 | 8 | Kegiatan & Polling | ⬜ Pending |
 | 9 | Dashboard & Laporan | ⬜ Pending |
 | 10 | Polish, Testing & Deployment | ⬜ Pending |
@@ -294,13 +298,13 @@ docker compose up --build
 
 ## 📊 Development Status
 
-> **Last updated:** June 14, 2026 — Phase 6 complete (6/10)
+> **Last updated:** June 14, 2026 — Phase 7 complete (7/10)
 
 ### Overall Progress
 
 ```
-Phase 1-6     ████████████░░░░░░░░  60%  ✅
-Phase 7-10    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-7     ██████████████░░░░░░  70%  ✅
+Phase 8-10    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -325,7 +329,7 @@ Documentation ████████████████████  100%
 | 4 | Keuangan RT | ✅ Done | KategoriTransaksi + Transaksi + IuranWarga models; CRUD bendahara/admin; upload bukti transfer (magic bytes + MIME + size validation); object-level permission warga; audit log konfirmasi; dashboard + grafik; laporan PDF; 24/24 security tests; frontend KeuanganListPage/DashboardPage/TransaksiFormPage/IuranUploadPage/IuranKonfirmasiPage/LaporanPage |
 | 5 | Pengumuman & Notifikasi | ✅ Done | Pengumuman CRUD; penjadwalan; gambar upload (magic bytes + MIME + 5MB); IsPengurusOrAdmin; in-app Notification + Web Push (pywebpush + VAPID); broadcast saat create; NotificationBell; PushSubscription; 19/19 security tests |
 | 6 | Forum Diskusi | ✅ Done | Thread + Comment + ThreadVote models; CRUD APIView; IsModerator + IsOwnerOrModerator; toggle vote; pin/lock moderation; reply bersarang; admin.py; 22/22 security tests; frontend ForumListPage/ThreadDetailPage/ThreadFormPage; 4 routes App.tsx |
-| 7 | Pengaduan Warga | ⬜ Pending | — |
+| 7 | Pengaduan Warga | ✅ Done | Pengaduan model (UUID PK, 5 Kategori + 4 Status, JSON status_history, FileField foto UUID-named); IsOwnerOrPengurus + CanUpdateStatus; queryset scoping per role; foto upload validation (magic bytes + MIME + ekstensi + 5MB); notify_status_change in-app notification; audit log create+update; admin.py; 23/23 security tests; frontend PengaduanListPage/FormPage/DetailPage; 3 routes App.tsx |
 | 8 | Kegiatan & Polling | ⬜ Pending | — |
 | 9 | Dashboard & Laporan | ⬜ Pending | — |
 | 10 | Polish, Testing & Deployment | ⬜ Pending | — |
@@ -392,9 +396,20 @@ Documentation ████████████████████  100%
   - `forumService.ts` (semua API calls), `types/forum.ts`, 4 routes di `App.tsx`
   - Security tests: `test_forum_security.py` — **22/22 passing** (FT-01 s/d FT-17 + list/filter/reply tests)
 
+- ✅ **v0.7.0** — Pengaduan Warga (June 14, 2026)
+  - Backend: `Pengaduan` model (UUID PK, 5 Kategori TextChoices, 4 Status TextChoices, `status_history` JSON untuk timeline, `foto` FileField dengan UUID upload path, 4 DB indexes)
+  - `PengaduanListCreateView` (role-scoped queryset), `PengaduanDetailView` (object-level 403), `PengaduanStatusUpdateView` (pengurus only), `PengaduanSayaView`
+  - Permission: `IsOwnerOrPengurus` (object-level — pelapor atau moderator), `CanUpdateStatus` (global — hanya pengurus/sekretaris/admin)
+  - `PengaduanFilter`: filter by status dan kategori via django-filters
+  - File upload: magic bytes (JPEG/PNG/WebP), ekstensi whitelist, MIME check, max 5MB — tanpa imghdr (Python 3.13 compatible)
+  - Status update: append `status_history` JSON, audit log, kirim `notify_status_change()` in-app notification ke pelapor
+  - `admin.py`: `PengaduanAdmin` dengan list_display, list_filter, search_fields, readonly_fields
+  - Frontend: `PengaduanListPage` (filter status + kategori, pagination, badge berwarna), `PengaduanFormPage` (kategori cards, foto preview, client-side validation), `PengaduanDetailPage` (detail + timeline riwayat status reversed + form update status pengurus)
+  - `pengaduanService.ts` (semua API calls + FormData upload), `types/pengaduan.ts`, 3 routes di `App.tsx`
+  - Security tests: `test_pengaduan_security.py` — **23/23 passing** (PT-01 s/d PT-16)
+
 ### Upcoming Milestones
 
-- ⬜ **v0.7.0** — Pengaduan Warga
 - ⬜ **v0.8.0** — Kegiatan & Polling
 - ⬜ **v0.9.0** — Dashboard & Laporan
 - ⬜ **v1.0.0** — Polish, Testing & Deployment

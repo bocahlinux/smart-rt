@@ -1,9 +1,9 @@
 # Smart-RT — Task Breakdown
 
-**Version:** 1.8.0
+**Version:** 1.9.0
 **Date:** June 14, 2026
 **Estimated Total:** 10 phases, ~16 hari kerja
-**Status:** Phase 6 complete (6/10)
+**Status:** Phase 7 complete (7/10)
 
 ---
 
@@ -176,22 +176,22 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| 7.1 | Database schema: pengaduan | 15m | ⬜ |
-| 7.2 | CRUD endpoints for pengaduan | 30m | ⬜ |
-| 7.3 | Update status endpoint | 15m | ⬜ |
-| 7.4 | Notifikasi perubahan status | 20m | ⬜ |
-| 7.5 | Filter by status endpoint | 15m | ⬜ |
-| 7.6 | **Security:** Object-level permission (pelapor only access own pengaduan) | 20m | ⬜ |
-| 7.7 | **Security:** Pengaduan sensitif tidak tampil publik | 15m | ⬜ |
-| 7.8 | **Security:** Validate upload file (foto pengaduan) — MIME, size, random filename | 15m | ⬜ |
-| 7.9 | **Security:** Audit log for status changes | 10m | ⬜ |
-| 7.10 | Frontend: Pengaduan list page (filtered by role) | 30m | ⬜ |
-| 7.11 | Frontend: Pengaduan form (warga) | 30m | ⬜ |
-| 7.12 | Frontend: Pengaduan detail + status tracking | 30m | ⬜ |
-| 7.13 | Frontend: Update status (pengurus) | 15m | ⬜ |
-| 7.14 | Frontend: Filter by status | 15m | ⬜ |
-| 7.15 | **Security Tests:** Warga cannot access other warga pengaduan → 403 | 15m | ⬜ |
-| 7.16 | **Security Tests:** Pengaduan sensitif not visible to other warga | 10m | ⬜ |
+| 7.1 | Database schema: pengaduan | 15m | ✅ |
+| 7.2 | CRUD endpoints for pengaduan | 30m | ✅ |
+| 7.3 | Update status endpoint | 15m | ✅ |
+| 7.4 | Notifikasi perubahan status | 20m | ✅ |
+| 7.5 | Filter by status endpoint | 15m | ✅ |
+| 7.6 | **Security:** Object-level permission (pelapor only access own pengaduan) | 20m | ✅ |
+| 7.7 | **Security:** Pengaduan sensitif tidak tampil publik | 15m | ✅ |
+| 7.8 | **Security:** Validate upload file (foto pengaduan) — MIME, size, random filename | 15m | ✅ |
+| 7.9 | **Security:** Audit log for status changes | 10m | ✅ |
+| 7.10 | Frontend: Pengaduan list page (filtered by role) | 30m | ✅ |
+| 7.11 | Frontend: Pengaduan form (warga) | 30m | ✅ |
+| 7.12 | Frontend: Pengaduan detail + status tracking | 30m | ✅ |
+| 7.13 | Frontend: Update status (pengurus) | 15m | ✅ |
+| 7.14 | Frontend: Filter by status | 15m | ✅ |
+| 7.15 | **Security Tests:** Warga cannot access other warga pengaduan → 403 | 15m | ✅ |
+| 7.16 | **Security Tests:** Pengaduan sensitif not visible to other warga | 10m | ✅ |
 
 ---
 
