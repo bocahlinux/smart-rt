@@ -2,8 +2,8 @@
 
 **Version:** 1.2.2
 **Date:** June 8, 2026
-**Based on:** PRD v1.0.0
-**Status:** Draft
+**Based on:** PRD v1.2.0
+**Status:** Approved
 
 ---
 

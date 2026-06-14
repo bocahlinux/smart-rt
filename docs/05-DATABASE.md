@@ -1,10 +1,10 @@
 # Smart-RT — Database Design Document
 
-**Version:** 1.3.0
-**Date:** June 8, 2026
+**Version:** 1.8.0
+**Date:** June 14, 2026
 **Database:** PostgreSQL 16
 **ORM:** Django ORM (bawaan)
-**Status:** Draft
+**Status:** Phase 8 Implemented
 
 ---
 

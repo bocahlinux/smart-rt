@@ -1,8 +1,8 @@
 # Smart-RT — Test Plan
 
-**Version:** 1.4.0
+**Version:** 1.8.0
 **Date:** June 14, 2026
-**Status:** Phase 3 Security Tests — 23/23 Passing
+**Status:** Phase 8 complete — Security tests Phase 1–8 passing (163+ tests)
 
 ---
 
@@ -814,20 +814,23 @@ jobs:
 |----------|-------|--------|
 | Backend Unit (Auth) | 18 | ✅ Phase 2 |
 | Backend Unit (Warga) | 9 | ✅ Phase 3 (subset dalam security tests) |
-| Backend Unit (Keuangan) | 8 | ⬜ |
+| Backend Unit (Keuangan) | 8 | ✅ Phase 4 |
 | Backend Unit (Permissions) | 13 | ✅ Phase 2 |
 | Backend Unit (Serializers) | 8 | ✅ Phase 3 (field masking verified) |
-| Backend Unit (File Upload) | 8 | ⬜ |
+| Backend Unit (File Upload) | 8 | ✅ Phase 4/5 (magic bytes + MIME + size) |
 | Backend Unit (Audit Log) | 10 | ✅ Phase 3 (masking + action logging) |
 | Backend Integration (Auth) | 12 | ✅ Phase 2 |
 | Backend Integration (Warga) | 23 | ✅ Phase 3 — 23/23 passing |
-| Backend Integration (Keuangan) | 22 | ⬜ |
-| Backend Integration (Pengaduan) | 11 | ⬜ |
-| Backend Integration (Other) | 44 | ⬜ |
+| Backend Integration (Keuangan) | 24 | ✅ Phase 4 — 24/24 passing |
+| Backend Integration (Pengumuman) | 19 | ✅ Phase 5 — 19/19 passing |
+| Backend Integration (Forum) | 22 | ✅ Phase 6 — 22/22 passing |
+| Backend Integration (Pengaduan) | 23 | ✅ Phase 7 — 23/23 passing |
+| Backend Integration (Kegiatan) | 15 | ✅ Phase 8 — 15/15 passing |
+| Backend Integration (Polling) | 20 | ✅ Phase 8 — 20/20 passing |
 | Security (Object-Level) | 16 | ✅ Phase 3 (warga object-level) |
 | Security (Masking) | 12 | ✅ Phase 3 (5 roles) |
 | Security (Audit Log) | 12 | ✅ Phase 3 (NIK mask in old_data) |
-| Security (File Upload) | 14 | ⬜ |
+| Security (File Upload) | 14 | ✅ Phase 4/5 (magic bytes, MIME, ekstensi, size) |
 | Security (JWT/Auth) | 10 | ✅ Phase 2 |
 | Security (OWASP Top 10) | 17 | 🔄 Partial — A01/A04/A09 ✅, others ⬜ |
 | Security (Backup) | 6 | ⬜ |
@@ -837,7 +840,8 @@ jobs:
 | Frontend Integration (Pages) | 10 | ⬜ |
 | Performance | 4 scenarios | ⬜ |
 | PWA | 8 checks | ⬜ |
-| **Total** | **300+** | |
+| **Total Automated (Phase 1–8)** | **163+** | ✅ All passing |
+| **Grand Total** | **300+** | |
 
 ---
 
@@ -851,3 +855,7 @@ jobs:
 | 1.3.0 | 2026-06-07 | Added §8 E2E Test Scenarios (Manual): detailed step-by-step flows per role (E2E-01 Warga registration to pengaduan, E2E-02 Bendahara transaksi & laporan, E2E-03 Admin pengumuman/forum/polling, E2E-04 Sekretaris verifikasi & export, E2E-05 Pengurus kegiatan & RSVP, E2E-06 cross-role negative/IDOR test), pass/fail criteria, and automation candidates. Renumbered subsequent sections (Test Execution Plan → §9, Test Summary → §10, Revision History → §11). |
 | 1.3.1 | 2026-06-07 | Fixed E2E-01 steps to reflect manual account verification by sekretaris/admin (per FR-AUTH-04 & 03-UIUX-Flow.md §2.1) instead of email verification link, resolving contradiction with SRS. |
 | 1.4.0 | 2026-06-14 | Phase 3 complete. Added Result column to §2.9 (IT-WRG-01..23) — 18 tests automated via `test_warga_security.py`, 5 pending manual. Updated §3.6 OWASP Top 10: A01 (IDOR/access control), A04 (object-level permission), A09 (audit log + field masking) marked ✅ Phase 3. Fixed export endpoint URL in IT-WRG-19..23: `?format=` → `?fmt=` (DRF URL_FORMAT_OVERRIDE conflict). |
+| 1.5.0 | 2026-06-14 | Phase 4 complete. `test_keuangan_security.py` — 24/24 passing. File upload security (magic bytes + MIME + ekstensi + 5MB) validated. IsBendaharaOrAdmin RBAC. Object-level permission warga pada iuran. Audit log konfirmasi. Updated Test Summary §10. |
+| 1.6.0 | 2026-06-14 | Phase 5 complete. `test_pengumuman_security.py` — 19/19 passing. Web Push via pywebpush + VAPID. IsPengurusOrAdmin RBAC. Scheduled pengumuman — warga hanya lihat yang sudah published. Gambar upload validation. |
+| 1.7.0 | 2026-06-14 | Phase 6 complete. `test_forum_security.py` — 22/22 passing. IsModerator + IsOwnerOrModerator. Toggle vote 1x per user. Pin/lock moderation. Thread locked → 422 komentar baru. |
+| 1.8.0 | 2026-06-14 | Phase 7 & 8 complete. Phase 7: `test_pengaduan_security.py` — 23/23 passing; IsOwnerOrPengurus + CanUpdateStatus; queryset scoping per role; foto upload UUID-named + magic bytes. Phase 8: `test_kegiatan_security.py` — 15/15 passing; `test_polling_security.py` — 20/20 passing; double vote → 409 Conflict (unique_together); poll results gating (hidden sebelum deadline untuk warga); RSVP upsert. Updated Test Summary §10: total automated Phase 1–8 = 163+ tests all passing. |

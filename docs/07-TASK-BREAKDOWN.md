@@ -279,8 +279,8 @@
 | 4 | Keuangan RT | 2 | 21 | ✅ |
 | 5 | Pengumuman & Notifikasi | 1 | 11 | ✅ |
 | 6 | Forum Diskusi | 1.5 | 14 | ✅ |
-| 7 | Pengaduan Warga | 1.5 | 16 | ⬜ |
-| 8 | Kegiatan & Polling | 1.5 | 15 | ⬜ |
+| 7 | Pengaduan Warga | 1.5 | 16 | ✅ |
+| 8 | Kegiatan & Polling | 1.5 | 15 | ✅ |
 | 9 | Dashboard & Laporan | 1 | 12 | ⬜ |
 | 10 | Polish, Testing & Deployment | 2 | 20 | ⬜ |
 | **Total** | | **~16 days** | **170** | |
@@ -307,29 +307,29 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 ## Security Checklist per Phase
 
 ### Phase 2 — Auth
-- [ ] SimpleJWT access/refresh lifetime configured
-- [ ] Token blacklist/rotation implemented
-- [ ] Login rate limit (10 attempts / 5 min)
-- [ ] Password strength validation
-- [ ] Django Argon2 password hasher
-- [ ] Tests: expired/invalid/reused token → 401
-- [ ] Tests: rate limit → 429
+- [x] SimpleJWT access/refresh lifetime configured
+- [x] Token blacklist/rotation implemented
+- [x] Login rate limit (10 attempts / 5 min)
+- [x] Password strength validation
+- [x] Django Argon2 password hasher
+- [x] Tests: expired/invalid/reused token → 401
+- [x] Tests: rate limit → 429
 
 ### Phase 3 — Data Warga
-- [ ] Object-level permission (warga only own profile)
-- [ ] Field masking (NIK, no KK, phone, email per role)
-- [ ] Export restricted to pengurus/admin
-- [ ] Audit log for all CRUD + export
-- [ ] Mask sensitive fields in export by default
-- [ ] Tests: warga cannot access other warga data → 403
+- [x] Object-level permission (warga only own profile)
+- [x] Field masking (NIK, no KK, phone, email per role)
+- [x] Export restricted to pengurus/admin
+- [x] Audit log for all CRUD + export
+- [x] Mask sensitive fields in export by default
+- [x] Tests: warga cannot access other warga data → 403
 
 ### Phase 4 — Keuangan
-- [ ] Bukti transfer access restricted (owner + pengurus keuangan)
-- [ ] File upload validation (MIME, extension, size)
-- [ ] Random UUID filename for uploads
-- [ ] Audit log for confirmation/rejection
-- [ ] Object-level permission (warga only own iuran)
-- [ ] Tests: invalid file type → 415, oversized → 413
+- [x] Bukti transfer access restricted (owner + pengurus keuangan)
+- [x] File upload validation (MIME, extension, size)
+- [x] Random UUID filename for uploads
+- [x] Audit log for confirmation/rejection
+- [x] Object-level permission (warga only own iuran)
+- [x] Tests: invalid file type → 415, oversized → 413
 
 ### Phase 5 — Pengumuman
 - [x] File upload validation for images (ext, MIME, magic bytes, 5MB max)
@@ -346,16 +346,16 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 - [x] Tests: non-owner cannot edit → 403 (22/22 passing)
 
 ### Phase 7 — Pengaduan
-- [ ] Object-level permission (pelapor only own pengaduan)
-- [ ] Pengaduan sensitif not public
-- [ ] File upload validation for photos
-- [ ] Audit log for status changes
-- [ ] Tests: warga cannot access other pengaduan → 403
+- [x] Object-level permission (pelapor only own pengaduan)
+- [x] Pengaduan sensitif not public
+- [x] File upload validation for photos
+- [x] Audit log for status changes
+- [x] Tests: warga cannot access other pengaduan → 403
 
 ### Phase 8 — Kegiatan & Polling
-- [ ] CRUD restricted to pengurus/admin
-- [ ] Double vote prevention
-- [ ] Tests: double vote → 409
+- [x] CRUD restricted to pengurus/admin
+- [x] Double vote prevention
+- [x] Tests: double vote → 409
 
 ### Phase 9 — Dashboard & Laporan
 - [ ] Dashboard data filtered by role
@@ -387,3 +387,5 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 | 1.6.0 | 2026-06-14 | Marked all Phase 4 (Keuangan RT) tasks 4.1-4.21 as completed (✅). Backend: KategoriTransaksi, Transaksi, IuranWarga models + migration; CRUD ViewSets; file upload validation (magic bytes, MIME, extension, size 5MB); object-level permission warga hanya akses iuran sendiri; audit log konfirmasi/tolak; laporan PDF (WeasyPrint); dashboard saldo; 24/24 security tests passing. Frontend: KeuanganDashboardPage (grafik bar), KeuanganListPage, TransaksiFormPage, IuranUploadPage, IuranKonfirmasiPage (modal), LaporanPage, keuanganService, keuangan types, App.tsx routes. |
 | 1.7.0 | 2026-06-14 | Marked all Phase 5 (Pengumuman & Notifikasi) tasks 5.1-5.11 as completed (✅). Backend: Pengumuman model (FileField, scheduled_at, is_published), Notification + PushSubscription models + migrations; CRUD views (IsPengurusOrAdmin permission); file upload validation (magic bytes, extension, 5MB); penjadwalan (warga hanya lihat yang published dan jadwalnya sudah tiba); Web Push via pywebpush + VAPID; broadcast_pengumuman service (in-app + web push); 19/19 security tests passing. Frontend: PengumumanListPage, PengumumanDetailPage, PengumumanFormPage, NotificationBell, PushNotificationSubscription; pengumumanService (CRUD + push API), pengumuman types; App.tsx routes. |
 | 1.8.0 | 2026-06-14 | Marked all Phase 6 (Forum Diskusi) tasks 6.1-6.14 as completed (✅). Backend: Thread model (UUID PK, Kategori+Status TextChoices, indexes), Comment model (self-referential FK untuk reply), ThreadVote model (unique_together); CRUD ViewSet (APIView-based); IsModerator + IsOwnerOrModerator permission classes; toggle vote (get_or_create pattern); moderation (pin/lock toggle); thread ordering (pinned di atas); comment reply validation (parent harus di thread yang sama); admin.py (ThreadAdmin, CommentAdmin, ThreadVoteAdmin); 22/22 security tests passing (FT-01 s/d FT-17 + list/filter/reply tests). Frontend: ForumListPage (filter kategori, moderasi controls, pagination), ThreadDetailPage (komentar + reply + vote + moderasi), ThreadFormPage (create + edit, pre-fill data), forumService (semua API calls), types/forum.ts, App.tsx routes (/forum, /forum/baru, /forum/:id, /forum/:id/edit). |
+| 1.9.0 | 2026-06-14 | Marked all Phase 7 (Pengaduan Warga) tasks 7.1-7.16 as completed (✅). Backend: Pengaduan model (UUID PK, 5 Kategori, 4 Status, JSON status_history, FileField foto UUID-named); IsOwnerOrPengurus + CanUpdateStatus permission classes; queryset scoping per role (warga lihat sendiri, pengurus lihat semua); foto upload validation (magic bytes + MIME + ekstensi + 5MB); notify_status_change (in-app notification ke pelapor); audit log create + update status; admin.py (PengaduanAdmin); 23/23 security tests passing. Frontend: PengaduanListPage (filter status+kategori), PengaduanFormPage (upload foto), PengaduanDetailPage (status timeline + actions); pengaduanService, types/pengaduan.ts, 3 routes App.tsx. |
+| 2.0.0 | 2026-06-14 | Marked all Phase 8 (Kegiatan & Polling) tasks 8.1-8.15 as completed (✅). Backend: Kegiatan model (UUID PK, kuota_peserta, rsvp_buka/tutup_at, penanggung_jawab SET_NULL, created_by PROTECT, 2 DB indexes) + RSVP model (unique_together kegiatan+user, 3 status choices, update_at auto); Poll model (UUID PK, opsi JSONField, deadline, is_expired property, get_results()) + Vote model (unique_together poll+user, opsi_index int); IsPengurusOrAdmin; RSVP upsert (update_or_create); double vote → 409 Conflict; poll results gating (hidden sebelum deadline untuk warga); KegiatanFilter + PollFilter; audit log; admin.py; 35/35 security tests passing (KT-01..15 + PT-01..20). Frontend: KegiatanListPage (filter mendatang/lampau), KegiatanDetailPage (RSVP 3 tombol + daftar peserta), KegiatanFormPage (create+edit), PollingListPage (filter aktif/expired + countdown), PollingDetailPage (vote + bar chart hasil), PollingFormPage (dynamic opsi min2 max10); kegiatanService, pollingService, types/kegiatan.ts, types/polling.ts; 7 routes App.tsx. Updated Security Checklist Phase 2, 3, 4, 7, 8 ke [x]. Updated Summary table Phase 7 & 8 ke ✅. |

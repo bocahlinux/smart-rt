@@ -1,9 +1,9 @@
 # Smart-RT — API Contract
 
-**Version:** 1.4.0
+**Version:** 1.8.0
 **Date:** June 14, 2026
 **Base URL:** `/api/v1`
-**Status:** Phase 3 Implemented
+**Status:** Phase 8 Implemented
 
 ---
 

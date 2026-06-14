@@ -1,9 +1,9 @@
 # Smart-RT — System Design Document (SDD)
 
-**Version:** 1.3.0
+**Version:** 1.8.0
 **Date:** June 14, 2026
 **Based on:** PRD v1.1.0, SRS v1.1.0
-**Status:** Phase 3 Implemented
+**Status:** Phase 8 Implemented
 
 ---
 
@@ -430,3 +430,8 @@ VITE_API_URL=https://smartrt.yourdomain.com/api/v1
 | 1.1.0 | 2026-06-07 | Major security rewrite: token storage (access in-memory, refresh in httpOnly cookie), object-level permission rules, IDOR prevention, Django password hasher (Argon2/PBKDF2), file upload validation detail, data protection rules. Added auth token/refresh endpoint. Updated API auth column to Object-level where applicable. |
 | 1.2.0 | 2026-06-08 | Added Background Jobs/Scheduler to Technology Stack — chose Django-Q2 (over Celery) for async tasks (notifications, scheduled pengumuman, kegiatan reminders, soft-delete hard-purge job) and periodic tasks, since it needs no external broker (Redis/RabbitMQ) and fits the single-VPS Docker Compose deployment in 12-CICD.md. Resolves previously undocumented background-job technology gap. |
 | 1.3.0 | 2026-06-14 | Phase 3 implemented. Backend: `WargaProfile` model (UUID PK, soft-delete, 5 DB indexes), `AuditLog` model, `log_action()` service dengan field masking untuk NIK/no_kk/phone/email/alamat. `WargaViewSet` (CRUD + search/filter + pagination + object-level permission), 5 role-based serializers, `WargaFilter`, explicit URL patterns (menghindari konflik DRF router dengan export/import paths). Frontend: `WargaListPage`, `WargaDetailPage`, `WargaFormPage`, `WargaKKPage`, `wargaService`, warga TypeScript types, App.tsx routes. |
+| 1.4.0 | 2026-06-14 | Phase 4 implemented. `KategoriTransaksi` + `Transaksi` + `IuranWarga` models; CRUD bendahara/admin; file upload (magic bytes + MIME + size); IsBendaharaOrAdmin + object-level warga permission; audit log; dashboard + grafik; laporan PDF (WeasyPrint); frontend KeuanganDashboardPage/TransaksiFormPage/IuranUploadPage/IuranKonfirmasiPage/LaporanPage. |
+| 1.5.0 | 2026-06-14 | Phase 5 implemented. `Pengumuman` model; penjadwalan (scheduled_at); gambar upload (magic bytes + MIME + 5MB); IsPengurusOrAdmin; `Notification` model; Web Push (pywebpush + VAPID); broadcast saat create; `NotificationBell`; `PushSubscription`. |
+| 1.6.0 | 2026-06-14 | Phase 6 implemented. `Thread` + `Comment` + `ThreadVote` models; CRUD APIView; `IsModerator` + `IsOwnerOrModerator`; toggle vote; pin/lock moderation; reply bersarang; frontend `ForumListPage`/`ThreadDetailPage`/`ThreadFormPage`. |
+| 1.7.0 | 2026-06-14 | Phase 7 implemented. `Pengaduan` model (UUID PK, 5 Kategori, 4 Status, JSON status_history, FileField UUID-named); `IsOwnerOrPengurus` + `CanUpdateStatus`; queryset scoping per role; foto upload validation; `notify_status_change`; frontend `PengaduanListPage`/`FormPage`/`DetailPage`. |
+| 1.8.0 | 2026-06-14 | Phase 8 implemented. `Kegiatan` model (UUID PK, kuota_peserta, rsvp_buka/tutup_at, penanggung_jawab SET_NULL) + `RSVP` model (unique_together kegiatan+user, 3 status); `Poll` model (UUID PK, opsi JSONField, is_expired property, get_results()) + `Vote` model (unique_together poll+user); `IsPengurusOrAdmin`; RSVP upsert (update_or_create); double vote → 409 Conflict (IntegrityError); poll results gating (hidden sebelum deadline untuk warga); filter `KegiatanFilter` (dari/sampai) + `PollFilter` (status aktif|expired); frontend `KegiatanListPage`/`DetailPage`/`FormPage` + `PollingListPage`/`DetailPage`/`FormPage`; 7 routes App.tsx. |
