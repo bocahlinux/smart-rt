@@ -21,6 +21,7 @@ api_v1_patterns = [
     path("", include("pengaduan.urls")),
     path("kegiatan/", include("kegiatan.urls")),
     path("polling/", include("polling.urls")),
+    path("dashboard/", include("dashboard.urls")),
 ]
 
 urlpatterns = [

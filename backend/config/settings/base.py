@@ -49,6 +49,7 @@ LOCAL_APPS = [
     "polling",
     "audit",
     "notifications",
+    "dashboard",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -144,6 +145,16 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Security headers (lihat docs/11-SECURITY.md §6)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+# Aktifkan di production — tidak di dev karena belum HTTPS
+# SECURE_SSL_REDIRECT = True
+# SECURE_HSTS_SECONDS = 31536000
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
 
 
 # Django REST Framework
