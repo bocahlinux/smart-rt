@@ -1,9 +1,9 @@
 # Smart-RT — Task Breakdown
 
-**Version:** 1.7.0
+**Version:** 1.8.0
 **Date:** June 14, 2026
 **Estimated Total:** 10 phases, ~16 hari kerja
-**Status:** Phase 5 complete (5/10)
+**Status:** Phase 6 complete (6/10)
 
 ---
 
@@ -153,20 +153,20 @@
 
 | ID | Task | Est. | Status |
 |----|------|------|--------|
-| 6.1 | Database schema: threads, comments | 20m | ⬜ |
-| 6.2 | Thread CRUD endpoints | 30m | ⬜ |
-| 6.3 | Comment CRUD endpoints | 20m | ⬜ |
-| 6.4 | Moderation endpoints (pin, lock, delete) | 20m | ⬜ |
-| 6.5 | Voting dalam thread endpoint | 20m | ⬜ |
-| 6.6 | **Security:** Object-level permission (owner can edit own thread/comment) | 15m | ⬜ |
-| 6.7 | **Security:** Moderation restricted to pengurus/admin | 10m | ⬜ |
-| 6.8 | Frontend: Forum list page (thread list) | 45m | ⬜ |
-| 6.9 | Frontend: Thread detail + comments | 45m | ⬜ |
-| 6.10 | Frontend: Create thread form | 20m | ⬜ |
-| 6.11 | Frontend: Comment form + reply | 20m | ⬜ |
-| 6.12 | Frontend: Moderation controls (pengurus) | 15m | ⬜ |
-| 6.13 | **Security Tests:** Non-owner cannot edit/delete other's thread → 403 | 10m | ⬜ |
-| 6.14 | **Security Tests:** Non-pengurus cannot moderate → 403 | 10m | ⬜ |
+| 6.1 | Database schema: threads, comments | 20m | ✅ |
+| 6.2 | Thread CRUD endpoints | 30m | ✅ |
+| 6.3 | Comment CRUD endpoints | 20m | ✅ |
+| 6.4 | Moderation endpoints (pin, lock, delete) | 20m | ✅ |
+| 6.5 | Voting dalam thread endpoint | 20m | ✅ |
+| 6.6 | **Security:** Object-level permission (owner can edit own thread/comment) | 15m | ✅ |
+| 6.7 | **Security:** Moderation restricted to pengurus/admin | 10m | ✅ |
+| 6.8 | Frontend: Forum list page (thread list) | 45m | ✅ |
+| 6.9 | Frontend: Thread detail + comments | 45m | ✅ |
+| 6.10 | Frontend: Create thread form | 20m | ✅ |
+| 6.11 | Frontend: Comment form + reply | 20m | ✅ |
+| 6.12 | Frontend: Moderation controls (pengurus) | 15m | ✅ |
+| 6.13 | **Security Tests:** Non-owner cannot edit/delete other's thread → 403 | 10m | ✅ |
+| 6.14 | **Security Tests:** Non-pengurus cannot moderate → 403 | 10m | ✅ |
 
 ---
 
@@ -278,7 +278,7 @@
 | 3 | Data Warga | 2.5 | 25 | ✅ |
 | 4 | Keuangan RT | 2 | 21 | ✅ |
 | 5 | Pengumuman & Notifikasi | 1 | 11 | ✅ |
-| 6 | Forum Diskusi | 1.5 | 14 | ⬜ |
+| 6 | Forum Diskusi | 1.5 | 14 | ✅ |
 | 7 | Pengaduan Warga | 1.5 | 16 | ⬜ |
 | 8 | Kegiatan & Polling | 1.5 | 15 | ⬜ |
 | 9 | Dashboard & Laporan | 1 | 12 | ⬜ |
@@ -341,9 +341,9 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 - [x] Tests: warga cannot create/update/delete pengumuman → 403 (19/19 passing)
 
 ### Phase 6 — Forum
-- [ ] Object-level permission (owner edit own content)
-- [ ] Moderation restricted to pengurus/admin
-- [ ] Tests: non-owner cannot edit → 403
+- [x] Object-level permission (owner edit own content)
+- [x] Moderation restricted to pengurus/admin (sekretaris, pengurus, admin)
+- [x] Tests: non-owner cannot edit → 403 (22/22 passing)
 
 ### Phase 7 — Pengaduan
 - [ ] Object-level permission (pelapor only own pengaduan)
@@ -386,3 +386,4 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 
 | 1.5.0 | 2026-06-14 | Marked all Phase 3 (Data Warga) tasks 3.1-3.25 as completed (✅). Backend: WargaProfile model, CRUD ViewSet, role-based serializers, field masking, object-level permission, soft-delete, audit log, import/export Excel+PDF, 23/23 security tests passing. Frontend: WargaListPage, WargaDetailPage, WargaFormPage, WargaKKPage, wargaService, warga types, App.tsx routes. |
 | 1.6.0 | 2026-06-14 | Marked all Phase 4 (Keuangan RT) tasks 4.1-4.21 as completed (✅). Backend: KategoriTransaksi, Transaksi, IuranWarga models + migration; CRUD ViewSets; file upload validation (magic bytes, MIME, extension, size 5MB); object-level permission warga hanya akses iuran sendiri; audit log konfirmasi/tolak; laporan PDF (WeasyPrint); dashboard saldo; 24/24 security tests passing. Frontend: KeuanganDashboardPage (grafik bar), KeuanganListPage, TransaksiFormPage, IuranUploadPage, IuranKonfirmasiPage (modal), LaporanPage, keuanganService, keuangan types, App.tsx routes. |
 | 1.7.0 | 2026-06-14 | Marked all Phase 5 (Pengumuman & Notifikasi) tasks 5.1-5.11 as completed (✅). Backend: Pengumuman model (FileField, scheduled_at, is_published), Notification + PushSubscription models + migrations; CRUD views (IsPengurusOrAdmin permission); file upload validation (magic bytes, extension, 5MB); penjadwalan (warga hanya lihat yang published dan jadwalnya sudah tiba); Web Push via pywebpush + VAPID; broadcast_pengumuman service (in-app + web push); 19/19 security tests passing. Frontend: PengumumanListPage, PengumumanDetailPage, PengumumanFormPage, NotificationBell, PushNotificationSubscription; pengumumanService (CRUD + push API), pengumuman types; App.tsx routes. |
+| 1.8.0 | 2026-06-14 | Marked all Phase 6 (Forum Diskusi) tasks 6.1-6.14 as completed (✅). Backend: Thread model (UUID PK, Kategori+Status TextChoices, indexes), Comment model (self-referential FK untuk reply), ThreadVote model (unique_together); CRUD ViewSet (APIView-based); IsModerator + IsOwnerOrModerator permission classes; toggle vote (get_or_create pattern); moderation (pin/lock toggle); thread ordering (pinned di atas); comment reply validation (parent harus di thread yang sama); admin.py (ThreadAdmin, CommentAdmin, ThreadVoteAdmin); 22/22 security tests passing (FT-01 s/d FT-17 + list/filter/reply tests). Frontend: ForumListPage (filter kategori, moderasi controls, pagination), ThreadDetailPage (komentar + reply + vote + moderasi), ThreadFormPage (create + edit, pre-fill data), forumService (semua API calls), types/forum.ts, App.tsx routes (/forum, /forum/baru, /forum/:id, /forum/:id/edit). |

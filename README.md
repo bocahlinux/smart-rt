@@ -96,12 +96,17 @@ Dibangun dengan arsitektur **web-based + PWA**, Smart-RT dapat diakses melalui d
 - NotificationBell component dengan badge unread count dan polling otomatis
 - Audit log setiap create/update/delete pengumuman
 
-### 💬 Forum Diskusi _(Phase 6 — coming soon)_
-- Thread per topik dengan kategori
-- Komentar & balasan
-- Moderasi oleh pengurus
+### 💬 Forum Diskusi ✅
+- Thread diskusi per topik dengan 5 kategori (keamanan, kebersihan, acara, usul, lainnya)
+- Komentar & balasan bersarang (satu level nesting)
+- Toggle upvote per thread (satu user satu vote)
+- **Object-level permission**: hanya owner yang bisa edit thread/komentar miliknya (→ 403 untuk non-owner)
+- **Moderasi oleh pengurus/sekretaris/admin**: pin thread, lock thread, hapus thread/komentar
+- Thread terkunci tidak bisa menerima komentar baru (→ 422)
+- Thread pinned tampil di atas daftar
+- Filter per kategori & pagination
 
-### 📝 Pengaduan Warga _(Phase 6 — coming soon)_
+### 📝 Pengaduan Warga _(Phase 7 — coming soon)_
 - Form pengaduan dengan upload foto
 - Tracking status: Diterima → Diproses → Selesai / Ditolak
 - Notifikasi perubahan status
@@ -260,7 +265,7 @@ docker compose up --build
 | [04-SDD.md](docs/04-SDD.md) | v1.3.0 | System Design Document |
 | [05-DATABASE.md](docs/05-DATABASE.md) | v1.0.0 | Database Design & Django Models |
 | [06-API-CONTRACT.md](docs/06-API-CONTRACT.md) | v1.4.0 | API Contract Specification |
-| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v1.6.0 | Task Breakdown & Estimation |
+| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v1.8.0 | Task Breakdown & Estimation |
 | [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | v1.0.0 | Coding Standard & Conventions |
 | [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | v1.4.0 | Test Plan & Coverage |
 | [10-AI-RULES.md](docs/10-AI-RULES.md) | v1.5.0 | AI Development Rules |
@@ -279,7 +284,7 @@ docker compose up --build
 | 3 | Data Warga | ✅ Done |
 | 4 | Keuangan RT | ✅ Done |
 | 5 | Pengumuman & Notifikasi | ✅ Done |
-| 6 | Forum Diskusi | ⬜ Pending |
+| 6 | Forum Diskusi | ✅ Done |
 | 7 | Pengaduan Warga | ⬜ Pending |
 | 8 | Kegiatan & Polling | ⬜ Pending |
 | 9 | Dashboard & Laporan | ⬜ Pending |
@@ -289,13 +294,13 @@ docker compose up --build
 
 ## 📊 Development Status
 
-> **Last updated:** June 14, 2026
+> **Last updated:** June 14, 2026 — Phase 6 complete (6/10)
 
 ### Overall Progress
 
 ```
-Phase 1-5     ██████████░░░░░░░░░░  50%  ✅
-Phase 6-10    ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1-6     ████████████░░░░░░░░  60%  ✅
+Phase 7-10    ░░░░░░░░░░░░░░░░░░░░  0%
 Documentation ████████████████████  100%  ✅
 ```
 
@@ -319,7 +324,7 @@ Documentation ████████████████████  100%
 | 3 | Data Warga | ✅ Done | WargaProfile model (soft-delete, UUID PK), AuditLog model, 5 role-based serializers, field masking NIK/KK/phone/email, object-level permission, import/export Excel+PDF, 23/23 security tests passing, frontend WargaListPage/DetailPage/FormPage/KKPage |
 | 4 | Keuangan RT | ✅ Done | KategoriTransaksi + Transaksi + IuranWarga models; CRUD bendahara/admin; upload bukti transfer (magic bytes + MIME + size validation); object-level permission warga; audit log konfirmasi; dashboard + grafik; laporan PDF; 24/24 security tests; frontend KeuanganListPage/DashboardPage/TransaksiFormPage/IuranUploadPage/IuranKonfirmasiPage/LaporanPage |
 | 5 | Pengumuman & Notifikasi | ✅ Done | Pengumuman CRUD; penjadwalan; gambar upload (magic bytes + MIME + 5MB); IsPengurusOrAdmin; in-app Notification + Web Push (pywebpush + VAPID); broadcast saat create; NotificationBell; PushSubscription; 19/19 security tests |
-| 6 | Forum Diskusi | ⬜ Pending | — |
+| 6 | Forum Diskusi | ✅ Done | Thread + Comment + ThreadVote models; CRUD APIView; IsModerator + IsOwnerOrModerator; toggle vote; pin/lock moderation; reply bersarang; admin.py; 22/22 security tests; frontend ForumListPage/ThreadDetailPage/ThreadFormPage; 4 routes App.tsx |
 | 7 | Pengaduan Warga | ⬜ Pending | — |
 | 8 | Kegiatan & Polling | ⬜ Pending | — |
 | 9 | Dashboard & Laporan | ⬜ Pending | — |
@@ -377,11 +382,21 @@ Documentation ████████████████████  100%
   - 4 routes di `App.tsx`: `/pengumuman`, `/pengumuman/baru`, `/pengumuman/:id`, `/pengumuman/:id/edit`
   - Security tests: `test_pengumuman_security.py` — **19/19 passing** (warga cannot write, pengurus/admin CRUD, sekretaris create, image validation, notification access control)
 
+- ✅ **v0.6.0** — Forum Diskusi (June 14, 2026)
+  - Backend: `Thread` model (UUID PK, Kategori + Status TextChoices, 3 DB indexes), `Comment` model (self-referential FK untuk reply bersarang), `ThreadVote` model (unique_together)
+  - `ThreadListCreateView`, `ThreadDetailView`, `CommentListCreateView`, `CommentDetailView`, `ThreadModerationView`, `ThreadVoteView`
+  - Permission: `IsModerator` (pengurus/sekretaris/admin), `IsOwnerOrModerator` (owner edit, moderator akses semua)
+  - Toggle vote (get_or_create pattern), pin/lock toggle, thread ordering (pinned di atas), reply validation (parent harus di thread yang sama)
+  - `admin.py`: `ThreadAdmin`, `CommentAdmin`, `ThreadVoteAdmin` dengan list_display, list_filter, search_fields
+  - Frontend: `ForumListPage` (filter kategori + pagination + moderasi controls), `ThreadDetailPage` (komentar + reply + vote + moderasi), `ThreadFormPage` (create + edit dengan pre-fill)
+  - `forumService.ts` (semua API calls), `types/forum.ts`, 4 routes di `App.tsx`
+  - Security tests: `test_forum_security.py` — **22/22 passing** (FT-01 s/d FT-17 + list/filter/reply tests)
+
 ### Upcoming Milestones
 
-- ⬜ **v0.6.0** — Forum & Pengaduan
-- ⬜ **v0.7.0** — Kegiatan & Polling
-- ⬜ **v0.8.0** — Dashboard & Laporan
+- ⬜ **v0.7.0** — Pengaduan Warga
+- ⬜ **v0.8.0** — Kegiatan & Polling
+- ⬜ **v0.9.0** — Dashboard & Laporan
 - ⬜ **v1.0.0** — Polish, Testing & Deployment
 
 ---
