@@ -308,7 +308,6 @@ docker compose up --build
 
 ```
 Phase 1-10    ████████████████████  100%  ✅
-Documentation ████████████████████  100%  ✅
 ```
 
 ### Status Legend
@@ -325,7 +324,6 @@ Documentation ████████████████████  100%
 
 | Phase | Fokus | Status | Notes |
 |-------|-------|--------|-------|
-| — | Documentation & Planning | ✅ Done | All 13 docs complete, README, AI Rules |
 | 1 | Project Setup | ✅ Done | Backend (Django+DRF) & frontend (React+Vite) scaffolded, Docker/Compose, lint tooling, pytest config |
 | 2 | Authentication & Role System | ✅ Done | JWT auth (access+refresh, rotation & blacklist), RBAC permissions, Argon2 hashing, rate limiting, field masking, security test suite |
 | 3 | Data Warga | ✅ Done | WargaProfile model (soft-delete, UUID PK), AuditLog model, 5 role-based serializers, field masking NIK/KK/phone/email, object-level permission, import/export Excel+PDF, 23/23 security tests passing, frontend WargaListPage/DetailPage/FormPage/KKPage |
@@ -339,11 +337,6 @@ Documentation ████████████████████  100%
 
 ### Completed Milestones
 
-- ✅ **v0.1.0** — Documentation & Planning (June 7, 2026)
-  - 13 documentation files (PRD, SRS, UI/UX, SDD, Database, API Contract, Task Breakdown, Coding Standard, Test Plan, AI Rules, Security & Privacy Policy, **CI/CD Pipeline**, **Monitoring & Observability**)
-  - README.md with professional layout
-  - AI Development Rules v1.5.0
-  - Security document as single source of truth for all security policies
 - ✅ **v0.1.1** — Project Setup (June 8, 2026)
   - Backend scaffold: Django 5 + DRF + SimpleJWT + Argon2, split settings (dev/prod/test), 9 app skeletons (accounts, keuangan, pengumuman, forum, pengaduan, kegiatan, polling, audit, notifications), `GET /healthz`
   - Frontend scaffold: React 19 + Vite + TypeScript, Tailwind CSS 4, PWA plugin, Zustand, react-router-dom, axios client
