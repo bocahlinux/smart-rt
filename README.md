@@ -18,6 +18,25 @@
 
 ---
 
+## 💖 Dukung Proyek Ini
+
+<div align="center">
+
+Proyek ini dikembangkan secara independen dan sepenuhnya bersumber terbuka (*open-source*).
+Jika Smart-RT memberikan manfaat bagi Anda — baik sebagai referensi, inspirasi, maupun solusi nyata untuk komunitas Anda — pertimbangkan untuk memberikan dukungan kepada pengembangnnya.
+
+Setiap bentuk dukungan, sekecil apapun, sangat berarti dan membantu keberlangsungan pengembangan proyek ini ke depannya.
+
+[![Dukung via Teer](https://img.shields.io/badge/Dukung%20di%20Teer-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://teer.id/bocahlinux)
+
+**[teer.id/bocahlinux](https://teer.id/bocahlinux)**
+
+> *"Good software takes time, care, and coffee."*
+
+</div>
+
+---
+
 ## 📋 Daftar Isi
 
 - [Tentang Proyek](#-tentang-proyek)
