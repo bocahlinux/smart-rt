@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, ImageIcon } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import {
@@ -20,6 +22,12 @@ const KATEGORI_OPTIONS: { value: PengumumanKategori; label: string }[] = [
   { value: 'keamanan', label: 'Keamanan' },
   { value: 'lainnya', label: 'Lainnya' },
 ]
+
+const INPUT = cn(
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition',
+  'focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20',
+  'dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800',
+)
 
 export function PengumumanFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -45,9 +53,7 @@ export function PengumumanFormPage() {
         setJudul(p.judul)
         setIsi(p.isi)
         setKategori(p.kategori)
-        if (p.scheduledAt) {
-          setScheduledAt(p.scheduledAt.slice(0, 16))
-        }
+        if (p.scheduledAt) setScheduledAt(p.scheduledAt.slice(0, 16))
         if (p.gambar) setGambarPreview(p.gambar)
       })
     }
@@ -56,7 +62,6 @@ export function PengumumanFormPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-
     const ext = '.' + file.name.split('.').pop()?.toLowerCase()
     if (!ALLOWED_EXT.includes(ext)) {
       setError(`Format gambar tidak didukung. Gunakan: ${ALLOWED_EXT.join(', ')}.`)
@@ -79,14 +84,12 @@ export function PengumumanFormPage() {
     }
     setLoading(true)
     setError('')
-
     const fd = new FormData()
     fd.append('judul', judul.trim())
     fd.append('isi', isi.trim())
     fd.append('kategori', kategori)
     if (scheduledAt) fd.append('scheduledAt', new Date(scheduledAt).toISOString())
     if (gambarFile) fd.append('gambar', gambarFile)
-
     try {
       if (isEdit && id) {
         await updatePengumuman(id, fd)
@@ -103,98 +106,111 @@ export function PengumumanFormPage() {
 
   if (!canWrite) {
     return (
-      <div className="p-6 text-center text-gray-500">
-        Akses ditolak. Hanya pengurus, sekretaris, dan admin.
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-slate-500 dark:text-slate-400">Akses ditolak.</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 lg:px-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Link to="/pengumuman" className="text-gray-500 hover:text-gray-700 text-sm">
-          ← Semua Pengumuman
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-800">
-          {isEdit ? 'Edit Pengumuman' : 'Buat Pengumuman'}
-        </h1>
-      </div>
+    <div className="mx-auto max-w-2xl px-4 py-4 lg:px-8 lg:py-6">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Kembali
+      </button>
+
+      <h1 className="mb-5 text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">
+        {isEdit ? 'Edit Pengumuman' : 'Buat Pengumuman'}
+      </h1>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 mb-4 text-sm">
+        <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
+      <form
+        onSubmit={(e) => void handleSubmit(e)}
+        className="space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+      >
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Judul</label>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Judul<span className="ml-0.5 text-red-500">*</span>
+          </label>
           <input
             type="text"
             value={judul}
             onChange={(e) => setJudul(e.target.value)}
             placeholder="Judul pengumuman..."
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={INPUT}
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Kategori<span className="ml-0.5 text-red-500">*</span>
+          </label>
           <select
             value={kategori}
             onChange={(e) => setKategori(e.target.value as PengumumanKategori)}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={INPUT}
           >
             {KATEGORI_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
+              <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Isi Pengumuman</label>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Isi Pengumuman<span className="ml-0.5 text-red-500">*</span>
+          </label>
           <textarea
             value={isi}
             onChange={(e) => setIsi(e.target.value)}
             rows={6}
             placeholder="Tuliskan isi pengumuman di sini..."
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            className={cn(INPUT, 'resize-y')}
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Jadwal Tayang <span className="text-gray-400 font-normal">(kosongkan = segera)</span>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Jadwal Tayang{' '}
+            <span className="font-normal text-slate-400">(kosongkan = segera)</span>
           </label>
           <input
             type="datetime-local"
             value={scheduledAt}
             onChange={(e) => setScheduledAt(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={INPUT}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Gambar <span className="text-gray-400 font-normal">(JPEG/PNG/WebP, maks. 5 MB)</span>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Gambar{' '}
+            <span className="font-normal text-slate-400">(JPEG/PNG/WebP, maks. 5 MB)</span>
           </label>
           <input
             ref={fileRef}
             type="file"
             accept=".jpg,.jpeg,.png,.webp"
             onChange={handleFileChange}
-            className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-4 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="hidden"
           />
-          {gambarPreview && (
-            <div className="mt-3 relative inline-block">
+          {gambarPreview ? (
+            <div className="relative mt-1 inline-block">
               <img
                 src={gambarPreview}
                 alt="Preview"
-                className="h-32 w-auto rounded-lg border border-gray-200 object-cover"
+                className="h-32 w-auto rounded-xl border border-slate-200 object-cover dark:border-slate-700"
               />
               <button
                 type="button"
@@ -203,25 +219,34 @@ export function PengumumanFormPage() {
                   setGambarPreview(null)
                   if (fileRef.current) fileRef.current.value = ''
                 }}
-                className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-xs text-white"
               >
                 ×
               </button>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-7 text-sm text-slate-400 transition-colors hover:border-primary-400 hover:text-primary-500 dark:border-slate-700 dark:hover:border-primary-500 dark:hover:text-primary-400"
+            >
+              <ImageIcon className="h-4 w-4" />
+              Klik untuk memilih gambar
+            </button>
           )}
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-1">
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-blue-600 text-white px-5 py-2.5 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {loading ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Buat Pengumuman'}
           </button>
           <Link
             to="/pengumuman"
-            className="px-5 py-2.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50"
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Batal
           </Link>

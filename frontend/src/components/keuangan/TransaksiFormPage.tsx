@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings2 } from 'lucide-react'
+import { ArrowLeft, Settings2 } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { createTransaksi, listKategori } from '../../services/keuanganService'
 import type { KategoriTransaksi, TransaksiTipe } from '../../types/keuangan'
 import { KategoriModal } from './KategoriModal'
+
+const INPUT = cn(
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition',
+  'focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20',
+  'dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800',
+)
 
 interface FormState {
   kategoriId: string
@@ -27,8 +34,8 @@ const INITIAL: FormState = {
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+        {label}{required && <span className="ml-0.5 text-red-500">*</span>}
       </label>
       {children}
     </div>
@@ -91,120 +98,154 @@ export function TransaksiFormPage() {
   }
 
   if (!canAccess) {
-    return <div className="p-6 text-center text-gray-500">Akses ditolak.</div>
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-slate-500 dark:text-slate-400">Akses ditolak.</p>
+      </div>
+    )
   }
 
   return (
     <>
-    {kategoriOpen && (
-      <KategoriModal
-        onClose={() => setKategoriOpen(false)}
-        onChanged={loadKategori}
-      />
-    )}
-    <div className="mx-auto max-w-xl px-4 py-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Tambah Transaksi</h1>
+      {kategoriOpen && (
+        <KategoriModal onClose={() => setKategoriOpen(false)} onChanged={loadKategori} />
+      )}
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 mb-4 text-sm">{error}</div>}
+      <div className="mx-auto max-w-xl px-4 py-4 lg:px-8 lg:py-6">
+        {/* Back */}
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Kembali
+        </button>
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <Field label="Tipe" required>
-          <div className="flex gap-3">
-            {(['pemasukan', 'pengeluaran'] as TransaksiTipe[]).map((t) => (
-              <label key={t} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="tipe"
-                  value={t}
-                  checked={form.tipe === t}
-                  onChange={() => set('tipe', t)}
-                  className="accent-blue-600"
-                />
-                <span className="text-sm capitalize">{t}</span>
-              </label>
-            ))}
+        <h1 className="mb-5 text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">Tambah Transaksi</h1>
+
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300">
+            {error}
           </div>
-        </Field>
+        )}
 
-        <Field label="Kategori" required>
-          <div className="flex gap-2">
-            <select
-              value={form.kategoriId}
-              onChange={(e) => set('kategoriId', e.target.value)}
-              required
-              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih kategori...</option>
-              {kategoriFiltered.map((k) => (
-                <option key={k.id} value={k.id}>{k.nama}</option>
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          {/* Tipe */}
+          <Field label="Tipe" required>
+            <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+              {(['pemasukan', 'pengeluaran'] as TransaksiTipe[]).map((t) => (
+                <label key={t} className="flex-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="tipe"
+                    value={t}
+                    checked={form.tipe === t}
+                    onChange={() => set('tipe', t)}
+                    className="sr-only"
+                  />
+                  <span className={cn(
+                    'block rounded-lg py-2 text-center text-xs font-semibold transition-colors',
+                    form.tipe === t
+                      ? t === 'pemasukan'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-rose-600 text-white'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
+                  )}>
+                    {t === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
+                  </span>
+                </label>
               ))}
-            </select>
+            </div>
+          </Field>
+
+          {/* Kategori */}
+          <Field label="Kategori" required>
+            <div className="flex gap-2">
+              <select
+                value={form.kategoriId}
+                onChange={(e) => set('kategoriId', e.target.value)}
+                required
+                className={cn(INPUT, 'flex-1')}
+              >
+                <option value="">Pilih kategori...</option>
+                {kategoriFiltered.map((k) => (
+                  <option key={k.id} value={k.id}>{k.nama}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setKategoriOpen(true)}
+                title="Kelola kategori"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              >
+                <Settings2 className="h-4 w-4" />
+              </button>
+            </div>
+            {kategoriFiltered.length === 0 && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                Belum ada kategori untuk tipe ini.{' '}
+                <button type="button" onClick={() => setKategoriOpen(true)} className="font-medium underline">
+                  Tambah kategori
+                </button>
+              </p>
+            )}
+          </Field>
+
+          {/* Jumlah */}
+          <Field label="Jumlah (Rp)" required>
+            <input
+              type="number"
+              value={form.jumlah}
+              onChange={(e) => set('jumlah', e.target.value)}
+              required
+              min={1}
+              placeholder="50000"
+              className={INPUT}
+            />
+          </Field>
+
+          {/* Tanggal */}
+          <Field label="Tanggal" required>
+            <input
+              type="date"
+              value={form.tanggal}
+              onChange={(e) => set('tanggal', e.target.value)}
+              required
+              className={INPUT}
+            />
+          </Field>
+
+          {/* Keterangan */}
+          <Field label="Keterangan">
+            <textarea
+              value={form.keterangan}
+              onChange={(e) => set('keterangan', e.target.value)}
+              rows={3}
+              placeholder="Keterangan transaksi (opsional)..."
+              className={cn(INPUT, 'resize-none')}
+            />
+          </Field>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-1">
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+            >
+              {loading ? 'Menyimpan...' : 'Simpan Transaksi'}
+            </button>
             <button
               type="button"
-              onClick={() => setKategoriOpen(true)}
-              title="Kelola kategori"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+              onClick={() => navigate('/keuangan')}
+              className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
-              <Settings2 className="h-4 w-4" />
+              Batal
             </button>
           </div>
-          {kategoriFiltered.length === 0 && (
-            <p className="text-xs text-amber-600 mt-1">
-              Belum ada kategori. Klik <button type="button" onClick={() => setKategoriOpen(true)} className="underline font-medium">kelola kategori</button> untuk menambahkan.
-            </p>
-          )}
-        </Field>
-
-        <Field label="Jumlah (Rp)" required>
-          <input
-            type="number"
-            value={form.jumlah}
-            onChange={(e) => set('jumlah', e.target.value)}
-            required
-            min={1}
-            placeholder="50000"
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </Field>
-
-        <Field label="Tanggal" required>
-          <input
-            type="date"
-            value={form.tanggal}
-            onChange={(e) => set('tanggal', e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </Field>
-
-        <Field label="Keterangan">
-          <textarea
-            value={form.keterangan}
-            onChange={(e) => set('keterangan', e.target.value)}
-            rows={3}
-            placeholder="Keterangan transaksi (opsional)..."
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-        </Field>
-
-        <div className="flex gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-5 py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Menyimpan...' : 'Simpan Transaksi'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/keuangan')}
-            className="bg-gray-100 text-gray-700 px-5 py-2 rounded text-sm hover:bg-gray-200 border border-gray-300"
-          >
-            Batal
-          </button>
-        </div>
-      </form>
-    </div>
+        </form>
+      </div>
     </>
   )
 }

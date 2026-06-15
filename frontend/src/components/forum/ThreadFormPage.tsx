@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import {
   createThread,
   getThread,
@@ -28,11 +30,12 @@ const EMPTY_FORM: FormData = {
   kategori: 'lainnya',
 }
 
-/**
- * ThreadFormPage — digunakan untuk create dan edit thread.
- * - Create: navigasi ke /forum/baru
- * - Edit:   navigasi ke /forum/:id/edit
- */
+const INPUT = cn(
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition',
+  'focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20',
+  'dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800',
+)
+
 export function ThreadFormPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -43,16 +46,11 @@ export function ThreadFormPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  /* Pre-fill form saat mode edit — loading sudah diinisialisasi true via useState(isEdit) */
   useEffect(() => {
     if (!isEdit || !id) return
     getThread(id)
       .then((thread) => {
-        setForm({
-          judul: thread.judul,
-          isi: thread.isi,
-          kategori: thread.kategori,
-        })
+        setForm({ judul: thread.judul, isi: thread.isi, kategori: thread.kategori })
       })
       .catch(() => setError('Thread tidak ditemukan.'))
       .finally(() => setLoading(false))
@@ -67,18 +65,11 @@ export function ThreadFormPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.judul.trim()) {
-      setError('Judul thread wajib diisi.')
-      return
-    }
-    if (!form.isi.trim()) {
-      setError('Isi thread wajib diisi.')
-      return
-    }
+    if (!form.judul.trim()) { setError('Judul thread wajib diisi.'); return }
+    if (!form.isi.trim()) { setError('Isi thread wajib diisi.'); return }
 
     setSubmitting(true)
     setError('')
-
     try {
       if (isEdit && id) {
         await updateThread(id, form)
@@ -89,9 +80,7 @@ export function ThreadFormPage() {
       }
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } }
-      setError(
-        axiosErr?.response?.data?.message ?? 'Gagal menyimpan thread. Coba lagi.',
-      )
+      setError(axiosErr?.response?.data?.message ?? 'Gagal menyimpan thread. Coba lagi.')
     } finally {
       setSubmitting(false)
     }
@@ -99,26 +88,28 @@ export function ThreadFormPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-gray-400">Memuat...</p>
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 lg:px-8">
-      <div className="mb-6">
-        <button
-          type="button"
-          onClick={() => navigate(isEdit && id ? `/forum/${id}` : '/forum')}
-          className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1 mb-4"
-        >
-          ← Kembali
-        </button>
-        <h1 className="text-2xl font-bold text-gray-800">
+    <div className="mx-auto max-w-2xl px-4 py-4 lg:px-8 lg:py-6">
+      <button
+        type="button"
+        onClick={() => navigate(isEdit && id ? `/forum/${id}` : '/forum')}
+        className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Kembali
+      </button>
+
+      <div className="mb-5">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">
           {isEdit ? 'Edit Thread' : 'Buat Thread Baru'}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
           {isEdit
             ? 'Perbarui judul, isi, atau kategori thread.'
             : 'Mulai diskusi baru dengan warga RT lainnya.'}
@@ -126,27 +117,19 @@ export function ThreadFormPage() {
       </div>
 
       {error && (
-        <div
-          className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700"
-          role="alert"
-        >
+        <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300">
           {error}
         </div>
       )}
 
       <form
-        id="thread-form"
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5"
+        onSubmit={(e) => void handleSubmit(e)}
+        className="space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900"
         noValidate
       >
-        {/* Judul */}
         <div>
-          <label
-            htmlFor="thread-judul"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Judul Thread <span className="text-red-500">*</span>
+          <label htmlFor="thread-judul" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Judul Thread<span className="ml-0.5 text-red-500">*</span>
           </label>
           <input
             id="thread-judul"
@@ -157,18 +140,14 @@ export function ThreadFormPage() {
             placeholder="Tulis judul yang jelas dan singkat..."
             maxLength={255}
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+            className={INPUT}
           />
-          <p className="text-xs text-gray-400 mt-1 text-right">{form.judul.length}/255</p>
+          <p className="mt-1 text-right text-xs text-slate-400 dark:text-slate-500">{form.judul.length}/255</p>
         </div>
 
-        {/* Kategori */}
         <div>
-          <label
-            htmlFor="thread-kategori"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Kategori <span className="text-red-500">*</span>
+          <label htmlFor="thread-kategori" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Kategori<span className="ml-0.5 text-red-500">*</span>
           </label>
           <select
             id="thread-kategori"
@@ -176,23 +155,17 @@ export function ThreadFormPage() {
             value={form.kategori}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white"
+            className={INPUT}
           >
             {KATEGORI_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
 
-        {/* Isi */}
         <div>
-          <label
-            htmlFor="thread-isi"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Isi Thread <span className="text-red-500">*</span>
+          <label htmlFor="thread-isi" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Isi Thread<span className="ml-0.5 text-red-500">*</span>
           </label>
           <textarea
             id="thread-isi"
@@ -202,30 +175,24 @@ export function ThreadFormPage() {
             placeholder="Tuliskan diskusi Anda dengan jelas..."
             rows={8}
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-y"
+            className={cn(INPUT, 'resize-y')}
           />
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex gap-3 pt-1">
           <button
             type="submit"
-            id="thread-form-submit"
             disabled={submitting || !form.judul.trim() || !form.isi.trim()}
-            className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-40 transition-colors"
+            className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {submitting
-              ? isEdit
-                ? 'Menyimpan...'
-                : 'Membuat...'
-              : isEdit
-                ? 'Simpan Perubahan'
-                : 'Buat Thread'}
+              ? isEdit ? 'Menyimpan...' : 'Membuat...'
+              : isEdit ? 'Simpan Perubahan' : 'Buat Thread'}
           </button>
           <button
             type="button"
             onClick={() => navigate(isEdit && id ? `/forum/${id}` : '/forum')}
-            className="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50 transition-colors"
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Batal
           </button>
