@@ -1,249 +1,186 @@
-/**
- * Halaman detail warga — field visibility berbeda per role.
- * Lihat docs/06-API-CONTRACT.md §3.1 "Field Visibility per Role".
- * Tasks: 3.17
- */
-
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 
-import { useAuthStore } from '../../stores/authStore'
-import { deleteWarga, getWarga, verifyWarga } from '../../services/wargaService'
-import type { WargaFull } from '../../types/warga'
+import { cn } from '@/lib/utils'
+import { getWarga } from '@/services/wargaService'
+import type { WargaFull } from '@/types/warga'
 
 const JK_LABELS: Record<string, string> = { L: 'Laki-laki', P: 'Perempuan' }
 const STATUS_LABELS: Record<string, string> = {
-  aktif: 'Aktif',
-  tidak_aktif: 'Tidak Aktif',
-  pindah: 'Pindah',
-  meninggal: 'Meninggal',
+  aktif: 'Aktif', tidak_aktif: 'Tidak Aktif', pindah: 'Pindah', meninggal: 'Meninggal',
 }
 const SP_LABELS: Record<string, string> = {
-  belum_kawin: 'Belum Kawin',
-  kawin: 'Kawin',
-  cerai_hidup: 'Cerai Hidup',
-  cerai_mati: 'Cerai Mati',
+  belum_kawin: 'Belum Kawin', kawin: 'Kawin', cerai_hidup: 'Cerai Hidup', cerai_mati: 'Cerai Mati',
+}
+const STATUS_CLS: Record<string, string> = {
+  aktif: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  tidak_aktif: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+  pindah: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  meninggal: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
 }
 
-interface FieldRowProps {
-  label: string
-  value?: string | null
-}
-function FieldRow({ label, value }: FieldRowProps) {
+function FieldRow({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4">
+    <div className="py-2.5 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</dt>
-      <dd className="mt-1 text-sm text-slate-900 sm:col-span-2 sm:mt-0 dark:text-slate-100">
-        {value || '—'}
-      </dd>
+      <dd className="mt-0.5 text-sm text-slate-900 sm:col-span-2 sm:mt-0 dark:text-slate-100">{value || '—'}</dd>
     </div>
   )
 }
 
-export function WargaDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const { user } = useAuthStore()
+// ── Shared content ─────────────────────────────────────────────────────────────
+
+export function WargaDetailContent({
+  id,
+  isModal = false,
+  onBack,
+}: {
+  id: string
+  isModal?: boolean
+  onBack?: () => void
+  onDeleteSuccess?: () => void
+}) {
   const [warga, setWarga] = useState<WargaFull | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [verifyStatus, setVerifyStatus] = useState<'idle' | 'loading'>('idle')
-
-  const isAdmin = user?.role === 'admin'
-  const canWrite = isAdmin || user?.role === 'sekretaris'
-  const canVerify = isAdmin || user?.role === 'sekretaris'
-  const canDelete = isAdmin
 
   useEffect(() => {
-    if (!id) return
+    setLoading(true)
+    setError('')
+    setWarga(null)
     getWarga(id)
       .then(setWarga)
       .catch(() => setError('Data warga tidak ditemukan atau tidak bisa diakses.'))
       .finally(() => setLoading(false))
   }, [id])
 
-  async function handleDelete() {
-    if (!warga) return
-    if (!confirm(`Hapus data "${warga.namaLengkap}"? Tindakan ini tidak bisa dibatalkan.`)) return
-    try {
-      await deleteWarga(warga.id)
-      navigate('/warga')
-    } catch {
-      alert('Gagal menghapus data warga.')
-    }
-  }
-
-  async function handleVerify(status: 'active' | 'rejected') {
-    if (!warga) return
-    setVerifyStatus('loading')
-    try {
-      await verifyWarga(warga.id, { status })
-      const updated = await getWarga(warga.id)
-      setWarga(updated)
-    } catch {
-      alert('Gagal memverifikasi warga.')
-    } finally {
-      setVerifyStatus('idle')
-    }
-  }
-
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-500">Memuat data warga...</p>
+      <div className="flex min-h-[30vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
       </div>
     )
   }
 
   if (error || !warga) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-red-600">{error || 'Data tidak ditemukan.'}</p>
-        <Link to="/warga" className="text-indigo-600 hover:underline">← Kembali ke daftar</Link>
+      <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+        <p className="text-sm text-red-600 dark:text-red-400">{error || 'Data tidak ditemukan.'}</p>
+        {onBack && (
+          <button onClick={onBack} className="text-sm text-primary-600 hover:underline">← Kembali</button>
+        )}
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 dark:bg-slate-900">
-      <div className="mx-auto max-w-3xl">
-        {/* Breadcrumb */}
-        <nav className="mb-6 text-sm text-slate-500 dark:text-slate-400">
-          <Link to="/warga" className="hover:underline">Data Warga</Link>
-          {' / '}
-          <span className="text-slate-700 dark:text-slate-200">{warga.namaLengkap}</span>
-        </nav>
+    <div className={cn(isModal ? 'px-5 pb-8 pt-4' : 'mx-auto max-w-3xl')}>
+      {/* Back button — page context only */}
+      {!isModal && onBack && (
+        <button
+          onClick={onBack}
+          className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+        >
+          <ArrowLeft className="h-4 w-4" /> Kembali
+        </button>
+      )}
 
-        {/* Header card */}
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-          <div className="flex items-center gap-4">
-            {warga.foto ? (
-              <img
-                src={warga.foto}
-                alt={warga.namaLengkap}
-                className="h-16 w-16 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-2xl font-bold text-indigo-600 dark:bg-indigo-900">
-                {warga.namaLengkap[0]?.toUpperCase()}
-              </div>
-            )}
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">{warga.namaLengkap}</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Blok {warga.blok ?? '—'} / No. {warga.noRumah ?? '—'}
-              </p>
-              <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                warga.status === 'aktif' ? 'bg-green-100 text-green-700' :
-                warga.status === 'tidak_aktif' ? 'bg-slate-100 text-slate-600' :
-                'bg-red-100 text-red-700'
-              }`}>
-                {STATUS_LABELS[warga.status] ?? warga.status}
-              </span>
+      {/* Header card */}
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+        <div className="flex min-w-0 items-center gap-4">
+          {warga.foto ? (
+            <img src={warga.foto} alt={warga.namaLengkap} className="h-14 w-14 shrink-0 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xl font-bold text-primary-600 dark:bg-primary-900 dark:text-primary-400">
+              {warga.namaLengkap[0]?.toUpperCase()}
             </div>
-          </div>
-
-          {/* Aksi */}
-          <div className="flex flex-wrap gap-2">
-            {canVerify && (
-              <>
-                <button
-                  type="button"
-                  disabled={verifyStatus === 'loading'}
-                  onClick={() => void handleVerify('active')}
-                  className="rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                >
-                  Verifikasi
-                </button>
-                <button
-                  type="button"
-                  disabled={verifyStatus === 'loading'}
-                  onClick={() => void handleVerify('rejected')}
-                  className="rounded-md bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
-                >
-                  Tolak
-                </button>
-              </>
-            )}
-            {canWrite && (
-              <Link
-                to={`/warga/${warga.id}/edit`}
-                className="rounded-md bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-600"
-              >
-                Edit
-              </Link>
-            )}
-            {canDelete && (
-              <button
-                type="button"
-                onClick={() => void handleDelete()}
-                className="rounded-md bg-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-red-100 hover:text-red-700 dark:bg-slate-700 dark:text-slate-200"
-              >
-                Hapus
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Detail fields */}
-        <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
-          <div className="border-b border-slate-200 px-6 py-4 dark:border-slate-700">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Informasi Pribadi</h2>
-          </div>
-          <dl className="divide-y divide-slate-100 px-6 dark:divide-slate-700">
-            <FieldRow label="NIK" value={warga.nik} />
-            <FieldRow label="Tempat Lahir" value={warga.tempatLahir} />
-            <FieldRow label="Tanggal Lahir" value={warga.tanggalLahir} />
-            <FieldRow label="Jenis Kelamin" value={warga.jenisKelamin ? JK_LABELS[warga.jenisKelamin] : undefined} />
-            <FieldRow label="Agama" value={warga.agama} />
-            <FieldRow label="Status Perkawinan" value={warga.statusPerkawinan ? SP_LABELS[warga.statusPerkawinan] : undefined} />
-            <FieldRow label="Pendidikan" value={warga.pendidikan} />
-            <FieldRow label="Pekerjaan" value={warga.pekerjaan} />
-          </dl>
-
-          <div className="border-b border-t border-slate-200 px-6 py-4 dark:border-slate-700">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Domisili</h2>
-          </div>
-          <dl className="divide-y divide-slate-100 px-6 dark:divide-slate-700">
-            <FieldRow label="Alamat" value={warga.alamat} />
-            <FieldRow label="Blok" value={warga.blok} />
-            <FieldRow label="No. Rumah" value={warga.noRumah} />
-            <FieldRow label="No. KK" value={warga.noKk} />
-            <FieldRow label="Hubungan Keluarga" value={warga.hubunganKeluarga} />
-          </dl>
-
-          {/* Kontak — hanya tampil jika field tersedia (admin/sekretaris/own) */}
-          {(warga.phone !== undefined || warga.email !== undefined) && (
-            <>
-              <div className="border-b border-t border-slate-200 px-6 py-4 dark:border-slate-700">
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white">Kontak</h2>
-              </div>
-              <dl className="divide-y divide-slate-100 px-6 dark:divide-slate-700">
-                <FieldRow label="Telepon" value={warga.phone} />
-                <FieldRow label="Email" value={warga.email} />
-              </dl>
-            </>
           )}
-
-          <div className="border-b border-t border-slate-200 px-6 py-4 dark:border-slate-700">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Metadata</h2>
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-bold text-slate-900 dark:text-white">{warga.namaLengkap}</h2>
+            <p className="text-sm text-slate-500">
+              Blok {warga.blok ?? '—'} / No. {warga.noRumah ?? '—'}
+            </p>
+            <span className={cn('mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium', STATUS_CLS[warga.status] ?? 'bg-slate-100 text-slate-500')}>
+              {STATUS_LABELS[warga.status] ?? warga.status}
+            </span>
           </div>
-          <dl className="divide-y divide-slate-100 px-6 dark:divide-slate-700">
-            <FieldRow label="Dibuat" value={warga.createdAt} />
-            <FieldRow label="Diperbarui" value={warga.updatedAt} />
-          </dl>
         </div>
 
-        {/* Link Kartu Keluarga */}
-        <div className="mt-4">
-          <Link
-            to={`/warga/${warga.id}/kk`}
-            className="text-sm text-indigo-600 hover:underline dark:text-indigo-400"
-          >
-            Lihat Kartu Keluarga →
-          </Link>
-        </div>
+        <div />
       </div>
+
+      {/* Detail fields */}
+      <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+        <div className="border-b border-slate-100 px-5 py-3 dark:border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-white">Informasi Pribadi</h3>
+        </div>
+        <dl className="divide-y divide-slate-50 px-5 dark:divide-slate-700">
+          <FieldRow label="NIK" value={warga.nik} />
+          <FieldRow label="Tempat Lahir" value={warga.tempatLahir} />
+          <FieldRow label="Tanggal Lahir" value={warga.tanggalLahir} />
+          <FieldRow label="Jenis Kelamin" value={warga.jenisKelamin ? JK_LABELS[warga.jenisKelamin] : undefined} />
+          <FieldRow label="Agama" value={warga.agama} />
+          <FieldRow label="Status Perkawinan" value={warga.statusPerkawinan ? SP_LABELS[warga.statusPerkawinan] : undefined} />
+          <FieldRow label="Pendidikan" value={warga.pendidikan} />
+          <FieldRow label="Pekerjaan" value={warga.pekerjaan} />
+        </dl>
+
+        <div className="border-b border-t border-slate-100 px-5 py-3 dark:border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-white">Domisili</h3>
+        </div>
+        <dl className="divide-y divide-slate-50 px-5 dark:divide-slate-700">
+          <FieldRow label="Alamat" value={warga.alamat} />
+          <FieldRow label="Blok" value={warga.blok} />
+          <FieldRow label="No. Rumah" value={warga.noRumah} />
+          <FieldRow label="No. KK" value={warga.noKk} />
+          <FieldRow label="Hubungan Keluarga" value={warga.hubunganKeluarga} />
+        </dl>
+
+        {(warga.phone !== undefined || warga.email !== undefined) && (
+          <>
+            <div className="border-b border-t border-slate-100 px-5 py-3 dark:border-slate-700">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-white">Kontak</h3>
+            </div>
+            <dl className="divide-y divide-slate-50 px-5 dark:divide-slate-700">
+              <FieldRow label="Telepon" value={warga.phone} />
+              <FieldRow label="Email" value={warga.email} />
+            </dl>
+          </>
+        )}
+
+        <div className="border-b border-t border-slate-100 px-5 py-3 dark:border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-white">Metadata</h3>
+        </div>
+        <dl className="divide-y divide-slate-50 px-5 dark:divide-slate-700">
+          <FieldRow label="Dibuat" value={warga.createdAt} />
+          <FieldRow label="Diperbarui" value={warga.updatedAt} />
+        </dl>
+      </div>
+
+      <div className="mt-4">
+        <Link to={`/warga/${warga.id}/kk`}
+          className="text-sm text-primary-600 hover:underline dark:text-primary-400">
+          Lihat Kartu Keluarga →
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+// ── Page wrapper ───────────────────────────────────────────────────────────────
+
+export function WargaDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+
+  return (
+    <div className="min-h-screen bg-slate-50 px-4 py-4 dark:bg-slate-900 lg:px-8 lg:py-6">
+      <WargaDetailContent
+        id={id!}
+        onBack={() => navigate(-1)}
+        onDeleteSuccess={() => navigate('/warga')}
+      />
     </div>
   )
 }

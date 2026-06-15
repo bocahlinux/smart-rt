@@ -3,11 +3,14 @@
  * Tasks: 3.18
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { createWarga, getWarga, updateWarga } from '../../services/wargaService'
+import { createKK, listKK } from '../../services/kartuKeluargaService'
 import type { JenisKelamin, StatusPerkawinan, WargaFormPayload, WargaStatus } from '../../types/warga'
+import type { KartuKeluarga } from '../../types/kartuKeluarga'
+import { HUBUNGAN_LABEL, HUBUNGAN_ORDER, type HubunganKeluarga } from '../../types/kartuKeluarga'
 
 interface FormState {
   userId: string
@@ -20,8 +23,8 @@ interface FormState {
   statusPerkawinan: StatusPerkawinan | ''
   pendidikan: string
   pekerjaan: string
-  noKk: string
-  hubunganKeluarga: string
+  kartuKeluargaId: string
+  hubunganKeluarga: HubunganKeluarga | ''
   alamat: string
   blok: string
   noRumah: string
@@ -39,7 +42,7 @@ const INITIAL: FormState = {
   statusPerkawinan: '',
   pendidikan: '',
   pekerjaan: '',
-  noKk: '',
+  kartuKeluargaId: '',
   hubunganKeluarga: '',
   alamat: '',
   blok: '',
@@ -47,9 +50,9 @@ const INITIAL: FormState = {
   status: 'aktif',
 }
 
-function toPayload(f: FormState): WargaFormPayload {
+function toPayload(f: FormState, isEdit: boolean): WargaFormPayload {
   return {
-    userId: f.userId || undefined,
+    ...(isEdit ? {} : { userId: f.userId || undefined }),
     nik: f.nik || undefined,
     namaLengkap: f.namaLengkap,
     tempatLahir: f.tempatLahir || undefined,
@@ -59,7 +62,7 @@ function toPayload(f: FormState): WargaFormPayload {
     statusPerkawinan: (f.statusPerkawinan as StatusPerkawinan) || undefined,
     pendidikan: f.pendidikan || undefined,
     pekerjaan: f.pekerjaan || undefined,
-    noKk: f.noKk || undefined,
+    kartuKeluargaId: f.kartuKeluargaId || undefined,
     hubunganKeluarga: f.hubunganKeluarga || undefined,
     alamat: f.alamat || undefined,
     blok: f.blok || undefined,
@@ -93,9 +96,31 @@ export function WargaFormPage() {
   const isEdit = Boolean(id)
 
   const [form, setForm] = useState<FormState>(INITIAL)
+  const [kkList, setKkList] = useState<KartuKeluarga[]>([])
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // KK combo-search state
+  const [kkSearch, setKkSearch] = useState('')
+  const [kkOpen, setKkOpen] = useState(false)
+  const [kkCreating, setKkCreating] = useState(false)
+  const kkRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    listKK().then(setKkList).catch(() => {})
+  }, [])
+
+  // Tutup dropdown KK saat klik di luar
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (kkRef.current && !kkRef.current.contains(e.target as Node)) {
+        setKkOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -112,13 +137,15 @@ export function WargaFormPage() {
           statusPerkawinan: (w.statusPerkawinan as StatusPerkawinan) ?? '',
           pendidikan: w.pendidikan ?? '',
           pekerjaan: w.pekerjaan ?? '',
-          noKk: w.noKk ?? '',
-          hubunganKeluarga: w.hubunganKeluarga ?? '',
+          kartuKeluargaId: w.kartuKeluargaId ?? '',
+          hubunganKeluarga: (w.hubunganKeluarga as HubunganKeluarga) ?? '',
           alamat: w.alamat ?? '',
           blok: w.blok ?? '',
           noRumah: w.noRumah ?? '',
           status: w.status,
         })
+        // Tampilkan nomor KK di combo input jika sudah punya KK
+        if (w.noKk) setKkSearch(w.noKk)
       })
       .catch(() => setError('Gagal memuat data warga.'))
       .finally(() => setLoading(false))
@@ -126,6 +153,34 @@ export function WargaFormPage() {
 
   function set(key: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const kkFiltered = kkSearch.trim()
+    ? kkList.filter((kk) => kk.noKk.includes(kkSearch.trim()))
+    : kkList
+
+  const kkExactMatch = kkList.find((kk) => kk.noKk === kkSearch.trim())
+  const canCreateKK = kkSearch.trim().length === 16 && !kkExactMatch
+
+  function selectKK(kk: KartuKeluarga) {
+    set('kartuKeluargaId', kk.id)
+    setKkSearch(kk.noKk)
+    setKkOpen(false)
+  }
+
+  async function handleBuatKK() {
+    const noKk = kkSearch.trim()
+    if (noKk.length !== 16) return
+    setKkCreating(true)
+    try {
+      const newKK = await createKK({ noKk })
+      setKkList((prev) => [...prev, newKK])
+      selectKK(newKK)
+    } catch {
+      setError('Gagal membuat Kartu Keluarga baru.')
+    } finally {
+      setKkCreating(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -137,7 +192,7 @@ export function WargaFormPage() {
     setSaving(true)
     setError('')
     try {
-      const payload = toPayload(form)
+      const payload = toPayload(form, isEdit)
       if (isEdit && id) {
         const updated = await updateWarga(id, payload)
         navigate(`/warga/${updated.id}`)
@@ -293,22 +348,74 @@ export function WargaFormPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="No. KK">
-              <input
-                className={INPUT}
-                value={form.noKk}
-                onChange={(e) => set('noKk', e.target.value)}
-                placeholder="16 digit"
-                maxLength={16}
-              />
+            <Field label="Kartu Keluarga">
+              <div ref={kkRef} className="relative">
+                <input
+                  className={INPUT}
+                  value={kkSearch}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setKkSearch(val)
+                    // Auto-link jika nomor cocok persis dengan KK yang ada
+                    const exact = kkList.find((kk) => kk.noKk === val.trim())
+                    set('kartuKeluargaId', exact ? exact.id : '')
+                    setKkOpen(true)
+                  }}
+                  onFocus={() => setKkOpen(true)}
+                  placeholder="Ketik 16 digit No. KK"
+                  maxLength={16}
+                  autoComplete="off"
+                />
+                {kkOpen && (
+                  <div className="absolute z-20 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
+                    <ul className="max-h-48 overflow-y-auto py-1 text-sm">
+                      {kkFiltered.length > 0
+                        ? kkFiltered.map((kk) => (
+                            <li
+                              key={kk.id}
+                              className="cursor-pointer px-3 py-2 hover:bg-indigo-50 dark:hover:bg-slate-700"
+                              onMouseDown={() => selectKK(kk)}
+                            >
+                              <span className="font-mono">{kk.noKk}</span>
+                              {kk.kepalaKeluarga && (
+                                <span className="ml-2 text-xs text-slate-500">
+                                  ({kk.kepalaKeluarga.namaLengkap})
+                                </span>
+                              )}
+                            </li>
+                          ))
+                        : !canCreateKK && (
+                            <li className="px-3 py-2 text-slate-400 dark:text-slate-500">
+                              Tidak ada KK yang cocok
+                            </li>
+                          )}
+                      {canCreateKK && (
+                        <li
+                          className="cursor-pointer border-t border-slate-100 px-3 py-2 font-medium text-indigo-600 hover:bg-indigo-50 dark:border-slate-700 dark:text-indigo-400 dark:hover:bg-slate-700"
+                          onMouseDown={() => void handleBuatKK()}
+                        >
+                          {kkCreating ? 'Membuat KK...' : `+ Buat KK "${kkSearch.trim()}"`}
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                {form.kartuKeluargaId && (
+                  <p className="mt-1 text-xs text-green-600 dark:text-green-400">✓ KK terhubung</p>
+                )}
+              </div>
             </Field>
             <Field label="Hubungan Keluarga">
-              <input
+              <select
                 className={INPUT}
                 value={form.hubunganKeluarga}
-                onChange={(e) => set('hubunganKeluarga', e.target.value)}
-                placeholder="Kepala Keluarga, Istri, dll."
-              />
+                onChange={(e) => set('hubunganKeluarga', e.target.value as HubunganKeluarga)}
+              >
+                <option value="">— Pilih —</option>
+                {HUBUNGAN_ORDER.map((h) => (
+                  <option key={h} value={h}>{HUBUNGAN_LABEL[h]}</option>
+                ))}
+              </select>
             </Field>
           </div>
 

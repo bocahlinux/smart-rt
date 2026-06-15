@@ -1,10 +1,11 @@
 import axios from 'axios'
 import { Building2, Eye, EyeOff, Lock, Mail } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
-import { login as loginRequest } from '@/services/authService'
+import apiClient from '@/services/apiClient'
+import { getCurrentUser, login as loginRequest } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
 
 interface ApiErrorBody {
@@ -16,7 +17,40 @@ interface ApiErrorBody {
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const login = useAuthStore((state) => state.login)
+  const { isAuthenticated, login, logout } = useAuthStore()
+
+  const redirectTo = (location.state as { from?: string } | null)?.from ?? '/'
+
+  // Cek sesi aktif saat halaman login dibuka
+  const [checking, setChecking] = useState(!isAuthenticated)
+  const checkedRef = useRef(false)
+
+  useEffect(() => {
+    // Jika Zustand sudah authenticated (dalam sesi yang sama) → langsung redirect
+    if (isAuthenticated) {
+      navigate(redirectTo, { replace: true })
+      return
+    }
+
+    // Hindari double-invoke (React StrictMode)
+    if (checkedRef.current) return
+    checkedRef.current = true
+
+    // Coba pulihkan sesi dari refresh token cookie (setelah page refresh)
+    void (async () => {
+      try {
+        const { data } = await apiClient.post<{ data: { accessToken: string } }>('/auth/token/refresh')
+        useAuthStore.getState().setAccessToken(data.data.accessToken)
+        const me = await getCurrentUser()
+        login(me, data.data.accessToken)
+        navigate(redirectTo, { replace: true })
+      } catch {
+        // Tidak ada sesi valid → tampilkan form login
+        logout()
+        setChecking(false)
+      }
+    })()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,7 +64,6 @@ export function LoginPage() {
     try {
       const { user, accessToken } = await loginRequest({ email, password })
       login(user, accessToken)
-      const redirectTo = (location.state as { from?: string } | null)?.from ?? '/'
       navigate(redirectTo, { replace: true })
     } catch (err) {
       if (axios.isAxiosError<ApiErrorBody>(err) && err.response?.data?.message) {
@@ -41,6 +74,14 @@ export function LoginPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-primary-600 via-primary-700 to-primary-900">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white" />
+      </div>
+    )
   }
 
   return (

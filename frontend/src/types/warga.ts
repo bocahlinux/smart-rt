@@ -19,8 +19,10 @@ export interface WargaFull {
   statusPerkawinan?: StatusPerkawinan | null
   pendidikan?: string | null
   pekerjaan?: string | null
+  kartuKeluargaId?: string | null
   noKk?: string | null
   hubunganKeluarga?: string | null
+  hubunganKeluargaLabel?: string | null
   alamat?: string | null
   blok?: string | null
   noRumah?: string | null
@@ -28,8 +30,10 @@ export interface WargaFull {
   email?: string | null
   status: WargaStatus
   foto?: string | null
+  userStatus?: 'pending' | 'active' | 'rejected'
   createdAt?: string
   updatedAt?: string
+  deletedAt?: string | null
 }
 
 // Response masked (bendahara/pengurus)
@@ -67,7 +71,7 @@ export interface WargaFormPayload {
   statusPerkawinan?: StatusPerkawinan
   pendidikan?: string
   pekerjaan?: string
-  noKk?: string
+  kartuKeluargaId?: string
   hubunganKeluarga?: string
   alamat?: string
   blok?: string

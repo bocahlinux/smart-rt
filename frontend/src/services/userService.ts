@@ -1,12 +1,22 @@
 import type { UserRole, UserStatus } from '@/types/auth'
 import apiClient from './apiClient'
 
+export interface LinkedWarga {
+  id: string
+  namaLengkap: string
+  nik?: string | null
+  blok?: string | null
+  noRumah?: string | null
+  status: string
+}
+
 export interface ManagedUser {
   id: string
   email: string
   phone: string
   role: UserRole
   status: UserStatus
+  warga: LinkedWarga | null
   createdAt: string
 }
 
@@ -22,8 +32,11 @@ export interface UserListParams {
 }
 
 export interface UpdateUserPayload {
+  email?: string
+  phone?: string
   role?: UserRole
   status?: UserStatus
+  newPassword?: string
 }
 
 export interface CreateUserPayload {

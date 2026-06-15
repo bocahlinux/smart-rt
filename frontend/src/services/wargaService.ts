@@ -50,6 +50,23 @@ export async function deleteWarga(id: string): Promise<void> {
   await apiClient.delete(`/warga/${id}/`)
 }
 
+export async function unlinkUser(wargaId: string): Promise<void> {
+  await apiClient.post(`/warga/${wargaId}/unlink/`)
+}
+
+export async function linkUser(wargaId: string, userId: string): Promise<void> {
+  await apiClient.post(`/warga/${wargaId}/link/`, { userId })
+}
+
+export async function listDeletedWarga(): Promise<WargaFull[]> {
+  const { data } = await apiClient.get<ApiSuccess<WargaFull[]>>('/warga/deleted/')
+  return data.data
+}
+
+export async function restoreWarga(id: string): Promise<void> {
+  await apiClient.put(`/warga/${id}/restore/`)
+}
+
 export async function verifyWarga(id: string, payload: VerifyPayload): Promise<void> {
   await apiClient.put(`/warga/${id}/verify/`, payload)
 }

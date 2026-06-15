@@ -28,9 +28,12 @@ import { PengumumanFormPage } from '@/components/pengumuman/PengumumanFormPage'
 import { PengumumanListPage } from '@/components/pengumuman/PengumumanListPage'
 import { UserListPage } from '@/components/users/UserListPage'
 import { WargaDetailPage } from '@/components/warga/WargaDetailPage'
-import { WargaFormPage } from '@/components/warga/WargaFormPage'
 import { WargaKKPage } from '@/components/warga/WargaKKPage'
 import { WargaListPage } from '@/components/warga/WargaListPage'
+import { KartuKeluargaPage } from '@/components/kartuKeluarga/KartuKeluargaPage'
+import { TambahAnggotaPage } from '@/components/kartuKeluarga/TambahAnggotaPage'
+import { UbahAnggotaPage } from '@/components/kartuKeluarga/UbahAnggotaPage'
+import { PengajuanPage } from '@/components/kartuKeluarga/PengajuanPage'
 
 function App() {
   return (
@@ -48,10 +51,15 @@ function App() {
 
             {/* Phase 3: Data Warga */}
             <Route path="/warga" element={<WargaListPage />} />
-            <Route path="/warga/baru" element={<WargaFormPage />} />
             <Route path="/warga/:id" element={<WargaDetailPage />} />
-            <Route path="/warga/:id/edit" element={<WargaFormPage />} />
             <Route path="/warga/:id/kk" element={<WargaKKPage />} />
+
+            {/* Kartu Keluarga */}
+            <Route path="/kk/saya" element={<KartuKeluargaPage />} />
+            <Route path="/kk/:id" element={<KartuKeluargaPage />} />
+            <Route path="/kk/:kkId/tambah-anggota" element={<TambahAnggotaPage />} />
+            <Route path="/kk/:kkId/ubah-anggota/:wargaId" element={<UbahAnggotaPage />} />
+            <Route path="/pengajuan" element={<PengajuanPage />} />
 
             {/* Phase 4: Keuangan RT */}
             <Route path="/keuangan" element={<KeuanganListPage />} />
