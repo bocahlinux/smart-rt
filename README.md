@@ -12,7 +12,7 @@
 
 **Platform digital modern untuk pengelolaan Rukun Tetangga (RT).**
 
-[Fitur](#-fitur) • [Tech Stack](#-tech-stack) • [Instalasi](#-instalasi) • [Dokumentasi](#-dokumentasi) • [Status](#-development-status) • [Kontribusi](#-kontribusi)
+[Fitur](#-fitur) • [Tech Stack](#-tech-stack) • [Instalasi](#-instalasi) • [Status](#-development-status) • [Kontribusi](#-kontribusi)
 
 </div>
 
@@ -46,7 +46,6 @@ Setiap bentuk dukungan, sekecil apapun, sangat berarti dan membantu keberlangsun
 - [Tech Stack](#-tech-stack)
 - [Arsitektur](#-arsitektur)
 - [Instalasi](#-instalasi)
-- [Dokumentasi](#-dokumentasi)
 - [Roadmap](#-roadmap)
 - [Development Status](#-development-status)
 - [Security Policy](#-security-policy)
@@ -281,26 +280,6 @@ npm run dev
 docker compose up --build
 # → http://localhost (Nginx proxy)
 ```
-
----
-
-## 📚 Dokumen
-
-| Dokumen | Versi | Deskripsi |
-|---------|-------|-----------|
-| [01-PRD.md](docs/01-PRD.md) | v1.1.0 | Product Requirements Document |
-| [02-SRS.md](docs/02-SRS.md) | v1.1.0 | Software Requirements Specification |
-| [03-UIUX-Flow.md](docs/03-UIUX-Flow.md) | v1.0.0 | UI/UX Flow & Design |
-| [04-SDD.md](docs/04-SDD.md) | v1.3.0 | System Design Document |
-| [05-DATABASE.md](docs/05-DATABASE.md) | v1.0.0 | Database Design & Django Models |
-| [06-API-CONTRACT.md](docs/06-API-CONTRACT.md) | v1.4.0 | API Contract Specification |
-| [07-TASK-BREAKDOWN.md](docs/07-TASK-BREAKDOWN.md) | v2.0.0 | Task Breakdown & Estimation |
-| [08-CODING-STANDART.md](docs/08-CODING-STANDART.md) | v1.0.0 | Coding Standard & Conventions |
-| [09-TEST-PLAN.md](docs/09-TEST-PLAN.md) | v1.4.0 | Test Plan & Coverage |
-| [10-AI-RULES.md](docs/10-AI-RULES.md) | v1.5.0 | AI Development Rules |
-| [11-SECURITY.md](docs/11-SECURITY.md) | v1.0.0 | Security & Privacy Policy |
-| [12-CICD.md](docs/12-CICD.md) | v1.0.0 | CI/CD Pipeline & Deployment |
-| [13-MONITORING.md](docs/13-MONITORING.md) | v1.0.0 | Monitoring & Observability |
 
 ---
 
