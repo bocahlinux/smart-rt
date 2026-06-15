@@ -1,4 +1,6 @@
 from django.contrib.auth import authenticate
+
+from .models import User
 from django.utils.translation import gettext as _
 from rest_framework import permissions, status
 from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle
@@ -7,7 +9,8 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import ChangePasswordSerializer, RegisterSerializer, UserSerializer
+from .serializers import AdminCreateUserSerializer, ChangePasswordSerializer, RegisterSerializer, UserManagementSerializer, UserSerializer
+from .permissions import IsAdmin
 from .utils import clear_refresh_cookie, error_response, set_refresh_cookie, success_response
 
 # Auth ViewSet/Views — lihat docs/06-API-CONTRACT.md §2 dan docs/11-SECURITY.md §4.
@@ -274,6 +277,80 @@ class ChangePasswordView(APIView):
             )
         serializer.save()
         return success_response(message="Password berhasil diubah")
+
+
+class UserListView(APIView):
+    """GET /users/ — daftar semua user, admin only.
+
+    Query params:
+    - role: filter by role (admin|sekretaris|bendahara|pengurus|warga)
+    - status: filter by status (pending|active|rejected)
+    - search: cari by email atau phone (case-insensitive)
+    """
+
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        from django.db.models import Q
+
+        qs = User.objects.all().order_by("-created_at")
+        role = request.query_params.get("role")
+        status_filter = request.query_params.get("status")
+        search = request.query_params.get("search", "").strip()
+        if role:
+            qs = qs.filter(role=role)
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if search:
+            qs = qs.filter(Q(email__icontains=search) | Q(phone__icontains=search))
+        serializer = UserManagementSerializer(qs, many=True)
+        return success_response(data={"count": qs.count(), "results": serializer.data})
+
+    def post(self, request):
+        serializer = AdminCreateUserSerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response(
+                "VALIDATION_ERROR",
+                "Data tidak valid",
+                errors=_serializer_errors(serializer),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        user = serializer.save()
+        return success_response(
+            data=UserManagementSerializer(user).data,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+
+class UserDetailView(APIView):
+    """GET /users/{id}/ dan PATCH /users/{id}/ — admin only.
+
+    PATCH hanya mengizinkan update field `role` dan `status`.
+    """
+
+    permission_classes = [IsAdmin]
+
+    def _get_user(self, pk):
+        from django.shortcuts import get_object_or_404
+
+        return get_object_or_404(User, pk=pk)
+
+    def get(self, request, pk):
+        user = self._get_user(pk)
+        return success_response(data=UserManagementSerializer(user).data)
+
+    def patch(self, request, pk):
+        user = self._get_user(pk)
+        serializer = UserManagementSerializer(user, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return error_response(
+                "VALIDATION_ERROR",
+                "Data tidak valid",
+                errors=_serializer_errors(serializer),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer.save()
+        return success_response(data=serializer.data)
 
 
 def _serializer_errors(serializer):

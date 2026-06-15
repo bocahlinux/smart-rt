@@ -85,6 +85,53 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
 
+class UserManagementSerializer(serializers.ModelSerializer):
+    """GET/PATCH /users/ dan /users/{id}/ — admin only."""
+
+    createdAt = serializers.DateTimeField(source="created_at", read_only=True)  # noqa: N815
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "phone", "role", "status", "createdAt"]
+        read_only_fields = ["id", "email", "phone", "createdAt"]
+
+
+class AdminCreateUserSerializer(serializers.Serializer):
+    """POST /users/ — buat akun baru oleh admin."""
+
+    email = serializers.EmailField()
+    phone = serializers.CharField(max_length=20)
+    password = serializers.CharField(write_only=True)
+    role = serializers.ChoiceField(choices=User.Role.choices, default=User.Role.WARGA)
+    status = serializers.ChoiceField(choices=User.Status.choices, default=User.Status.ACTIVE)
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Email sudah terdaftar")
+        return value
+
+    def validate_phone(self, value):
+        if User.objects.filter(phone=value).exists():
+            raise serializers.ValidationError("Nomor HP sudah terdaftar")
+        return value
+
+    def validate_password(self, value):
+        password_validation.validate_password(value)
+        return value
+
+    def create(self, validated_data):
+        user = User(
+            username=validated_data["email"],
+            email=validated_data["email"],
+            phone=validated_data["phone"],
+            role=validated_data["role"],
+            status=validated_data["status"],
+        )
+        user.set_password(validated_data["password"])
+        user.save()
+        return user
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     """PUT /auth/password — lihat docs/06-API-CONTRACT.md §2.6."""
 

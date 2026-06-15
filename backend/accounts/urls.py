@@ -13,3 +13,9 @@ urlpatterns = [
     path("me", views.MeView.as_view(), name="me"),
     path("password", views.ChangePasswordView.as_view(), name="change-password"),
 ]
+
+# User management — admin only
+user_management_patterns = [
+    path("users/", views.UserListView.as_view(), name="user-list"),
+    path("users/<uuid:pk>/", views.UserDetailView.as_view(), name="user-detail"),
+]
