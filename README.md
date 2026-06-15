@@ -439,8 +439,6 @@ Phase 1-10    ████████████████████  100%
 
 ## 🔒 Security Policy
 
-Untuk detail lengkap tentang kebijakan keamanan dan privasi, lihat **[docs/11-SECURITY.md](docs/11-SECURITY.md)**.
-
 Ringkasan:
 - **Data Classification:** Public, Internal, Sensitive, Restricted
 - **Authentication:** SimpleJWT dengan access token (15-30 menit) + refresh token (7-14 hari, httpOnly cookie)
