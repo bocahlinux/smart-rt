@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .permission_views import PermissionConfigDetailView, PermissionConfigListView
 
 app_name = "accounts"
 
@@ -18,4 +19,10 @@ urlpatterns = [
 user_management_patterns = [
     path("users/", views.UserListView.as_view(), name="user-list"),
     path("users/<uuid:pk>/", views.UserDetailView.as_view(), name="user-detail"),
+]
+
+# Permission config — admin only
+permission_patterns = [
+    path("permissions/", PermissionConfigListView.as_view(), name="permission-list"),
+    path("permissions/<str:key>/", PermissionConfigDetailView.as_view(), name="permission-detail"),
 ]

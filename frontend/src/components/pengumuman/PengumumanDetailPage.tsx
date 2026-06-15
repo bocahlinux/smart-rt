@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { getPengumuman } from '../../services/pengumumanService'
 import type { Pengumuman } from '../../types/pengumuman'
@@ -39,7 +40,7 @@ export function PengumumanDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const canWrite = user?.role && ['admin', 'pengurus', 'sekretaris'].includes(user.role)
+  const canWrite = hasPerm(user, 'kelola_pengumuman')
 
   useEffect(() => {
     if (!id) return
@@ -65,7 +66,7 @@ export function PengumumanDetailPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
       <div className="flex items-center gap-3 mb-6">
         <Link to="/pengumuman" className="text-gray-500 hover:text-gray-700 text-sm">
           ← Semua Pengumuman

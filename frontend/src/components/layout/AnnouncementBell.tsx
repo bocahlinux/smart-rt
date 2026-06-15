@@ -32,7 +32,7 @@ function persistRead(userId: string, ids: Set<string>) {
   localStorage.setItem(storageKey(userId), JSON.stringify([...ids]))
 }
 
-export function AnnouncementBell() {
+export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownClassName?: string }) {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -102,7 +102,7 @@ export function AnnouncementBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 sm:w-96">
+        <div className={cn('absolute z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 sm:w-96', dropdownClassName)}>
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">Pengumuman</span>

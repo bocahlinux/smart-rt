@@ -5,6 +5,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, CreateModelMixin
 
 from accounts.models import WargaProfile
+from accounts.permissions import has_perm
 from accounts.utils import error_response, success_response
 from notifications.services import notify_user, notify_admins
 
@@ -22,11 +23,8 @@ from .serializers import (
     PengajuanPerubahanSerializer,
 )
 
-APPROVER_ROLES = ("admin", "sekretaris", "pengurus")
-
-
 def _is_approver(user):
-    return user.role in APPROVER_ROLES
+    return has_perm(user, "kelola_kartu_keluarga")
 
 
 def _warga_kk(user):
@@ -86,8 +84,8 @@ class KartuKeluargaViewSet(ModelViewSet):
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.role != "admin":
-            return error_response("PERMISSION_DENIED", "Hanya admin yang dapat menghapus KK.", status_code=403)
+        if not has_perm(request.user, "kelola_kartu_keluarga"):
+            return error_response("PERMISSION_DENIED", "Anda tidak memiliki izin untuk menghapus KK.", status_code=403)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"], url_path=r"cari/(?P<no_kk>[0-9]{16})")

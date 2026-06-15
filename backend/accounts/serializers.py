@@ -60,18 +60,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """GET /auth/me — lihat docs/06-API-CONTRACT.md §2.5.
-
-    Field `profile` adalah placeholder forward-compatible: bernilai `null`
-    sampai `WargaProfile` (relasi `User.profile`) diimplementasikan di
-    Phase 3 — lihat docs/05-DATABASE.md §5.
-    """
+    """GET /auth/me — lihat docs/06-API-CONTRACT.md §2.5."""
 
     profile = serializers.SerializerMethodField()
+    permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "email", "phone", "role", "status", "profile"]
+        fields = ["id", "email", "phone", "role", "status", "profile", "permissions"]
         read_only_fields = fields
 
     def get_profile(self, obj):
@@ -83,6 +79,11 @@ class UserSerializer(serializers.ModelSerializer):
             "namaLengkap": getattr(profile, "nama_lengkap", None),
             "foto": getattr(foto, "url", None) if foto else None,
         }
+
+    def get_permissions(self, obj):
+        from accounts.permissions import get_user_permissions
+
+        return get_user_permissions(obj)
 
 
 class UserManagementSerializer(serializers.ModelSerializer):

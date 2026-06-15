@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { deleteKegiatan, getKegiatan, rsvpKegiatan } from '../../services/kegiatanService'
 import type { KegiatanDetail, RSVPStatus } from '../../types/kegiatan'
-
-const PENGURUS_ROLES = ['admin', 'sekretaris', 'pengurus']
 
 const RSVP_LABELS: Record<RSVPStatus, string> = {
   hadir: 'Hadir',
@@ -41,7 +40,7 @@ export function KegiatanDetailPage() {
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const isModerator = user?.role && PENGURUS_ROLES.includes(user.role)
+  const isModerator = hasPerm(user, 'kelola_kegiatan')
 
   useEffect(() => {
     if (!id) return
@@ -91,7 +90,7 @@ export function KegiatanDetailPage() {
   }
   if (error) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="mx-auto max-w-3xl px-4 py-6 lg:px-8">
         <button onClick={() => navigate('/kegiatan')} className="text-sm text-gray-500 mb-4">
           ← Kembali
         </button>

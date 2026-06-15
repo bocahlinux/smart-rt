@@ -15,7 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.permissions import IsBendahara, IsAdmin
+from accounts.permissions import IsBendahara
 from audit.services import log_action
 from .filters import IuranWargaFilter, TransaksiFilter
 from .models import IuranWarga, KategoriTransaksi, Transaksi
@@ -41,7 +41,7 @@ class KategoriTransaksiViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == "destroy":
-            return [IsAdmin()]
+            return [IsBendaharaOrAdmin()]
         return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
@@ -112,7 +112,7 @@ class TransaksiViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == "destroy":
-            return [IsAdmin()]
+            return [IsBendaharaOrAdmin()]
         return [IsBendaharaOrAdmin()]
 
     def get_serializer_class(self):
@@ -351,8 +351,10 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
         return [IsBendaharaOrAdmin()]
 
     def list(self, request, *args, **kwargs):
-        """List semua iuran — hanya bendahara/admin."""
-        if request.user.role not in ["admin", "bendahara"]:
+        """List semua iuran — hanya yang punya izin konfirmasi_iuran."""
+        from accounts.permissions import has_perm
+
+        if not has_perm(request.user, "konfirmasi_iuran"):
             return Response(
                 {"status": "error", "message": "Akses ditolak.", "code": "PERMISSION_DENIED"},
                 status=status.HTTP_403_FORBIDDEN,

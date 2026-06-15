@@ -106,7 +106,7 @@ export function ThreadFormPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="mx-auto max-w-2xl px-4 py-6 lg:px-8">
       <div className="mb-6">
         <button
           type="button"

@@ -6,17 +6,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import User, WargaProfile
+from accounts.permissions import has_perm
 from kegiatan.models import Kegiatan
 from keuangan.models import IuranWarga, Transaksi
 from pengaduan.models import Pengaduan
 from pengumuman.models import Pengumuman
 
-PENGURUS_ROLES = {"admin", "sekretaris", "bendahara", "pengurus"}
-
 
 class IsPengurus(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in PENGURUS_ROLES
+        return request.user.is_authenticated and has_perm(request.user, "akses_dashboard_pengurus")
 
 
 class DashboardPengurusView(APIView):
@@ -145,9 +144,44 @@ class DashboardWargaView(APIView):
             for k in kegiatan_qs
         ]
 
+        # Info profil warga
+        profile_info = None
+        try:
+            profile = request.user.profile
+            kk_obj = profile.kartu_keluarga
+            profile_info = {
+                "namaLengkap": profile.nama_lengkap,
+                "noKk": kk_obj.no_kk if kk_obj else None,
+                "jumlahAnggotaKK": kk_obj.anggota.filter(is_deleted=False).count() if kk_obj else 0,
+                "kartuKeluargaId": str(kk_obj.id) if kk_obj else None,
+            }
+        except Exception:
+            pass
+
+        # Riwayat iuran 3 bulan terakhir
+        riwayat_iuran = []
+        try:
+            profile = request.user.profile
+            for i in range(3):
+                b = bulan - i
+                t = tahun
+                while b <= 0:
+                    b += 12
+                    t -= 1
+                record = IuranWarga.objects.filter(warga=profile, bulan=b, tahun=t).first()
+                riwayat_iuran.append({
+                    "bulan": b,
+                    "tahun": t,
+                    "status": record.status if record else "belum_bayar",
+                })
+        except Exception:
+            pass
+
         return Response(
             {
+                "profileInfo": profile_info,
                 "iuranBulanIni": iuran_status,
+                "riwayatIuran": riwayat_iuran,
                 "pengumumanTerbaru": pengumuman_list,
                 "pengaduanSaya": pengaduan_list,
                 "kegiatanMendatang": kegiatan_list,

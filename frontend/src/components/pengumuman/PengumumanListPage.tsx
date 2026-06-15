@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { deletePengumuman, listPengumuman } from '../../services/pengumumanService'
 import type { Pengumuman, PengumumanKategori } from '../../types/pengumuman'
@@ -38,7 +39,7 @@ export function PengumumanListPage() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const canWrite = user?.role && ['admin', 'pengurus', 'sekretaris'].includes(user.role)
+  const canWrite = hasPerm(user, 'kelola_pengumuman')
 
   useEffect(() => {
     load()
@@ -73,7 +74,7 @@ export function PengumumanListPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Pengumuman RT</h1>
         {canWrite && (

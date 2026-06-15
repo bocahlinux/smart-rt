@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { getDashboardKeuangan } from '../../services/keuanganService'
 import type { DashboardKeuangan } from '../../types/keuangan'
@@ -58,7 +59,7 @@ export function KeuanganDashboardPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const canAccess = user?.role === 'admin' || user?.role === 'bendahara'
+  const canAccess = hasPerm(user, 'kelola_keuangan')
 
   useEffect(() => {
     if (!canAccess) return
@@ -83,7 +84,7 @@ export function KeuanganDashboardPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard Keuangan</h1>
         <div className="flex items-center gap-3">

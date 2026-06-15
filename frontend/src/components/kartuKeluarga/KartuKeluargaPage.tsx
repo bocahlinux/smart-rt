@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Users, Plus, Trash2, Edit2, Home, MapPin, Hash, ArrowLeft } from 'lucide-react'
 
+
 import { cn } from '@/lib/utils'
+import { hasPerm } from '@/lib/permissions'
 import { getKK, getKKSaya } from '@/services/kartuKeluargaService'
 import type { KartuKeluarga, AnggotaKK } from '@/types/kartuKeluarga'
 import { HUBUNGAN_LABEL, HUBUNGAN_ORDER } from '@/types/kartuKeluarga'
 import { useAuthStore } from '@/stores/authStore'
 import { HapusAnggotaModal } from './HapusAnggotaModal'
+import { TambahAnggotaModal } from './TambahAnggotaModal'
 import { WargaDetailModal } from '@/components/warga/WargaDetailModal'
 
 const STATUS_CLS: Record<string, string> = {
@@ -33,13 +36,14 @@ export function KartuKeluargaPage() {
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const isAdmin = user?.role && ['admin', 'sekretaris', 'pengurus'].includes(user.role)
+  const isAdmin = hasPerm(user, 'kelola_kartu_keluarga')
 
   const [kk, setKK] = useState<KartuKeluarga | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [hapusTarget, setHapusTarget] = useState<AnggotaKK | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
+  const [tambahOpen, setTambahOpen] = useState(false)
 
   function loadKK() {
     setLoading(true)
@@ -141,13 +145,14 @@ export function KartuKeluargaPage() {
         {/* Action bar */}
         <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 dark:border-slate-800">
           <p className="text-xs text-slate-400">Daftar anggota keluarga</p>
-          <Link
-            to={`/kk/${kk.id}/tambah-anggota`}
+          <button
+            type="button"
+            onClick={() => setTambahOpen(true)}
             className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700"
           >
             <Plus className="h-3.5 w-3.5" />
             Tambah Anggota
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -272,6 +277,14 @@ export function KartuKeluargaPage() {
           anggota={hapusTarget}
           onClose={() => setHapusTarget(null)}
           onSubmitted={() => setHapusTarget(null)}
+        />
+      )}
+
+      {tambahOpen && kk && (
+        <TambahAnggotaModal
+          kk={kk}
+          onClose={() => setTambahOpen(false)}
+          onSuccess={() => { setTambahOpen(false); loadKK() }}
         />
       )}
     </div>

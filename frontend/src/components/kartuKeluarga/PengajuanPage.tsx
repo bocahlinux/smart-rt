@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { hasPerm } from '@/lib/permissions'
 import {
   listPengajuanTambah, reviewPengajuanTambah,
   listPengajuanHapus, reviewPengajuanHapus,
@@ -87,7 +88,7 @@ function ReviewModal({
 
 export function PengajuanPage() {
   const user = useAuthStore((s) => s.user)
-  const isApprover = user?.role && ['admin', 'sekretaris', 'pengurus'].includes(user.role)
+  const isApprover = hasPerm(user, 'kelola_kartu_keluarga')
 
   const [tab, setTab] = useState<Tab>('tambah')
   const [statusFilter, setStatusFilter] = useState<string>('pending')

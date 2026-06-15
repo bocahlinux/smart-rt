@@ -5,64 +5,91 @@ import {
   CalendarDays,
   ChevronRight,
   CircleDollarSign,
+  ClipboardList,
+  Home,
   LayoutDashboard,
   LayoutGrid,
   LogOut,
   Megaphone,
   MessageSquare,
   Moon,
+  Settings2,
   ShieldAlert,
   ShieldCheck,
   Sun,
-  User,
+  User as UserIcon,
   Users,
+  Wallet,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 
 import { AnnouncementBell } from '@/components/layout/AnnouncementBell'
 import { useTheme } from '@/hooks/useTheme'
+import { hasPerm } from '@/lib/permissions'
 import { cn } from '@/lib/utils'
 import { logout as logoutRequest } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
+import type { User } from '@/types/auth'
 
 // ── Types & constants ──────────────────────────────────────────
-
-const PENGURUS_ROLES = ['admin', 'sekretaris', 'bendahara', 'pengurus']
 
 interface NavItem {
   to: string
   label: string
   icon: React.ElementType
+  /** Tampilkan hanya untuk role persis ini */
   roles?: string[]
+  /** Tampilkan jika user memiliki salah satu permission ini */
+  permAny?: string[]
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/',           label: 'Beranda',    icon: LayoutDashboard },
-  { to: '/users',      label: 'Pengguna',   icon: ShieldCheck,      roles: ['admin'] },
-  { to: '/warga',      label: 'Warga',      icon: Users,            roles: PENGURUS_ROLES },
-  { to: '/keuangan',   label: 'Keuangan',   icon: CircleDollarSign, roles: ['admin', 'bendahara', 'pengurus'] },
-  { to: '/pengumuman', label: 'Pengumuman', icon: Megaphone },
-  { to: '/pengaduan',  label: 'Pengaduan',  icon: ShieldAlert },
-  { to: '/forum',      label: 'Forum',      icon: MessageSquare },
-  { to: '/kegiatan',   label: 'Kegiatan',   icon: CalendarDays },
-  { to: '/polling',    label: 'Polling',    icon: BarChart3 },
+  { to: '/',             label: 'Beranda',        icon: LayoutDashboard },
+  { to: '/warga',        label: 'Warga',          icon: Users,             permAny: ['tambah_edit_warga', 'verifikasi_warga', 'export_import_warga'] },
+  { to: '/keuangan',     label: 'Keuangan',       icon: CircleDollarSign,  permAny: ['kelola_keuangan', 'konfirmasi_iuran'] },
+  { to: '/pengumuman',   label: 'Pengumuman',     icon: Megaphone },
+  { to: '/pengaduan',    label: 'Pengaduan',      icon: ShieldAlert },
+  { to: '/forum',        label: 'Forum',          icon: MessageSquare },
+  { to: '/kegiatan',     label: 'Kegiatan',       icon: CalendarDays },
+  { to: '/polling',      label: 'Polling',        icon: BarChart3 },
+  // Khusus warga
+  { to: '/kk/saya',      label: 'Kartu Keluarga', icon: Home,              roles: ['warga'] },
+  { to: '/iuran/upload', label: 'Iuran Saya',     icon: Wallet,            roles: ['warga'] },
+  { to: '/pengajuan',    label: 'Pengajuan',      icon: ClipboardList,     roles: ['warga'] },
+  // Admin-only (disendirikan ke bawah)
+  { to: '/users',        label: 'Pengguna',       icon: ShieldCheck,       roles: ['admin'] },
+  { to: '/permissions',  label: 'Izin Role',      icon: Settings2,         roles: ['admin'] },
 ]
 
 const ROLE_LABEL: Record<string, string> = {
-  admin: 'Admin', sekretaris: 'Sekretaris', bendahara: 'Bendahara',
-  pengurus: 'Pengurus', warga: 'Warga',
+  admin: 'Admin', ketua_rt: 'Ketua RT', sekretaris: 'Sekretaris',
+  bendahara: 'Bendahara', pengurus: 'Pengurus', warga: 'Warga',
 }
 
-// Pilih 4 item utama untuk bottom nav berdasarkan role — sisanya masuk "Lainnya"
-function getPrimaryNav(visibleNav: NavItem[], isPengurus: boolean): NavItem[] {
+function isNavVisible(item: NavItem, user: User | null): boolean {
+  if (!user) return false
+  if (user.role === 'admin') {
+    if (item.roles && !item.roles.includes('admin')) return false
+    return true
+  }
+  if (user.role === 'ketua_rt') {
+    if (item.roles) return false
+    if (item.permAny) return item.permAny.some((p) => hasPerm(user, p))
+    return true
+  }
+  if (item.roles) return item.roles.includes(user.role)
+  if (item.permAny) return item.permAny.some((p) => hasPerm(user, p))
+  return true
+}
+
+function getPrimaryNav(visibleNav: NavItem[], user: User | null): NavItem[] {
+  const isPengurus = user?.role !== 'warga'
   if (isPengurus) {
-    // Pengurus: Beranda, Warga, Keuangan, Pengaduan
     const priority = ['/', '/warga', '/keuangan', '/pengaduan']
     return priority.flatMap((p) => visibleNav.filter((i) => i.to === p))
   }
-  // Warga: Beranda, Pengaduan, Forum, Kegiatan
-  const priority = ['/', '/pengaduan', '/forum', '/kegiatan']
+  const priority = ['/', '/kk/saya', '/iuran/upload', '/pengaduan']
   return priority.flatMap((p) => visibleNav.filter((i) => i.to === p))
 }
 
@@ -70,15 +97,18 @@ function getPrimaryNav(visibleNav: NavItem[], isPengurus: boolean): NavItem[] {
 
 function ThemeToggle({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: () => void }) {
   return (
-    <button type="button" onClick={onToggle}
+    <button
+      type="button"
+      onClick={onToggle}
       aria-label={theme === 'dark' ? 'Mode terang' : 'Mode gelap'}
-      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+    >
       {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
   )
 }
 
-// ── User menu (avatar → dropdown) ─────────────────────────────
+// ── User menu (avatar → dropdown) — mobile only ────────────────
 
 function UserMenu({ onLogout }: { onLogout: () => void }) {
   const { user } = useAuthStore()
@@ -99,16 +129,18 @@ function UserMenu({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
         aria-label="Menu akun"
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white ring-2 ring-transparent hover:ring-primary-300 dark:hover:ring-primary-700 transition">
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white ring-2 ring-transparent transition hover:ring-primary-300 dark:hover:ring-primary-700"
+      >
         {initials}
       </button>
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-          {/* User info */}
-          <div className="px-4 py-3.5 border-b border-slate-100 dark:border-slate-800">
+          <div className="border-b border-slate-100 px-4 py-3.5 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">
                 {initials}
@@ -124,16 +156,20 @@ function UserMenu({ onLogout }: { onLogout: () => void }) {
               </div>
             </div>
           </div>
-
-          {/* Actions */}
           <div className="py-1">
-            <NavLink to="/profile" onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800">
-              <User className="h-4 w-4 text-slate-400" />
+            <NavLink
+              to="/profile"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <UserIcon className="h-4 w-4 text-slate-400" />
               Profil Saya
             </NavLink>
-            <button type="button" onClick={() => { setOpen(false); onLogout() }}
-              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
+            <button
+              type="button"
+              onClick={() => { setOpen(false); onLogout() }}
+              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
               <LogOut className="h-4 w-4" />
               Keluar
             </button>
@@ -163,15 +199,9 @@ function MoreDrawer({
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Sheet */}
       <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-safe pt-1 dark:bg-slate-900">
-        {/* Drag handle */}
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
-
-        {/* User info */}
         {user && (
           <div className="flex items-center gap-3 border-b border-slate-100 px-5 pb-3 dark:border-slate-800">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">
@@ -188,17 +218,22 @@ function MoreDrawer({
             </div>
           </div>
         )}
-
-        {/* Nav grid */}
         <div className="grid grid-cols-3 gap-1 px-4 py-3">
           {items.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.to === '/'} onClick={onClose}
-              className={({ isActive }) => cn(
-                'flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-xs font-medium transition',
-                isActive
-                  ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
-              )}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              onClick={onClose}
+              className={({ isActive }) =>
+                cn(
+                  'flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-xs font-medium transition',
+                  isActive
+                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
+                )
+              }
+            >
               {({ isActive }) => (
                 <>
                   <item.icon className={cn('h-5 w-5', isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400')} />
@@ -208,11 +243,12 @@ function MoreDrawer({
             </NavLink>
           ))}
         </div>
-
-        {/* Logout */}
         <div className="border-t border-slate-100 px-4 pb-6 pt-2 dark:border-slate-800">
-          <button type="button" onClick={() => { onClose(); onLogout() }}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
+          <button
+            type="button"
+            onClick={() => { onClose(); onLogout() }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+          >
             <LogOut className="h-4 w-4" />
             Keluar
           </button>
@@ -226,18 +262,32 @@ function MoreDrawer({
 
 function SidebarNavItem({ item }: { item: NavItem }) {
   return (
-    <NavLink to={item.to} end={item.to === '/'}
-      className={({ isActive }) => cn(
-        'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-        isActive
-          ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100',
-      )}>
+    <NavLink
+      to={item.to}
+      end={item.to === '/'}
+      className={({ isActive }) =>
+        cn(
+          'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
+          isActive
+            ? 'bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white',
+        )
+      }
+    >
       {({ isActive }) => (
         <>
-          <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400 group-hover:text-slate-600')} />
-          {item.label}
-          {isActive && <ChevronRight className="ml-auto h-3.5 w-3.5 text-primary-400" />}
+          {isActive && (
+            <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-primary-600 dark:bg-primary-400" />
+          )}
+          <item.icon
+            className={cn(
+              'h-4.5 w-4.5 shrink-0 transition-colors',
+              isActive
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200',
+            )}
+          />
+          <span className="truncate">{item.label}</span>
         </>
       )}
     </NavLink>
@@ -248,13 +298,18 @@ function SidebarNavItem({ item }: { item: NavItem }) {
 
 function BottomNavItem({ item }: { item: NavItem }) {
   return (
-    <NavLink to={item.to} end={item.to === '/'}
-      className={({ isActive }) => cn(
-        'flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
-        isActive
-          ? 'text-primary-600 dark:text-primary-400'
-          : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300',
-      )}>
+    <NavLink
+      to={item.to}
+      end={item.to === '/'}
+      className={({ isActive }) =>
+        cn(
+          'flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
+          isActive
+            ? 'text-primary-600 dark:text-primary-400'
+            : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300',
+        )
+      }
+    >
       {({ isActive }) => (
         <>
           <item.icon className={cn('h-5 w-5', isActive && 'text-primary-600 dark:text-primary-400')} />
@@ -273,13 +328,13 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme()
   const [moreOpen, setMoreOpen] = useState(false)
 
-  const isPengurus = user?.role ? PENGURUS_ROLES.includes(user.role) : false
+  const visibleNav = NAV_ITEMS.filter((item) => isNavVisible(item, user ?? null))
 
-  const visibleNav = NAV_ITEMS.filter(
-    (item) => !item.roles || (user?.role && item.roles.includes(user.role)),
-  )
+  // Split into main nav and admin-only nav
+  const mainNav = visibleNav.filter((i) => !i.roles?.includes('admin'))
+  const adminNav = visibleNav.filter((i) => i.roles?.includes('admin'))
 
-  const primaryNav = getPrimaryNav(visibleNav, isPengurus)
+  const primaryNav = getPrimaryNav(visibleNav, user ?? null)
   const primarySet = new Set(primaryNav.map((i) => i.to))
   const moreNav = visibleNav.filter((i) => !primarySet.has(i.to))
 
@@ -288,50 +343,106 @@ export function AppLayout() {
     finally { logout(); navigate('/login', { replace: true }) }
   }
 
+  const initials = user?.email.slice(0, 2).toUpperCase() ?? ''
+  const username = user?.email.split('@')[0] ?? ''
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* ── Desktop Sidebar ── */}
+
+      {/* ── Desktop Sidebar ─────────────────────────────────── */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:flex">
-        {/* Logo */}
-        <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5 dark:border-slate-800">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600">
+
+        {/* Brand area */}
+        <div className="flex h-15 shrink-0 items-center gap-3 border-b border-slate-100 px-4 dark:border-slate-800/80">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 shadow-sm">
             <Building2 className="h-4 w-4 text-white" />
           </div>
-          <span className="flex-1 text-base font-bold text-slate-900 dark:text-white">Smart-RT</span>
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold leading-snug text-slate-900 dark:text-white">Smart-RT</p>
+            <p className="text-[10px] font-medium leading-snug text-slate-400 dark:text-slate-500">
+              Sistem Informasi RT
+            </p>
+          </div>
+          <div className="flex items-center gap-0.5">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <AnnouncementBell dropdownClassName="left-0" />
+          </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="space-y-0.5">
-            {visibleNav.map((item) => (
-              <li key={item.to}><SidebarNavItem item={item} /></li>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
+          {/* Main items */}
+          <div className="space-y-0.5">
+            {mainNav.map((item) => (
+              <SidebarNavItem key={item.to} item={item} />
             ))}
-          </ul>
-        </nav>
+          </div>
 
-        {/* User + logout */}
-        <div className="border-t border-slate-100 p-4 dark:border-slate-800">
-          {user && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">
-                {user.email.slice(0, 2).toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{user.email}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{ROLE_LABEL[user.role] ?? user.role}</p>
+          {/* Admin section */}
+          {adminNav.length > 0 && (
+            <div className="mt-5">
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-600">
+                Administrasi
+              </p>
+              <div className="space-y-0.5">
+                {adminNav.map((item) => (
+                  <SidebarNavItem key={item.to} item={item} />
+                ))}
               </div>
             </div>
           )}
-          <button type="button" onClick={() => void handleLogout()}
-            className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400">
-            <LogOut className="h-4 w-4" />
+        </nav>
+
+        {/* User + logout */}
+        <div className="shrink-0 border-t border-slate-100 p-3 dark:border-slate-800">
+          {user && (
+            <NavLink
+              to="/profile"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                  isActive
+                    ? 'bg-primary-50 dark:bg-primary-500/10'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-800/60',
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
+                    {initials}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={cn(
+                      'truncate text-sm font-semibold leading-snug',
+                      isActive ? 'text-primary-700 dark:text-primary-400' : 'text-slate-800 dark:text-slate-100',
+                    )}>
+                      {username}
+                    </p>
+                    <span className="inline-flex items-center rounded-full bg-primary-50 px-1.5 py-px text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                      {ROLE_LABEL[user.role] ?? user.role}
+                    </span>
+                  </div>
+                  <ChevronRight className={cn(
+                    'h-3.5 w-3.5 shrink-0',
+                    isActive ? 'text-primary-400' : 'text-slate-300 dark:text-slate-600',
+                  )} />
+                </>
+              )}
+            </NavLink>
+          )}
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
             Keluar
           </button>
         </div>
       </aside>
 
-      {/* ── Main area ── */}
+      {/* ── Main area ─────────────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white/80 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 lg:hidden">
@@ -339,7 +450,6 @@ export function AppLayout() {
             <Building2 className="h-3.5 w-3.5 text-white" />
           </div>
           <span className="text-sm font-bold text-slate-900 dark:text-white">Smart-RT</span>
-
           <div className="ml-auto flex items-center gap-1.5">
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <AnnouncementBell />
@@ -353,7 +463,7 @@ export function AppLayout() {
         </main>
       </div>
 
-      {/* ── Mobile Bottom Navigation ── */}
+      {/* ── Mobile Bottom Navigation ─────────────────────────── */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 lg:hidden">
         <ul className="flex">
           {primaryNav.map((item) => (
@@ -361,11 +471,12 @@ export function AppLayout() {
               <BottomNavItem item={item} />
             </li>
           ))}
-
-          {/* More button */}
           <li className="flex-1">
-            <button type="button" onClick={() => setMoreOpen(true)}
-              className="flex w-full flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              className="flex w-full flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+            >
               <LayoutGrid className="h-5 w-5" />
               Lainnya
             </button>
@@ -373,7 +484,6 @@ export function AppLayout() {
         </ul>
       </nav>
 
-      {/* More drawer */}
       {moreOpen && (
         <MoreDrawer
           items={moreNav}

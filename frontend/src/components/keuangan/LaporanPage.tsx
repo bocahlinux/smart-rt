@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { downloadLaporan } from '../../services/keuanganService'
 
@@ -18,7 +19,7 @@ export function LaporanPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const canAccess = user?.role === 'admin' || user?.role === 'bendahara'
+  const canAccess = hasPerm(user, 'kelola_keuangan')
 
   async function handleDownload(e: React.FormEvent) {
     e.preventDefault()
@@ -40,7 +41,7 @@ export function LaporanPage() {
   }
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
+    <div className="mx-auto max-w-xl px-4 py-6 lg:px-8">
       <div className="flex items-center gap-3 mb-6">
         <Link to="/keuangan/dashboard" className="text-gray-500 hover:text-gray-700 text-sm">← Dashboard</Link>
         <h1 className="text-2xl font-bold text-gray-800">Laporan Keuangan</h1>

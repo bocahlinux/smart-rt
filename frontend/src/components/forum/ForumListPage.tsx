@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { deleteThread, listThreads, lockThread, pinThread } from '../../services/forumService'
 import type { Thread, ThreadKategori } from '../../types/forum'
@@ -43,7 +44,7 @@ export function ForumListPage() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const isModerator = user?.role && ['admin', 'sekretaris', 'pengurus'].includes(user.role)
+  const isModerator = hasPerm(user, 'moderasi_forum')
 
   useEffect(() => {
     load()
@@ -96,7 +97,7 @@ export function ForumListPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Forum Diskusi RT</h1>
         <Link

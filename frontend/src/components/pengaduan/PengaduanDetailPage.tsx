@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import {
   deletePengaduan,
@@ -48,7 +49,6 @@ function formatDate(iso: string) {
   })
 }
 
-const MODERATOR_ROLES = ['admin', 'sekretaris', 'pengurus']
 const STATUS_OPTIONS: PengaduanStatus[] = ['diajukan', 'diproses', 'selesai', 'ditolak']
 
 export function PengaduanDetailPage() {
@@ -67,7 +67,7 @@ export function PengaduanDetailPage() {
   const [updating, setUpdating] = useState(false)
   const [updateMsg, setUpdateMsg] = useState('')
 
-  const isModerator = user?.role && MODERATOR_ROLES.includes(user.role)
+  const isModerator = hasPerm(user, 'update_pengaduan')
 
   useEffect(() => {
     if (!id) return
@@ -135,7 +135,7 @@ export function PengaduanDetailPage() {
 
   if (error) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="mx-auto max-w-3xl px-4 py-6 lg:px-8">
         <button onClick={() => navigate('/pengaduan')} className="text-sm text-gray-500 hover:text-gray-700 mb-4">
           ← Kembali
         </button>
@@ -149,7 +149,7 @@ export function PengaduanDetailPage() {
   if (!pengaduan) return null
 
   const isOwner = user?.email === (pengaduan.warga as { namaLengkap?: string; email?: string })?.email
-  const canDelete = isOwner || user?.role === 'admin'
+  const canDelete = isOwner || hasPerm(user, 'update_pengaduan')
 
   return (
     <div className="p-6 max-w-2xl mx-auto">

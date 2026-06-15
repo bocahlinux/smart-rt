@@ -1,15 +1,10 @@
 from rest_framework import permissions
 
-# Roles yang berhak CRUD kegiatan dan polling
-PENGURUS_ROLES = {"admin", "sekretaris", "pengurus"}
+from accounts.permissions import has_perm
 
 
 class IsPengurusOrAdmin(permissions.BasePermission):
-    """
-    Global permission: hanya admin, sekretaris, atau pengurus.
-    Warga & bendahara → 403.
-    Sesuai docs/11-SECURITY.md §2.3 (Kegiatan CRUD).
-    """
+    """Hanya yang punya izin kelola_kegiatan yang boleh CRUD kegiatan."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in PENGURUS_ROLES
+        return request.user.is_authenticated and has_perm(request.user, "kelola_kegiatan")

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Users, Home, ChevronDown, Edit2, Trash2, Download, Upload, Plus, RotateCcw } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/authStore'
 import { deleteWarga, downloadBlob, exportWarga, importWarga, listDeletedWarga, listWarga, restoreWarga, verifyWarga } from '@/services/wargaService'
 import { listKK } from '@/services/kartuKeluargaService'
@@ -199,10 +200,10 @@ export function WargaListPage() {
   const [deletedError, setDeletedError] = useState('')
   const [restoreMsg, setRestoreMsg] = useState('')
 
-  const canWrite = user?.role === 'admin' || user?.role === 'sekretaris'
-  const canExport = user?.role === 'admin' || user?.role === 'sekretaris'
-  const canDelete = user?.role === 'admin'
-  const canSeeKK = user?.role === 'admin' || user?.role === 'sekretaris'
+  const canWrite = hasPerm(user, 'tambah_edit_warga')
+  const canExport = hasPerm(user, 'export_import_warga')
+  const canDelete = hasPerm(user, 'hapus_restore_warga')
+  const canSeeKK = hasPerm(user, 'tambah_edit_warga')
 
   async function load(p = page) {
     setLoading(true)

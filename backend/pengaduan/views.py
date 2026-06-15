@@ -11,7 +11,8 @@ from rest_framework.views import APIView
 from audit.services import log_action
 from .filters import PengaduanFilter
 from .models import Pengaduan
-from .permissions import CanUpdateStatus, IsOwnerOrPengurus, PENGURUS_ROLES
+from accounts.permissions import has_perm
+from .permissions import CanUpdateStatus, IsOwnerOrPengurus
 from .serializers import (
     PengaduanCreateSerializer,
     PengaduanDetailSerializer,
@@ -36,10 +37,8 @@ class PengaduanListCreateView(APIView):
     def _get_queryset(self, request):
         """Filter queryset berdasarkan role pengguna."""
         qs = Pengaduan.objects.select_related("warga", "warga__profile")
-        if request.user.role in PENGURUS_ROLES:
-            # Pengurus lihat semua
+        if has_perm(request.user, "update_pengaduan"):
             return qs
-        # Warga & bendahara: hanya pengaduan sendiri
         return qs.filter(warga=request.user)
 
     def get(self, request):
@@ -169,10 +168,10 @@ class PengaduanDetailView(APIView):
         if err:
             return err
 
-        # Hanya pemilik atau admin yang bisa hapus
-        if request.user.role != "admin" and pengaduan.warga != request.user:
+        # Hanya pemilik atau yang punya izin update_pengaduan yang bisa hapus
+        if not has_perm(request.user, "update_pengaduan") and pengaduan.warga != request.user:
             return Response(
-                {"status": "error", "message": "Hanya pemilik atau admin yang bisa menghapus pengaduan.", "code": "PERMISSION_DENIED"},
+                {"status": "error", "message": "Hanya pemilik atau pengurus yang bisa menghapus pengaduan.", "code": "PERMISSION_DENIED"},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

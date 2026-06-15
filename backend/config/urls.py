@@ -7,7 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from accounts.urls import user_management_patterns
+from accounts.urls import user_management_patterns, permission_patterns
 
 from .views import healthz
 
@@ -15,6 +15,7 @@ api_v1_patterns = [
     path("healthz/", healthz, name="healthz"),
     path("auth/", include("accounts.urls")),
     path("", include(user_management_patterns)),
+    path("", include(permission_patterns)),
     path("warga/", include("accounts.warga_urls")),
     path("", include("keuangan.urls")),
     path("", include("pengumuman.urls")),

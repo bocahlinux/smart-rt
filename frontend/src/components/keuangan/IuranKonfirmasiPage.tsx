@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { konfirmasiIuran, listIuran } from '../../services/keuanganService'
 import type { IuranStatus, IuranWarga } from '../../types/keuangan'
@@ -38,7 +39,7 @@ export function IuranKonfirmasiPage() {
   const [modalIuran, setModalIuran] = useState<IuranWarga | null>(null)
   const [keterangan, setKeterangan] = useState('')
 
-  const canAccess = user?.role === 'admin' || user?.role === 'bendahara'
+  const canAccess = hasPerm(user, 'konfirmasi_iuran')
 
   useEffect(() => {
     if (!canAccess) return
@@ -81,7 +82,7 @@ export function IuranKonfirmasiPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Konfirmasi Iuran Warga</h1>
 
       {msg && (

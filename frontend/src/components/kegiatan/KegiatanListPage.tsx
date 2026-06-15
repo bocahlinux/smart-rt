@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { listKegiatan } from '../../services/kegiatanService'
 import type { Kegiatan } from '../../types/kegiatan'
-
-const PENGURUS_ROLES = ['admin', 'sekretaris', 'pengurus']
 
 function formatTanggal(iso: string) {
   return new Date(iso).toLocaleDateString('id-ID', {
@@ -34,7 +33,7 @@ export function KegiatanListPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const isModerator = user?.role && PENGURUS_ROLES.includes(user.role)
+  const isModerator = hasPerm(user, 'kelola_kegiatan')
 
   const load = async () => {
     setLoading(true)
@@ -60,7 +59,7 @@ export function KegiatanListPage() {
   })
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Kegiatan RT</h1>

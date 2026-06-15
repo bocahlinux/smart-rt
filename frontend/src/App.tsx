@@ -2,6 +2,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { DashboardPage } from '@/components/auth/DashboardPage'
 import { LoginPage } from '@/components/auth/LoginPage'
+import { PermissionsPage } from '@/components/auth/PermissionsPage'
+import { ProfilePage } from '@/components/auth/ProfilePage'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RegisterPage } from '@/components/auth/RegisterPage'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -27,11 +29,8 @@ import { PengumumanDetailPage } from '@/components/pengumuman/PengumumanDetailPa
 import { PengumumanFormPage } from '@/components/pengumuman/PengumumanFormPage'
 import { PengumumanListPage } from '@/components/pengumuman/PengumumanListPage'
 import { UserListPage } from '@/components/users/UserListPage'
-import { WargaDetailPage } from '@/components/warga/WargaDetailPage'
-import { WargaKKPage } from '@/components/warga/WargaKKPage'
 import { WargaListPage } from '@/components/warga/WargaListPage'
 import { KartuKeluargaPage } from '@/components/kartuKeluarga/KartuKeluargaPage'
-import { TambahAnggotaPage } from '@/components/kartuKeluarga/TambahAnggotaPage'
 import { UbahAnggotaPage } from '@/components/kartuKeluarga/UbahAnggotaPage'
 import { PengajuanPage } from '@/components/kartuKeluarga/PengajuanPage'
 
@@ -45,19 +44,18 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/permissions" element={<PermissionsPage />} />
 
             {/* User management — admin only */}
             <Route path="/users" element={<UserListPage />} />
 
             {/* Phase 3: Data Warga */}
             <Route path="/warga" element={<WargaListPage />} />
-            <Route path="/warga/:id" element={<WargaDetailPage />} />
-            <Route path="/warga/:id/kk" element={<WargaKKPage />} />
 
             {/* Kartu Keluarga */}
             <Route path="/kk/saya" element={<KartuKeluargaPage />} />
             <Route path="/kk/:id" element={<KartuKeluargaPage />} />
-            <Route path="/kk/:kkId/tambah-anggota" element={<TambahAnggotaPage />} />
             <Route path="/kk/:kkId/ubah-anggota/:wargaId" element={<UbahAnggotaPage />} />
             <Route path="/pengajuan" element={<PengajuanPage />} />
 

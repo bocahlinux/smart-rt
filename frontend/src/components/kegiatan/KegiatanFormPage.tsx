@@ -65,7 +65,7 @@ export function KegiatanFormPage() {
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
+    <div className="mx-auto max-w-xl px-4 py-6 lg:px-8">
       <div className="mb-6">
         <button onClick={() => navigate('/kegiatan')} className="text-sm text-gray-500 hover:text-gray-700">
           ← Kembali

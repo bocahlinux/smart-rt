@@ -1,6 +1,6 @@
 // Tipe domain auth — lihat docs/06-API-CONTRACT.md §2.
 
-export type UserRole = 'admin' | 'sekretaris' | 'bendahara' | 'pengurus' | 'warga'
+export type UserRole = 'admin' | 'ketua_rt' | 'sekretaris' | 'bendahara' | 'pengurus' | 'warga'
 
 export type UserStatus = 'pending' | 'active' | 'rejected'
 
@@ -16,6 +16,7 @@ export interface User {
   role: UserRole
   status: UserStatus
   profile?: UserProfile | null
+  permissions?: Record<string, boolean>
 }
 
 export interface LoginPayload {

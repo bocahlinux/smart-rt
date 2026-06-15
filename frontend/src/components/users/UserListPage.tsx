@@ -39,6 +39,7 @@ const STATUS_STYLE: Record<UserStatus, { label: string; cls: string; icon: React
 
 const ROLE_STYLE: Record<UserRole, string> = {
   admin:      'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+  ketua_rt:   'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
   sekretaris: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   bendahara:  'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
   pengurus:   'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
@@ -46,10 +47,11 @@ const ROLE_STYLE: Record<UserRole, string> = {
 }
 
 const ROLE_LABEL: Record<UserRole, string> = {
-  admin: 'Admin', sekretaris: 'Sekretaris', bendahara: 'Bendahara', pengurus: 'Pengurus', warga: 'Warga',
+  admin: 'Admin', ketua_rt: 'Ketua RT', sekretaris: 'Sekretaris',
+  bendahara: 'Bendahara', pengurus: 'Pengurus', warga: 'Warga',
 }
 
-const ALL_ROLES: UserRole[] = ['admin', 'sekretaris', 'bendahara', 'pengurus', 'warga']
+const ALL_ROLES: UserRole[] = ['admin', 'ketua_rt', 'sekretaris', 'bendahara', 'pengurus', 'warga']
 const ALL_STATUSES: UserStatus[] = ['active', 'pending', 'rejected']
 
 const SELECT_CLS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800'

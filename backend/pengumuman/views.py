@@ -6,14 +6,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import has_perm
 from audit.models import AuditLog
 
 from .filters import PengumumanFilter
 from .models import Pengumuman
 from .permissions import IsPengurusOrAdmin
 from .serializers import PengumumanCreateSerializer, PengumumanListSerializer
-
-PENGURUS_ROLES = {"admin", "pengurus", "sekretaris"}
 
 
 def _build_response(data, message="", status_code=status.HTTP_200_OK, pagination=None):
@@ -40,7 +39,7 @@ class PengumumanListCreateView(APIView):
         qs = Pengumuman.objects.select_related("created_by__profile").all()
 
         # Warga hanya lihat yang sudah published dan jadwalnya sudah tiba
-        if request.user.role not in PENGURUS_ROLES:
+        if not has_perm(request.user, "kelola_pengumuman"):
             now = timezone.now()
             qs = qs.filter(is_published=True).filter(
                 Q(scheduled_at__isnull=True) | Q(scheduled_at__lte=now)
@@ -122,7 +121,7 @@ class PengumumanDetailView(APIView):
         if obj is None:
             return Response({"status": "error", "message": "Tidak ditemukan."}, status=404)
 
-        if request.user.role not in PENGURUS_ROLES:
+        if not has_perm(request.user, "kelola_pengumuman"):
             now = timezone.now()
             if not obj.is_published:
                 return Response({"status": "error", "message": "Tidak ditemukan."}, status=404)

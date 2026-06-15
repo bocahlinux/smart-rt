@@ -1,13 +1,10 @@
 from rest_framework import permissions
 
-PENGURUS_ROLES = {"admin", "sekretaris", "pengurus"}
+from accounts.permissions import has_perm
 
 
 class IsPengurusOrAdmin(permissions.BasePermission):
-    """
-    Hanya admin, sekretaris, atau pengurus yang bisa CRUD poll.
-    Sesuai docs/11-SECURITY.md §2.3 (Polling CRUD).
-    """
+    """Hanya yang punya izin kelola_polling yang boleh CRUD polling."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in PENGURUS_ROLES
+        return request.user.is_authenticated and has_perm(request.user, "kelola_polling")

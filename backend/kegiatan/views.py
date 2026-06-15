@@ -9,7 +9,8 @@ from rest_framework.views import APIView
 from audit.services import log_action
 from .filters import KegiatanFilter
 from .models import Kegiatan, RSVP
-from .permissions import IsPengurusOrAdmin, PENGURUS_ROLES
+from accounts.permissions import has_perm
+from .permissions import IsPengurusOrAdmin
 from .serializers import (
     KegiatanCreateSerializer,
     KegiatanDetailSerializer,

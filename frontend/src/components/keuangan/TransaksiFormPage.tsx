@@ -1,14 +1,12 @@
-/**
- * Form tambah transaksi keuangan RT.
- * Lihat docs/06-API-CONTRACT.md §4.2 dan docs/07-TASK-BREAKDOWN.md §4.14.
- */
-
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Settings2 } from 'lucide-react'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { createTransaksi, listKategori } from '../../services/keuanganService'
 import type { KategoriTransaksi, TransaksiTipe } from '../../types/keuangan'
+import { KategoriModal } from './KategoriModal'
 
 interface FormState {
   kategoriId: string
@@ -42,14 +40,19 @@ export function TransaksiFormPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState<FormState>(INITIAL)
   const [kategoriAll, setKategoriAll] = useState<KategoriTransaksi[]>([])
+  const [kategoriOpen, setKategoriOpen] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const canAccess = user?.role === 'admin' || user?.role === 'bendahara'
+  const canAccess = hasPerm(user, 'kelola_keuangan')
+
+  function loadKategori() {
+    listKategori().then(setKategoriAll).catch(() => {})
+  }
 
   useEffect(() => {
     if (!canAccess) return
-    listKategori().then(setKategoriAll).catch(() => {})
+    loadKategori()
   }, [canAccess])
 
   const kategoriFiltered = kategoriAll.filter((k) => k.tipe === form.tipe)
@@ -92,7 +95,14 @@ export function TransaksiFormPage() {
   }
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
+    <>
+    {kategoriOpen && (
+      <KategoriModal
+        onClose={() => setKategoriOpen(false)}
+        onChanged={loadKategori}
+      />
+    )}
+    <div className="mx-auto max-w-xl px-4 py-6 lg:px-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Tambah Transaksi</h1>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 mb-4 text-sm">{error}</div>}
@@ -117,19 +127,31 @@ export function TransaksiFormPage() {
         </Field>
 
         <Field label="Kategori" required>
-          <select
-            value={form.kategoriId}
-            onChange={(e) => set('kategoriId', e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Pilih kategori...</option>
-            {kategoriFiltered.map((k) => (
-              <option key={k.id} value={k.id}>{k.nama}</option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={form.kategoriId}
+              onChange={(e) => set('kategoriId', e.target.value)}
+              required
+              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Pilih kategori...</option>
+              {kategoriFiltered.map((k) => (
+                <option key={k.id} value={k.id}>{k.nama}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setKategoriOpen(true)}
+              title="Kelola kategori"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            >
+              <Settings2 className="h-4 w-4" />
+            </button>
+          </div>
           {kategoriFiltered.length === 0 && (
-            <p className="text-xs text-amber-600 mt-1">Belum ada kategori untuk tipe ini. Tambah dulu di halaman kategori.</p>
+            <p className="text-xs text-amber-600 mt-1">
+              Belum ada kategori. Klik <button type="button" onClick={() => setKategoriOpen(true)} className="underline font-medium">kelola kategori</button> untuk menambahkan.
+            </p>
           )}
         </Field>
 
@@ -183,5 +205,6 @@ export function TransaksiFormPage() {
         </div>
       </form>
     </div>
+    </>
   )
 }

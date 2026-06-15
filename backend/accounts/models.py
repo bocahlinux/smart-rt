@@ -14,6 +14,7 @@ class User(AbstractUser):
 
     class Role(models.TextChoices):
         ADMIN = "admin", "Admin"
+        KETUA_RT = "ketua_rt", "Ketua RT"
         SEKRETARIS = "sekretaris", "Sekretaris"
         BENDAHARA = "bendahara", "Bendahara"
         PENGURUS = "pengurus", "Pengurus"
@@ -141,3 +142,24 @@ class WargaProfile(models.Model):
 
     def __str__(self):
         return self.nama_lengkap
+
+
+class PermissionConfig(models.Model):
+    """Konfigurasi izin per permission-key → daftar role yang diizinkan.
+
+    Admin (role='admin') selalu memiliki semua izin tanpa perlu entri di tabel ini.
+    """
+
+    key = models.CharField(max_length=64, primary_key=True)
+    label = models.CharField(max_length=100)
+    description = models.CharField(max_length=255, blank=True)
+    category = models.CharField(max_length=64, blank=True)
+    # JSONField: list string role, misal ["sekretaris", "pengurus"]
+    allowed_roles = models.JSONField(default=list)
+
+    class Meta:
+        db_table = "permission_configs"
+        ordering = ["category", "key"]
+
+    def __str__(self):
+        return f"{self.key}: {self.allowed_roles}"

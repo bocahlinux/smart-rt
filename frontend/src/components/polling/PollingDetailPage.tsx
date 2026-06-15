@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { deletePoll, getPoll, votePoll } from '../../services/pollingService'
 import type { PollDetail } from '../../types/polling'
-
-const PENGURUS_ROLES = ['admin', 'sekretaris', 'pengurus']
 
 function formatDeadline(iso: string) {
   return new Date(iso).toLocaleString('id-ID', {
@@ -63,7 +62,7 @@ export function PollingDetailPage() {
   const [voting, setVoting] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const isModerator = user?.role && PENGURUS_ROLES.includes(user.role)
+  const isModerator = hasPerm(user, 'kelola_polling')
 
   useEffect(() => {
     if (!id) return
@@ -122,7 +121,7 @@ export function PollingDetailPage() {
   if (loading) return <div className="flex items-center justify-center py-24 text-gray-400">Memuat...</div>
   if (error) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="mx-auto max-w-3xl px-4 py-6 lg:px-8">
         <button onClick={() => navigate('/polling')} className="text-sm text-gray-500 mb-4">
           ← Kembali
         </button>

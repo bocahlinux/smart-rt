@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { deletePengaduan, listPengaduan } from '../../services/pengaduanService'
 import type { Pengaduan, PengaduanKategori, PengaduanStatus } from '../../types/pengaduan'
@@ -43,8 +44,6 @@ function formatDate(iso: string) {
   })
 }
 
-const MODERATOR_ROLES = ['admin', 'sekretaris', 'pengurus']
-
 export function PengaduanListPage() {
   const { user } = useAuthStore()
   const [pengaduan, setPengaduan] = useState<Pengaduan[]>([])
@@ -55,7 +54,7 @@ export function PengaduanListPage() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const isModerator = user?.role && MODERATOR_ROLES.includes(user.role)
+  const isModerator = hasPerm(user, 'update_pengaduan')
 
   useEffect(() => {
     load()
@@ -91,7 +90,7 @@ export function PengaduanListPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Pengaduan Warga</h1>
@@ -203,7 +202,7 @@ export function PengaduanListPage() {
                   </a>
                 )}
                 {/* Pemilik atau admin bisa hapus */}
-                {(user?.id === undefined || isModerator || user?.role === 'admin') && (
+                {(user?.id === undefined || isModerator) && (
                   <button
                     onClick={() => handleDelete(p)}
                     className="text-xs text-rose-500 hover:underline"

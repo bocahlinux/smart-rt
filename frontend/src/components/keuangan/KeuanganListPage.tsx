@@ -1,11 +1,7 @@
-/**
- * Halaman daftar transaksi keuangan RT.
- * Lihat docs/06-API-CONTRACT.md §4.1-4.4 dan docs/07-TASK-BREAKDOWN.md §4.13.
- */
-
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import {
   deleteTransaksi,
@@ -13,6 +9,7 @@ import {
   listTransaksi,
 } from '../../services/keuanganService'
 import type { KategoriTransaksi, Pagination, Transaksi, TransaksiTipe } from '../../types/keuangan'
+import { KategoriModal } from './KategoriModal'
 
 function formatRupiah(val: string | number): string {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val))
@@ -37,8 +34,9 @@ export function KeuanganListPage() {
   const [error, setError] = useState('')
   const [deleteMsg, setDeleteMsg] = useState('')
 
-  const canWrite = user?.role === 'admin' || user?.role === 'bendahara'
-  const canDelete = user?.role === 'admin'
+  const canWrite = hasPerm(user, 'kelola_keuangan')
+  const canDelete = hasPerm(user, 'kelola_keuangan')
+  const [kategoriOpen, setKategoriOpen] = useState(false)
 
   async function load(p = page) {
     setLoading(true)
@@ -88,19 +86,35 @@ export function KeuanganListPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <>
+    {kategoriOpen && (
+      <KategoriModal
+        onClose={() => setKategoriOpen(false)}
+        onChanged={() => listKategori().then(setKategoriList).catch(() => {})}
+      />
+    )}
+    <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Transaksi Keuangan</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Transaksi Keuangan</h1>
         <div className="flex gap-2">
           <Link to="/keuangan/dashboard" className="text-sm text-blue-600 hover:underline">Dashboard</Link>
           <Link to="/keuangan/laporan" className="text-sm text-blue-600 hover:underline">Laporan PDF</Link>
           {canWrite && (
-            <Link
-              to="/keuangan/baru"
-              className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"
-            >
-              + Tambah
-            </Link>
+            <>
+              <button
+                type="button"
+                onClick={() => setKategoriOpen(true)}
+                className="border border-slate-200 px-3 py-1.5 rounded text-sm text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Kategori
+              </button>
+              <Link
+                to="/keuangan/baru"
+                className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"
+              >
+                + Tambah
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -175,7 +189,7 @@ export function KeuanganListPage() {
               <tr key={t.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{t.tanggal}</td>
                 <td className="px-4 py-3 text-gray-800">{t.kategori.nama}</td>
-                <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate">{t.keterangan || '—'}</td>
+                <td className="px-4 py-3 text-gray-600 max-w-50 truncate">{t.keterangan || '—'}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIPE_BADGE[t.tipe]}`}>
                     {t.tipe === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
@@ -222,5 +236,6 @@ export function KeuanganListPage() {
         </div>
       )}
     </div>
+    </>
   )
 }

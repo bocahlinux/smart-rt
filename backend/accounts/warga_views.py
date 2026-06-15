@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import User, WargaProfile
-from accounts.permissions import IsAdmin, IsSekretaris
+from accounts.permissions import IsAdmin, IsSekretaris, has_perm
 from accounts.utils import error_response, success_response
 from accounts.warga_filters import WargaFilter
 from accounts.warga_serializers import WargaWriteSerializer, get_warga_serializer_class
@@ -48,10 +48,10 @@ class WargaViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         base_qs = WargaProfile.objects.select_related("user").filter(is_deleted=False)
-        if user.role in ("admin", "sekretaris", "bendahara", "pengurus"):
+        # Non-warga dan siapa pun yang punya izin kelola warga → lihat semua
+        if user.role != "warga" or has_perm(user, "tambah_edit_warga"):
             return base_qs
         # Warga: untuk list hanya profil sendiri; untuk detail akses semua
-        # (object-level permission dicek di retrieve() → 403 bukan 404)
         if self.action == "list":
             return base_qs.filter(user=user)
         return base_qs
@@ -92,19 +92,19 @@ class WargaViewSet(ModelViewSet):
 
     def _check_write_permission(self):
         user = self.request.user
-        if user.role not in ("admin", "sekretaris"):
+        if not has_perm(user, "tambah_edit_warga"):
             return error_response(
                 "PERMISSION_DENIED",
-                "Hanya admin atau sekretaris yang dapat mengelola data warga",
+                "Anda tidak memiliki izin untuk mengelola data warga",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
         return None
 
     def _check_admin_only(self):
-        if self.request.user.role != "admin":
+        if not has_perm(self.request.user, "hapus_restore_warga"):
             return error_response(
                 "PERMISSION_DENIED",
-                "Hanya admin yang dapat melakukan aksi ini",
+                "Anda tidak memiliki izin untuk melakukan aksi ini",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
         return None
@@ -418,9 +418,12 @@ class WargaViewSet(ModelViewSet):
 
     @action(detail=True, methods=["put"], url_path="verify")
     def verify(self, request, pk=None):
-        denied = self._check_write_permission()
-        if denied:
-            return denied
+        if not has_perm(request.user, "verifikasi_warga"):
+            return error_response(
+                "PERMISSION_DENIED",
+                "Anda tidak memiliki izin untuk memverifikasi data warga",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
 
         instance = self.get_object()
         new_status = request.data.get("status")
@@ -458,10 +461,10 @@ class WargaViewSet(ModelViewSet):
         Parameter `fmt` (bukan `format`) digunakan untuk menghindari konflik
         dengan DRF URL_FORMAT_OVERRIDE yang menggunakan key 'format'.
         """
-        if request.user.role not in ("admin", "sekretaris"):
+        if not has_perm(request.user, "export_import_warga"):
             return error_response(
                 "PERMISSION_DENIED",
-                "Hanya admin atau sekretaris yang dapat mengekspor data warga",
+                "Anda tidak memiliki izin untuk mengekspor data warga",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
 
@@ -475,7 +478,7 @@ class WargaViewSet(ModelViewSet):
 
         full_data = request.query_params.get("fullData", "false").lower() == "true"
         # fullData=true hanya untuk admin — lihat docs/06-API-CONTRACT.md §3.7
-        if full_data and request.user.role != "admin":
+        if full_data and not has_perm(request.user, "hapus_restore_warga"):
             full_data = False
 
         qs = self.filter_queryset(self.get_queryset())
@@ -615,10 +618,10 @@ class WargaViewSet(ModelViewSet):
     @action(detail=False, methods=["post"], url_path="import", parser_classes=[MultiPartParser])
     def import_excel(self, request):
         """POST /warga/import — import data warga dari file Excel."""
-        if request.user.role not in ("admin", "sekretaris"):
+        if not has_perm(request.user, "export_import_warga"):
             return error_response(
                 "PERMISSION_DENIED",
-                "Hanya admin atau sekretaris yang dapat mengimpor data warga",
+                "Anda tidak memiliki izin untuk mengimpor data warga",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
 

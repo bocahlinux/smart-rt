@@ -5,6 +5,19 @@ export interface IuranBulanIni {
   tahun: number
 }
 
+export interface IuranRiwayat {
+  bulan: number
+  tahun: number
+  status: 'lunas' | 'pending' | 'ditolak' | 'belum_bayar'
+}
+
+export interface ProfileInfoWarga {
+  namaLengkap: string
+  noKk: string | null
+  jumlahAnggotaKK: number
+  kartuKeluargaId: string | null
+}
+
 export interface PengumumanRingkas {
   id: string
   judul: string
@@ -44,7 +57,9 @@ export interface DashboardPengurus {
 }
 
 export interface DashboardWarga {
+  profileInfo: ProfileInfoWarga | null
   iuranBulanIni: IuranBulanIni
+  riwayatIuran: IuranRiwayat[]
   pengumumanTerbaru: PengumumanRingkas[]
   pengaduanSaya: PengaduanRingkas[]
   kegiatanMendatang: KegiatanRingkas[]

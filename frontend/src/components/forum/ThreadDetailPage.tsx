@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import {
   addComment,
@@ -175,7 +176,7 @@ export function ThreadDetailPage() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [submittingComment, setSubmittingComment] = useState(false)
 
-  const isModerator = user?.role && ['admin', 'sekretaris', 'pengurus'].includes(user.role)
+  const isModerator = hasPerm(user, 'moderasi_forum')
   const isOwner = thread?.createdBy.id === user?.id
   const isLocked = thread?.status === 'locked'
 
@@ -271,7 +272,7 @@ export function ThreadDetailPage() {
   if (!thread) return <p className="text-center text-gray-500 py-16">{msg || 'Thread tidak ditemukan.'}</p>
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
       {/* Breadcrumb */}
       <div className="text-sm text-gray-500 mb-4">
         <Link to="/forum" className="hover:text-blue-600">Forum</Link>
