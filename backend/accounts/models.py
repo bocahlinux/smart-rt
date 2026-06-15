@@ -72,7 +72,9 @@ class WargaProfile(models.Model):
         PINDAH = "pindah", "Pindah"
         MENINGGAL = "meninggal", "Meninggal"
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    user = models.OneToOneField(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="profile"
+    )
     nik = models.CharField(max_length=16, unique=True, null=True, blank=True)  # SENSITIF
     nama_lengkap = models.CharField(max_length=255)
     tempat_lahir = models.CharField(max_length=100, null=True, blank=True)  # SENSITIF
@@ -86,8 +88,29 @@ class WargaProfile(models.Model):
     )
     pendidikan = models.CharField(max_length=100, null=True, blank=True)
     pekerjaan = models.CharField(max_length=100, null=True, blank=True)
-    no_kk = models.CharField(max_length=16, null=True, blank=True)  # SENSITIF
-    hubungan_keluarga = models.CharField(max_length=50, null=True, blank=True)
+    class HubunganKeluarga(models.TextChoices):
+        KEPALA_KELUARGA = "kepala_keluarga", "Kepala Keluarga"
+        ISTRI = "istri", "Istri"
+        ANAK = "anak", "Anak"
+        ORANG_TUA = "orang_tua", "Orang Tua"
+        MENANTU = "menantu", "Menantu"
+        CUCU = "cucu", "Cucu"
+        SAUDARA = "saudara", "Saudara/i"
+        LAINNYA = "lainnya", "Lainnya"
+
+    kartu_keluarga = models.ForeignKey(
+        "kartu_keluarga.KartuKeluarga",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="anggota",
+    )
+    hubungan_keluarga = models.CharField(
+        max_length=50,
+        choices=HubunganKeluarga.choices,
+        null=True,
+        blank=True,
+    )
     alamat = models.TextField(null=True, blank=True)  # SENSITIF
     blok = models.CharField(max_length=10, null=True, blank=True)
     no_rumah = models.CharField(max_length=10, null=True, blank=True)

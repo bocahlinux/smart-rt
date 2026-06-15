@@ -248,11 +248,12 @@ class WargaViewSet(ModelViewSet):
         instance = self.get_object()
         old_data = _profile_dict(instance)
 
-        # Soft delete — lihat docs/05-DATABASE.md §10.6
+        # Soft delete + unlink user agar user dapat dilink ke profil warga lain
         instance.is_deleted = True
         instance.deleted_at = timezone.now()
         instance.deleted_by = request.user
-        instance.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])
+        instance.user = None
+        instance.save(update_fields=["is_deleted", "deleted_at", "deleted_by", "user"])
 
         log_action(
             user=request.user,
@@ -263,6 +264,153 @@ class WargaViewSet(ModelViewSet):
             request=request,
         )
         return success_response(message="Data warga berhasil dihapus")
+
+    # ------------------------------------------------------------------ #
+    # Restore / Deleted list                                               #
+    # ------------------------------------------------------------------ #
+
+    @action(detail=False, methods=["get"], url_path="deleted")
+    def deleted(self, request):
+        """GET /warga/deleted/ — list warga yang sudah di-soft-delete (admin only)."""
+        denied = self._check_admin_only()
+        if denied:
+            return denied
+
+        from accounts.warga_serializers import WargaAdminSerializer
+
+        qs = (
+            WargaProfile.objects.select_related("user", "kartu_keluarga")
+            .filter(is_deleted=True)
+            .order_by("-deleted_at")
+        )
+        data = WargaAdminSerializer(qs, many=True, context=self.get_serializer_context()).data
+        return success_response(data=data)
+
+    @action(detail=True, methods=["put"], url_path="restore")
+    def restore(self, request, pk=None):
+        """PUT /warga/{id}/restore/ — pulihkan warga yang di-soft-delete (admin only)."""
+        denied = self._check_admin_only()
+        if denied:
+            return denied
+
+        try:
+            instance = WargaProfile.objects.select_related("user").get(pk=pk, is_deleted=True)
+        except WargaProfile.DoesNotExist:
+            return error_response(
+                "NOT_FOUND",
+                "Data warga tidak ditemukan atau belum dihapus",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Cek konflik NIK dengan warga aktif lain
+        if instance.nik:
+            if WargaProfile.objects.filter(nik=instance.nik, is_deleted=False).exists():
+                return error_response(
+                    "WARGA_NIK_DUPLICATE",
+                    f"NIK {instance.nik} sudah digunakan warga lain yang aktif. "
+                    "Hapus atau ubah NIK warga tersebut sebelum memulihkan data ini.",
+                    status_code=status.HTTP_409_CONFLICT,
+                )
+
+        # Cek apakah user sudah punya profil aktif lain
+        if WargaProfile.objects.filter(user=instance.user, is_deleted=False).exclude(pk=instance.pk).exists():
+            return error_response(
+                "WARGA_PROFILE_EXISTS",
+                "Akun user ini sudah terhubung ke profil warga lain yang aktif.",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
+        instance.is_deleted = False
+        instance.deleted_at = None
+        instance.deleted_by = None
+        instance.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])
+
+        log_action(
+            user=request.user,
+            action="restore",
+            table_name="warga_profiles",
+            record_id=instance.id,
+            new_data=_profile_dict(instance),
+            request=request,
+        )
+        return success_response(message="Data warga berhasil dipulihkan")
+
+    @action(detail=True, methods=["post"], url_path="unlink")
+    def unlink(self, request, pk=None):
+        """POST /warga/{id}/unlink/ — lepas tautan user dari profil warga (admin only)."""
+        denied = self._check_admin_only()
+        if denied:
+            return denied
+
+        instance = self.get_object()
+        if not instance.user_id:
+            return error_response(
+                "WARGA_NOT_LINKED",
+                "Profil warga ini tidak memiliki user yang tertaut.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        old_user_id = instance.user_id
+        instance.user = None
+        instance.save(update_fields=["user"])
+
+        log_action(
+            user=request.user,
+            action="unlink",
+            table_name="warga_profiles",
+            record_id=instance.id,
+            old_data={"user_id": str(old_user_id)},
+            request=request,
+        )
+        return success_response(message="Tautan user berhasil dilepas")
+
+    @action(detail=True, methods=["post"], url_path="link")
+    def link(self, request, pk=None):
+        """POST /warga/{id}/link/ — tautkan user ke profil warga (admin only)."""
+        denied = self._check_admin_only()
+        if denied:
+            return denied
+
+        instance = self.get_object()
+        user_id = request.data.get("userId")
+        if not user_id:
+            return error_response(
+                "VALIDATION_ERROR",
+                "userId wajib diisi",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            target_user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return error_response(
+                "NOT_FOUND",
+                "User tidak ditemukan",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Cek apakah user sudah tertaut ke profil warga aktif lain
+        existing = WargaProfile.objects.filter(user=target_user, is_deleted=False).exclude(pk=instance.pk).first()
+        if existing:
+            return error_response(
+                "USER_ALREADY_LINKED",
+                f"User ini sudah terhubung ke data warga '{existing.nama_lengkap}'. "
+                "Lepas tautan terlebih dahulu sebelum menghubungkan ke profil lain.",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
+        instance.user = target_user
+        instance.save(update_fields=["user"])
+
+        log_action(
+            user=request.user,
+            action="link",
+            table_name="warga_profiles",
+            record_id=instance.id,
+            new_data={"user_id": str(target_user.id)},
+            request=request,
+        )
+        return success_response(message="User berhasil ditautkan ke profil warga")
 
     # ------------------------------------------------------------------ #
     # Verify                                                               #
@@ -380,8 +528,8 @@ class WargaViewSet(ModelViewSet):
                     warga.nama_lengkap,
                     warga.blok or "",
                     warga.no_rumah or "",
-                    warga.no_kk or "",
-                    warga.hubungan_keluarga or "",
+                    warga.kartu_keluarga.no_kk if warga.kartu_keluarga else "",
+                    warga.get_hubungan_keluarga_display() if warga.hubungan_keluarga else "",
                     warga.tempat_lahir or "",
                     str(warga.tanggal_lahir) if warga.tanggal_lahir else "",
                     warga.get_jenis_kelamin_display() if warga.jenis_kelamin else "",
@@ -539,8 +687,8 @@ class WargaViewSet(ModelViewSet):
                 nama_lengkap = str(row[2]).strip()
                 blok = str(row[3]).strip() if row[3] else None
                 no_rumah = str(row[4]).strip() if row[4] else None
-                no_kk = str(row[5]).strip() if row[5] else None
-                hubungan_keluarga = str(row[6]).strip() if row[6] else None
+                no_kk_raw = str(row[5]).strip() if row[5] else None
+                hubungan_keluarga_raw = str(row[6]).strip() if row[6] else None
                 tempat_lahir = str(row[7]).strip() if row[7] else None
                 tanggal_lahir_raw = row[8]
                 jenis_kelamin = str(row[9]).strip()[:1].upper() if row[9] else None
@@ -581,28 +729,31 @@ class WargaViewSet(ModelViewSet):
                     (status_perkawinan_raw or "").lower().strip(), None
                 )
 
-                # Buat user akun bila email dan phone ada
-                user_obj = None
-                if email and phone:
-                    if User.objects.filter(email=email).exists():
-                        user_obj = User.objects.get(email=email)
-                    else:
-                        user_obj = User.objects.create_user(
-                            username=email,
-                            email=email,
-                            phone=phone,
-                            password=User.objects.make_random_password(),
-                            role=User.Role.WARGA,
-                            status=User.Status.ACTIVE,
-                        )
+                # Hubungkan ke KartuKeluarga jika no_kk ada
+                kk_instance = None
+                if no_kk_raw:
+                    from kartu_keluarga.models import KartuKeluarga  # noqa: PLC0415
+                    kk_instance, _ = KartuKeluarga.objects.get_or_create(
+                        no_kk=no_kk_raw,
+                        defaults={"alamat": alamat or "", "created_by": request.user},
+                    )
 
-                if user_obj is None:
-                    errors.append(f"Baris {row_num}: Email dan No HP wajib diisi untuk membuat akun")
-                    failed += 1
-                    continue
+                # Map hubungan_keluarga ke choice value
+                hub_map = {
+                    "kepala keluarga": "kepala_keluarga",
+                    "istri": "istri",
+                    "anak": "anak",
+                    "orang tua": "orang_tua",
+                    "menantu": "menantu",
+                    "cucu": "cucu",
+                    "saudara": "saudara",
+                }
+                hubungan_keluarga = hub_map.get(
+                    (hubungan_keluarga_raw or "").lower().strip(), "lainnya"
+                ) if hubungan_keluarga_raw else None
 
                 WargaProfile.objects.create(
-                    user=user_obj,
+                    user=None,
                     nik=nik,
                     nama_lengkap=nama_lengkap,
                     tempat_lahir=tempat_lahir,
@@ -612,7 +763,7 @@ class WargaViewSet(ModelViewSet):
                     status_perkawinan=status_perkawinan,
                     pendidikan=pendidikan,
                     pekerjaan=pekerjaan,
-                    no_kk=no_kk,
+                    kartu_keluarga=kk_instance,
                     hubungan_keluarga=hubungan_keluarga,
                     alamat=alamat,
                     blok=blok,
@@ -654,7 +805,7 @@ def _profile_dict(profile: WargaProfile) -> dict:
         "blok": profile.blok,
         "no_rumah": profile.no_rumah,
         "status": profile.status,
-        "no_kk": profile.no_kk,
+        "no_kk": profile.kartu_keluarga.no_kk if profile.kartu_keluarga else None,
         "alamat": profile.alamat,
         "phone": getattr(profile.user, "phone", None),
         "email": getattr(profile.user, "email", None),

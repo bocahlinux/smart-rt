@@ -68,8 +68,16 @@ class WargaWriteSerializer(serializers.ModelSerializer):
     tanggalLahir = serializers.DateField(source="tanggal_lahir", required=False, allow_null=True)  # noqa: N815
     jenisKelamin = serializers.ChoiceField(source="jenis_kelamin", choices=WargaProfile.JenisKelamin.choices, required=False, allow_null=True, allow_blank=True)  # noqa: N815
     statusPerkawinan = serializers.ChoiceField(source="status_perkawinan", choices=WargaProfile.StatusPerkawinan.choices, required=False, allow_null=True, allow_blank=True)  # noqa: N815
-    hubunganKeluarga = serializers.CharField(source="hubungan_keluarga", required=False, allow_null=True, allow_blank=True)  # noqa: N815
-    noKk = serializers.CharField(source="no_kk", max_length=16, required=False, allow_null=True, allow_blank=True)  # noqa: N815
+    hubunganKeluarga = serializers.ChoiceField(  # noqa: N815
+        source="hubungan_keluarga",
+        choices=WargaProfile.HubunganKeluarga.choices,
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+    )
+    kartuKeluargaId = serializers.UUIDField(  # noqa: N815
+        source="kartu_keluarga_id", required=False, allow_null=True
+    )
     noRumah = serializers.CharField(source="no_rumah", max_length=10, required=False, allow_null=True, allow_blank=True)  # noqa: N815
 
     class Meta:
@@ -85,7 +93,7 @@ class WargaWriteSerializer(serializers.ModelSerializer):
             "statusPerkawinan",
             "pendidikan",
             "pekerjaan",
-            "noKk",
+            "kartuKeluargaId",
             "hubunganKeluarga",
             "alamat",
             "blok",
@@ -105,14 +113,15 @@ class WargaWriteSerializer(serializers.ModelSerializer):
     def validate_userId(self, value):  # noqa: N802
         if not User.objects.filter(id=value).exists():
             raise serializers.ValidationError("User tidak ditemukan")
-        if WargaProfile.objects.filter(user_id=value, is_deleted=False).exists():
+        qs = WargaProfile.objects.filter(user_id=value, is_deleted=False)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
             raise serializers.ValidationError("User sudah memiliki profil warga")
         return value
 
     def create(self, validated_data):
         user_id = validated_data.pop("userId", None)
-        if user_id is None:
-            raise serializers.ValidationError({"userId": "userId wajib diisi saat membuat profil warga"})
         return WargaProfile.objects.create(user_id=user_id, **validated_data)
 
     def update(self, instance, validated_data):
@@ -142,9 +151,10 @@ class _WargaBaseReadSerializer(serializers.ModelSerializer):
 class WargaAdminSerializer(_WargaBaseReadSerializer):
     """Full data — admin, sekretaris."""
 
-    userId = serializers.UUIDField(source="user.id")  # noqa: N815
+    userId = serializers.SerializerMethodField()  # noqa: N815
     nik = serializers.CharField()
-    noKk = serializers.CharField(source="no_kk")  # noqa: N815
+    noKk = serializers.SerializerMethodField()  # noqa: N815
+    kartuKeluargaId = serializers.SerializerMethodField()  # noqa: N815
     tempatLahir = serializers.CharField(source="tempat_lahir")  # noqa: N815
     tanggalLahir = serializers.DateField(source="tanggal_lahir")  # noqa: N815
     jenisKelamin = serializers.CharField(source="jenis_kelamin")  # noqa: N815
@@ -153,22 +163,47 @@ class WargaAdminSerializer(_WargaBaseReadSerializer):
     pendidikan = serializers.CharField()
     pekerjaan = serializers.CharField()
     hubunganKeluarga = serializers.CharField(source="hubungan_keluarga")  # noqa: N815
+    hubunganKeluargaLabel = serializers.SerializerMethodField()  # noqa: N815
     alamat = serializers.CharField()
-    phone = serializers.CharField(source="user.phone")
-    email = serializers.EmailField(source="user.email")
+    phone = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
     foto = serializers.SerializerMethodField()
+    deletedAt = serializers.DateTimeField(source="deleted_at", read_only=True)  # noqa: N815
+    userStatus = serializers.SerializerMethodField()  # noqa: N815
 
     class Meta(WargaProfile.__class__):
         model = WargaProfile
         fields = [
             "id", "userId", "nik", "namaLengkap", "tempatLahir", "tanggalLahir",
             "jenisKelamin", "agama", "statusPerkawinan", "pendidikan", "pekerjaan",
-            "noKk", "hubunganKeluarga", "alamat", "blok", "noRumah", "phone", "email",
-            "status", "foto", "createdAt", "updatedAt",
+            "kartuKeluargaId", "noKk", "hubunganKeluarga", "hubunganKeluargaLabel",
+            "alamat", "blok", "noRumah", "phone", "email",
+            "status", "userStatus", "foto", "createdAt", "updatedAt", "deletedAt",
         ]
+
+    def get_noKk(self, obj):  # noqa: N802
+        return obj.kartu_keluarga.no_kk if obj.kartu_keluarga else None
+
+    def get_kartuKeluargaId(self, obj):  # noqa: N802
+        return str(obj.kartu_keluarga.id) if obj.kartu_keluarga else None
+
+    def get_hubunganKeluargaLabel(self, obj):  # noqa: N802
+        return obj.get_hubungan_keluarga_display() if obj.hubungan_keluarga else None
+
+    def get_userId(self, obj):  # noqa: N802
+        return str(obj.user_id) if obj.user_id else None
 
     def get_foto(self, obj):
         return _foto_url(obj.foto, self.context.get("request"))
+
+    def get_phone(self, obj):  # noqa: N802
+        return obj.user.phone if obj.user_id else None
+
+    def get_email(self, obj):  # noqa: N802
+        return obj.user.email if obj.user_id else None
+
+    def get_userStatus(self, obj):  # noqa: N802
+        return obj.user.status if obj.user_id else None
 
 
 class WargaBendaharaSerializer(_WargaBaseReadSerializer):
@@ -177,7 +212,6 @@ class WargaBendaharaSerializer(_WargaBaseReadSerializer):
     nikMasked = serializers.SerializerMethodField()  # noqa: N815
     noKkMasked = serializers.SerializerMethodField()  # noqa: N815
     phoneMasked = serializers.SerializerMethodField()  # noqa: N815
-    # alamat terbatas: hanya blok+noRumah (sudah ada di base)
     pekerjaan = serializers.CharField()
     status = serializers.CharField()
 
@@ -190,10 +224,11 @@ class WargaBendaharaSerializer(_WargaBaseReadSerializer):
         return _mask_nik(obj.nik)
 
     def get_noKkMasked(self, obj):  # noqa: N802
-        return _mask_nik(obj.no_kk)
+        kk = obj.kartu_keluarga
+        return _mask_nik(kk.no_kk) if kk else None
 
     def get_phoneMasked(self, obj):  # noqa: N802
-        return _mask_phone(obj.user.phone)
+        return _mask_phone(obj.user.phone) if obj.user_id else None
 
 
 class WargaPengurusSerializer(_WargaBaseReadSerializer):
@@ -213,18 +248,20 @@ class WargaPengurusSerializer(_WargaBaseReadSerializer):
         return _mask_nik(obj.nik)
 
     def get_noKkMasked(self, obj):  # noqa: N802
-        return _mask_nik(obj.no_kk)
+        kk = obj.kartu_keluarga
+        return _mask_nik(kk.no_kk) if kk else None
 
     def get_phoneMasked(self, obj):  # noqa: N802
-        return _mask_phone(obj.user.phone)
+        return _mask_phone(obj.user.phone) if obj.user_id else None
 
 
 class WargaOwnSerializer(_WargaBaseReadSerializer):
     """Full own data — warga melihat profilnya sendiri."""
 
-    userId = serializers.UUIDField(source="user.id")  # noqa: N815
+    userId = serializers.SerializerMethodField()  # noqa: N815
     nik = serializers.CharField()
-    noKk = serializers.CharField(source="no_kk")  # noqa: N815
+    noKk = serializers.SerializerMethodField()  # noqa: N815
+    kartuKeluargaId = serializers.SerializerMethodField()  # noqa: N815
     tempatLahir = serializers.CharField(source="tempat_lahir")  # noqa: N815
     tanggalLahir = serializers.DateField(source="tanggal_lahir")  # noqa: N815
     jenisKelamin = serializers.CharField(source="jenis_kelamin")  # noqa: N815
@@ -233,9 +270,10 @@ class WargaOwnSerializer(_WargaBaseReadSerializer):
     pendidikan = serializers.CharField()
     pekerjaan = serializers.CharField()
     hubunganKeluarga = serializers.CharField(source="hubungan_keluarga")  # noqa: N815
+    hubunganKeluargaLabel = serializers.SerializerMethodField()  # noqa: N815
     alamat = serializers.CharField()
-    phone = serializers.CharField(source="user.phone")
-    email = serializers.EmailField(source="user.email")
+    phone = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
     foto = serializers.SerializerMethodField()
 
     class Meta:
@@ -243,9 +281,28 @@ class WargaOwnSerializer(_WargaBaseReadSerializer):
         fields = [
             "id", "userId", "nik", "namaLengkap", "tempatLahir", "tanggalLahir",
             "jenisKelamin", "agama", "statusPerkawinan", "pendidikan", "pekerjaan",
-            "noKk", "hubunganKeluarga", "alamat", "blok", "noRumah", "phone", "email",
+            "kartuKeluargaId", "noKk", "hubunganKeluarga", "hubunganKeluargaLabel",
+            "alamat", "blok", "noRumah", "phone", "email",
             "status", "foto", "createdAt", "updatedAt",
         ]
+
+    def get_userId(self, obj):  # noqa: N802
+        return str(obj.user_id) if obj.user_id else None
+
+    def get_noKk(self, obj):  # noqa: N802
+        return obj.kartu_keluarga.no_kk if obj.kartu_keluarga else None
+
+    def get_kartuKeluargaId(self, obj):  # noqa: N802
+        return str(obj.kartu_keluarga.id) if obj.kartu_keluarga else None
+
+    def get_hubunganKeluargaLabel(self, obj):  # noqa: N802
+        return obj.get_hubungan_keluarga_display() if obj.hubungan_keluarga else None
+
+    def get_phone(self, obj):  # noqa: N802
+        return obj.user.phone if obj.user_id else None
+
+    def get_email(self, obj):  # noqa: N802
+        return obj.user.email if obj.user_id else None
 
     def get_foto(self, obj):
         return _foto_url(obj.foto, self.context.get("request"))

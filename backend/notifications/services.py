@@ -55,6 +55,53 @@ def send_web_push(subscription, judul, isi):
         logger.warning("Web push gagal (endpoint=%s): %s", subscription.endpoint[:40], exc)
 
 
+def notify_user(user, judul, isi, tipe="info", url=None):
+    """Kirim notifikasi in-app + web push ke satu user."""
+    from .models import PushSubscription  # noqa: PLC0415
+
+    create_notification(user=user, judul=judul, isi=isi, tipe=tipe)
+    payload_extra = {"url": url} if url else {}
+    for sub in PushSubscription.objects.filter(user=user):
+        _send_push_with_url(sub, judul, isi, url)
+
+
+def notify_admins(judul, isi, url=None):
+    """Kirim notifikasi ke semua user dengan role admin/sekretaris/pengurus."""
+    from accounts.models import User  # noqa: PLC0415
+    from .models import PushSubscription  # noqa: PLC0415
+
+    admins = User.objects.filter(role__in=["admin", "sekretaris", "pengurus"], is_active=True)
+    for user in admins:
+        create_notification(user=user, judul=judul, isi=isi, tipe="penting")
+        for sub in PushSubscription.objects.filter(user=user):
+            _send_push_with_url(sub, judul, isi, url)
+
+
+def _send_push_with_url(subscription, judul, isi, url=None):
+    """Kirim web push dengan field url opsional untuk navigasi saat notif diklik."""
+    private_pem = getattr(settings, "VAPID_PRIVATE_PEM", "")
+    claim_email = getattr(settings, "VAPID_CLAIM_EMAIL", "mailto:admin@smartrt.local")
+
+    if not private_pem or "PRIVATE KEY" not in private_pem:
+        return
+
+    try:
+        from pywebpush import webpush, WebPushException  # noqa: PLC0415
+
+        payload = json.dumps({"judul": judul, "isi": isi[:160], "url": url or "/"})
+        webpush(
+            subscription_info={
+                "endpoint": subscription.endpoint,
+                "keys": {"p256dh": subscription.p256dh, "auth": subscription.auth},
+            },
+            data=payload,
+            vapid_private_key=private_pem,
+            vapid_claims={"sub": claim_email},
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Web push gagal (endpoint=%s): %s", subscription.endpoint[:40], exc)
+
+
 def broadcast_pengumuman(pengumuman):
     """
     Setelah pengumuman dibuat:

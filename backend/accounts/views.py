@@ -293,7 +293,7 @@ class UserListView(APIView):
     def get(self, request):
         from django.db.models import Q
 
-        qs = User.objects.all().order_by("-created_at")
+        qs = User.objects.select_related("profile").all().order_by("-created_at")
         role = request.query_params.get("role")
         status_filter = request.query_params.get("status")
         search = request.query_params.get("search", "").strip()
@@ -333,7 +333,7 @@ class UserDetailView(APIView):
     def _get_user(self, pk):
         from django.shortcuts import get_object_or_404
 
-        return get_object_or_404(User, pk=pk)
+        return get_object_or_404(User.objects.select_related("profile"), pk=pk)
 
     def get(self, request, pk):
         user = self._get_user(pk)

@@ -89,11 +89,58 @@ class UserManagementSerializer(serializers.ModelSerializer):
     """GET/PATCH /users/ dan /users/{id}/ — admin only."""
 
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)  # noqa: N815
+    warga = serializers.SerializerMethodField(read_only=True)
+    newPassword = serializers.CharField(  # noqa: N815
+        source="new_password", write_only=True, required=False, allow_blank=True, min_length=8,
+        error_messages={"min_length": "Password minimal 8 karakter."},
+    )
 
     class Meta:
         model = User
-        fields = ["id", "email", "phone", "role", "status", "createdAt"]
-        read_only_fields = ["id", "email", "phone", "createdAt"]
+        fields = ["id", "email", "phone", "role", "status", "warga", "newPassword", "createdAt"]
+        read_only_fields = ["id", "warga", "createdAt"]
+
+    def validate_email(self, value):
+        qs = User.objects.filter(email__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Email ini sudah digunakan akun lain.")
+        return value
+
+    def validate_phone(self, value):
+        qs = User.objects.filter(phone=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Nomor HP ini sudah digunakan akun lain.")
+        return value
+
+    def get_warga(self, obj):  # noqa: N802
+        try:
+            p = obj.profile
+            if p.is_deleted:
+                return None
+            return {
+                "id": str(p.id),
+                "namaLengkap": p.nama_lengkap,
+                "nik": p.nik,
+                "blok": p.blok,
+                "noRumah": p.no_rumah,
+                "status": p.status,
+            }
+        except Exception:  # noqa: BLE001
+            return None
+
+    def update(self, instance, validated_data):
+        new_password = validated_data.pop("new_password", None) or None
+        if "email" in validated_data:
+            validated_data["username"] = validated_data["email"]
+        instance = super().update(instance, validated_data)
+        if new_password:
+            instance.set_password(new_password)
+            instance.save(update_fields=["password"])
+        return instance
 
 
 class AdminCreateUserSerializer(serializers.Serializer):
