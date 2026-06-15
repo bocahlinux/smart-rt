@@ -27,9 +27,11 @@ Jika Smart-RT memberikan manfaat bagi Anda — baik sebagai referensi, inspirasi
 
 Setiap bentuk dukungan, sekecil apapun, sangat berarti dan membantu keberlangsungan pengembangan proyek ini ke depannya.
 
-[![Dukung via Teer](https://img.shields.io/badge/Dukung%20di%20Teer-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://teer.id/bocahlinux)
+<a href="https://teer.id/bocahlinux" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/Dukung%20di%20Teer-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Dukung via Teer" />
+</a>
 
-**[teer.id/bocahlinux](https://teer.id/bocahlinux)**
+**<a href="https://teer.id/bocahlinux" target="_blank" rel="noopener noreferrer">teer.id/bocahlinux</a>**
 
 > *"Good software takes time, care, and coffee."*
 
