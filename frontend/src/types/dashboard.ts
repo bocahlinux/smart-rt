@@ -54,6 +54,32 @@ export interface WargaBelumLunas {
   noKk: string | null
 }
 
+export interface TransaksiRingkas {
+  id: string
+  tipe: 'pemasukan' | 'pengeluaran'
+  jumlah: number
+  keterangan: string
+  tanggal: string
+  kategori: string
+}
+
+export interface IuranPendingItem {
+  id: string
+  wargaNama: string
+  jumlah: number
+  bulan: number
+  tahun: number
+  jenisNama: string
+}
+
+export interface ArusKasBulan {
+  label: string
+  bulan: number
+  tahun: number
+  pemasukan: number
+  pengeluaran: number
+}
+
 export interface DashboardPengurus {
   role: string
   totalWarga: number
@@ -72,6 +98,12 @@ export interface DashboardPengurus {
   kegiatanMendatangList: KegiatanRingkas[]
   pengumumanTerbaru: PengumumanRingkas[]
   pengaduanTerbaru: PengaduanRingkas[]
+  // Bendahara-specific fields
+  pemasukanBulanIni?: number
+  pengeluaranBulanIni?: number
+  arusKas6Bulan?: ArusKasBulan[]
+  transaksiTerbaru?: TransaksiRingkas[]
+  iuranPendingList?: IuranPendingItem[]
 }
 
 export interface DashboardWarga {

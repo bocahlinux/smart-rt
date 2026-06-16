@@ -1,4 +1,7 @@
 import {
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
   BarChart3,
   CalendarDays,
   CheckCircle2,
@@ -9,6 +12,7 @@ import {
   ListChecks,
   Megaphone,
   MessageSquare,
+  Receipt,
   ShieldAlert,
   TrendingUp,
   UserPlus,
@@ -24,14 +28,17 @@ import { getDashboardPengurus, getDashboardWarga } from '@/services/dashboardSer
 import { getBukuKas } from '@/services/keuanganService'
 import { useAuthStore } from '@/stores/authStore'
 import type {
+  ArusKasBulan,
   DashboardPengurus,
   DashboardWarga,
   IuranBulanIni,
+  IuranPendingItem,
   IuranRiwayat,
   KegiatanRingkas,
   PengaduanRingkas,
   PengumumanRingkas,
   ProfileInfoWarga,
+  TransaksiRingkas,
   WargaBelumLunas,
 } from '@/types/dashboard'
 
@@ -278,6 +285,154 @@ function WargaBelumLunasWidget({ list, bulan, tahun }: { list: WargaBelumLunas[]
   )
 }
 
+// ── Bendahara: Arus kas chart (SVG) ───────────────────────────
+
+function ArusKasChart({ data }: { data: ArusKasBulan[] }) {
+  const maxVal = Math.max(...data.flatMap((d) => [d.pemasukan, d.pengeluaran]), 1)
+  const CH = 72
+  const BW = 13
+  const IG = 4
+  const OG = 14
+  const GW = BW * 2 + IG + OG
+  const LH = 16
+  const VW = data.length * GW - OG
+
+  function bH(val: number) {
+    return val > 0 ? Math.max(3, Math.round((val / maxVal) * CH)) : 0
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Arus Kas 6 Bulan</p>
+          <p className="text-xs text-slate-400">Pemasukan vs Pengeluaran</p>
+        </div>
+        <div className="flex gap-4 text-[11px] text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: '#10b981' }} />Masuk
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: '#fb7185' }} />Keluar
+          </span>
+        </div>
+      </div>
+      <svg width="100%" viewBox={`0 0 ${VW} ${CH + LH}`} className="overflow-visible">
+        {data.map((d, i) => {
+          const x = i * GW
+          const ph = bH(d.pemasukan)
+          const kh = bH(d.pengeluaran)
+          return (
+            <g key={d.label}>
+              <title>{d.label}: Masuk {formatRupiah(d.pemasukan)}, Keluar {formatRupiah(d.pengeluaran)}</title>
+              <rect x={x} y={CH - ph} width={BW} height={ph} rx="2" fill="#10b981" />
+              <rect x={x + BW + IG} y={CH - kh} width={BW} height={kh} rx="2" fill="#fb7185" />
+              <text x={x + BW + IG / 2} y={CH + 12} textAnchor="middle" fill="#94a3b8" fontSize="9">{d.label}</text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
+// ── Bendahara: Transaksi list ──────────────────────────────────
+
+function TransaksiList({ list }: { list: TransaksiRingkas[] }) {
+  if (list.length === 0) return <p className="px-5 py-6 text-sm text-slate-400">Belum ada transaksi.</p>
+  return (
+    <>
+      {list.map((t) => (
+        <div key={t.id} className="flex items-center justify-between px-5 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className={cn(
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+              t.tipe === 'pemasukan' ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-rose-50 dark:bg-rose-900/20',
+            )}>
+              {t.tipe === 'pemasukan'
+                ? <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                : <ArrowDownRight className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                {t.kategori || t.keterangan || '—'}
+              </p>
+              <p className="text-xs text-slate-400">
+                {new Date(t.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+              </p>
+            </div>
+          </div>
+          <span className={cn('ml-3 shrink-0 text-sm font-semibold tabular-nums',
+            t.tipe === 'pemasukan' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+          )}>
+            {t.tipe === 'pemasukan' ? '+' : '−'}{formatRupiah(t.jumlah)}
+          </span>
+        </div>
+      ))}
+    </>
+  )
+}
+
+// ── Bendahara: Iuran pending konfirmasi ───────────────────────
+
+function IuranPendingKonfirmasiList({ list }: { list: IuranPendingItem[] }) {
+  if (list.length === 0) return null
+  return (
+    <div className="overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/30 shadow-sm dark:border-amber-800/40 dark:bg-amber-900/10">
+      <div className="flex items-center justify-between border-b border-amber-100 px-5 py-3.5 dark:border-amber-800/30">
+        <div>
+          <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">Iuran Menunggu Konfirmasi</h3>
+          <p className="text-xs text-amber-600 dark:text-amber-500">{list.length} pembayaran perlu diverifikasi</p>
+        </div>
+        <Link to="/keuangan/iuran" className="flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 dark:text-amber-400">
+          Konfirmasi Semua <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+      <ul className="divide-y divide-amber-100/60 dark:divide-amber-800/20">
+        {list.map((item) => (
+          <li key={item.id} className="flex items-center gap-3 px-5 py-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+              <CircleDollarSign className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{item.wargaNama}</p>
+              <p className="text-xs text-slate-400">{item.jenisNama} · {BULAN[item.bulan]} {item.tahun}</p>
+            </div>
+            <span className="shrink-0 text-sm font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+              {formatRupiah(item.jumlah)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// ── Bendahara: Quick actions ───────────────────────────────────
+
+function BendaharaQuickActions() {
+  const actions = [
+    { label: 'Catat Transaksi', to: '/keuangan/baru', icon: Receipt,
+      cls: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/30' },
+    { label: 'Konfirmasi Iuran', to: '/keuangan/iuran', icon: ListChecks,
+      cls: 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/30' },
+    { label: 'Lihat Laporan', to: '/keuangan/laporan', icon: TrendingUp,
+      cls: 'bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-900/20 dark:text-sky-300 dark:hover:bg-sky-900/30' },
+  ]
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {actions.map((a) => (
+        <Link key={a.to} to={a.to}
+          className={cn('flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition sm:justify-start', a.cls)}>
+          <a.icon className="h-4 w-4 shrink-0" />
+          <span className="hidden sm:inline">{a.label}</span>
+          <span className="sm:hidden text-xs">{a.label}</span>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
 // ── ADMIN / KETUA RT dashboard ─────────────────────────────────
 
 function AdminKetuaDashboard({ data }: { data: DashboardPengurus }) {
@@ -331,26 +486,48 @@ function AdminKetuaDashboard({ data }: { data: DashboardPengurus }) {
 
 function BendaharaDashboard({ data }: { data: DashboardPengurus }) {
   const { iuranBulanIni } = data
+  const pemasukan = data.pemasukanBulanIni ?? 0
+  const pengeluaran = data.pengeluaranBulanIni ?? 0
+  const net = pemasukan - pengeluaran
+
   return (
     <div className="space-y-5">
+      {/* 4 Stat cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Saldo Kas RT" value={formatRupiah(data.saldoKas)} icon={CircleDollarSign} color="emerald" to="/keuangan" />
+        <StatCard label="Pemasukan Bulan Ini" value={formatRupiah(pemasukan)} icon={ArrowUpRight} color="sky"
+          sub={`${BULAN[iuranBulanIni.bulan]} ${iuranBulanIni.tahun}`} />
+        <StatCard label="Pengeluaran Bulan Ini" value={formatRupiah(pengeluaran)} icon={ArrowDownRight} color="rose"
+          sub={net >= 0 ? `Surplus ${formatRupiah(net)}` : `Defisit ${formatRupiah(Math.abs(net))}`} />
         <StatCard label="Iuran Perlu Konfirmasi" value={data.iuranPending} icon={ListChecks} color="amber" to="/keuangan/iuran"
           badge={data.iuranPending} sub="Menunggu verifikasi" />
-        <StatCard label="Lunas Bulan Ini" value={iuranBulanIni.lunas} icon={CheckCircle2} color="sky"
-          sub={`${BULAN[iuranBulanIni.bulan]} ${iuranBulanIni.tahun}`} />
-        <StatCard label="Total Warga" value={data.totalWarga} icon={Users} color="indigo" to="/warga" />
       </div>
 
-      <IuranProgress lunas={iuranBulanIni.lunas} pending={iuranBulanIni.pending} bulan={iuranBulanIni.bulan} tahun={iuranBulanIni.tahun} />
+      {/* Quick actions */}
+      <BendaharaQuickActions />
 
+      {/* Arus kas chart + Iuran progress */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {data.arusKas6Bulan && data.arusKas6Bulan.length > 0 && (
+          <ArusKasChart data={data.arusKas6Bulan} />
+        )}
+        <IuranProgress lunas={iuranBulanIni.lunas} pending={iuranBulanIni.pending} bulan={iuranBulanIni.bulan} tahun={iuranBulanIni.tahun} />
+      </div>
+
+      {/* Iuran pending konfirmasi list */}
+      {data.iuranPendingList && data.iuranPendingList.length > 0 && (
+        <IuranPendingKonfirmasiList list={data.iuranPendingList} />
+      )}
+
+      {/* Warga belum lunas */}
       {data.wargaBelumLunas?.length > 0 && (
         <WargaBelumLunasWidget list={data.wargaBelumLunas} bulan={iuranBulanIni.bulan} tahun={iuranBulanIni.tahun} />
       )}
 
+      {/* Transaksi terbaru + Pengumuman */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <SectionCard title="Kegiatan Mendatang" to="/kegiatan">
-          <KegiatanList list={data.kegiatanMendatangList} />
+        <SectionCard title="Transaksi Terbaru" to="/keuangan">
+          <TransaksiList list={data.transaksiTerbaru ?? []} />
         </SectionCard>
         <SectionCard title="Pengumuman Terbaru" to="/pengumuman">
           <PengumumanList list={data.pengumumanTerbaru} />

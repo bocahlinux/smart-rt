@@ -35,6 +35,9 @@ import { WargaListPage } from '@/components/warga/WargaListPage'
 import { ProfilBuatPage } from '@/components/warga/ProfilBuatPage'
 import { KartuKeluargaPage } from '@/components/kartuKeluarga/KartuKeluargaPage'
 import { PengajuanPage } from '@/components/kartuKeluarga/PengajuanPage'
+import { SuratPage } from '@/components/surat/SuratPage'
+import { SuratRiwayatPage } from '@/components/surat/SuratRiwayatPage'
+import { SuratKelolaPage } from '@/components/surat/SuratKelolaPage'
 
 function App() {
   return (
@@ -95,6 +98,11 @@ function App() {
             <Route path="/polling" element={<PollingListPage />} />
             <Route path="/polling/baru" element={<PollingFormPage />} />
             <Route path="/polling/:id" element={<PollingDetailPage />} />
+
+            {/* Surat Menyurat */}
+            <Route path="/surat" element={<SuratPage />} />
+            <Route path="/surat/riwayat" element={<SuratRiwayatPage />} />
+            <Route path="/surat/kelola" element={<SuratKelolaPage />} />
           </Route>
         </Route>
 

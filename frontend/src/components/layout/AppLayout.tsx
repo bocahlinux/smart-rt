@@ -3,13 +3,16 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
   CircleDollarSign,
   ClipboardList,
+  FileText,
   Home,
   LayoutDashboard,
   LayoutGrid,
   LogOut,
+  Mail,
   Megaphone,
   MessageSquare,
   Moon,
@@ -24,7 +27,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { AnnouncementBell } from '@/components/layout/AnnouncementBell'
 import { useTheme } from '@/hooks/useTheme'
@@ -46,26 +49,44 @@ interface NavItem {
   roles?: string[]
   /** Tampilkan jika user memiliki salah satu permission ini */
   permAny?: string[]
+  /** Sub-items (accordion di sidebar desktop, diratakan di mobile) */
+  children?: Omit<NavItem, 'children'>[]
 }
 
 const NAV_ITEMS: NavItem[] = [
+  // ── Semua role ─────────────────────────────────────────────────
   { to: '/',             label: 'Beranda',        icon: LayoutDashboard },
-  { to: '/warga',        label: 'Warga',          icon: Users,             permAny: ['tambah_edit_warga', 'verifikasi_warga', 'export_import_warga'] },
+  // ── Pengurus: data warga & KK ──────────────────────────────────
+  { to: '/warga',        label: 'Warga',          icon: Users,           permAny: ['tambah_edit_warga', 'verifikasi_warga', 'export_import_warga'] },
+  // ── Warga: KK saya ─────────────────────────────────────────────
+  { to: '/kk/saya',      label: 'Kartu Keluarga', icon: Home,            roles: ['warga'] },
+  // ── Pengurus: keuangan ─────────────────────────────────────────
   { to: '/keuangan',     label: 'Keuangan',       icon: CircleDollarSign },
+  // ── Warga: iuran saya ──────────────────────────────────────────
+  { to: '/iuran/upload', label: 'Iuran Saya',     icon: Wallet,          roles: ['warga'] },
+  // ── Semua: konten & komunikasi ─────────────────────────────────
   { to: '/pengumuman',   label: 'Pengumuman',     icon: Megaphone },
+  { to: '/kegiatan',     label: 'Kegiatan',       icon: CalendarDays },
   { to: '/pengaduan',    label: 'Pengaduan',      icon: ShieldAlert },
   { to: '/forum',        label: 'Forum',          icon: MessageSquare },
-  { to: '/kegiatan',     label: 'Kegiatan',       icon: CalendarDays },
   { to: '/polling',      label: 'Polling',        icon: BarChart3 },
-  // Khusus warga
-  { to: '/kk/saya',      label: 'Kartu Keluarga', icon: Home,              roles: ['warga'] },
-  { to: '/iuran/upload', label: 'Iuran Saya',     icon: Wallet,            roles: ['warga'] },
-  { to: '/pengajuan',    label: 'Pengajuan',      icon: ClipboardList,     roles: ['warga'] },
-  // Manajemen KK untuk pengurus/admin
-  { to: '/pengajuan',    label: 'Pengajuan KK',   icon: ClipboardList,     permAny: ['kelola_kartu_keluarga'] },
-  // Admin-only (disendirikan ke bawah)
-  { to: '/users',        label: 'Pengguna',       icon: ShieldCheck,       roles: ['admin'] },
-  { to: '/permissions',  label: 'Izin Role',      icon: Settings2,         roles: ['admin'] },
+  // ── Pengajuan ──────────────────────────────────────────────────
+  { to: '/pengajuan',    label: 'Pengajuan',      icon: ClipboardList,   roles: ['warga'] },
+  { to: '/pengajuan',    label: 'Pengajuan KK',   icon: ClipboardList,   permAny: ['kelola_kartu_keluarga'] },
+  // ── Surat Menyurat (accordion) ─────────────────────────────────
+  {
+    to: '/surat',
+    label: 'Surat Menyurat',
+    icon: Mail,
+    children: [
+      { to: '/surat',         label: 'Ajukan Surat', icon: FileText },
+      { to: '/surat/riwayat', label: 'Riwayat Saya', icon: ClipboardList, roles: ['warga'] },
+      { to: '/surat/kelola',  label: 'Kelola Surat', icon: LayoutGrid,    permAny: ['kelola_surat'] },
+    ],
+  },
+  // ── Admin-only ─────────────────────────────────────────────────
+  { to: '/users',        label: 'Pengguna',       icon: ShieldCheck,     roles: ['admin'] },
+  { to: '/permissions',  label: 'Izin Role',      icon: Settings2,       roles: ['admin'] },
 ]
 
 const ROLE_LABEL: Record<string, string> = {
@@ -90,13 +111,26 @@ function isNavVisible(item: NavItem, user: User | null): boolean {
 }
 
 function getPrimaryNav(visibleNav: NavItem[], user: User | null): NavItem[] {
-  const isPengurus = user?.role !== 'warga'
-  if (isPengurus) {
-    const priority = ['/', '/warga', '/keuangan', '/pengaduan']
-    return priority.flatMap((p) => visibleNav.filter((i) => i.to === p))
+  const role = user?.role ?? 'warga'
+
+  // 4 primary slots per role (+ "Lainnya" always added by caller)
+  const priorityMap: Record<string, string[]> = {
+    admin:       ['/', '/warga', '/keuangan', '/pengaduan'],
+    ketua_rt:    ['/', '/warga', '/pengaduan', '/pengumuman'],
+    sekretaris:  ['/', '/warga', '/pengumuman', '/pengajuan'],
+    bendahara:   ['/', '/keuangan', '/pengumuman', '/kegiatan'],
+    pengurus:    ['/', '/pengumuman', '/kegiatan', '/pengaduan'],
+    warga:       ['/', '/kk/saya', '/iuran/upload', '/pengumuman'],
   }
-  const priority = ['/', '/kk/saya', '/iuran/upload', '/pengaduan']
-  return priority.flatMap((p) => visibleNav.filter((i) => i.to === p))
+
+  const priority = priorityMap[role] ?? priorityMap.warga
+  // dedup: for paths that may have multiple items (e.g. /pengajuan), take only the first visible match
+  const seen = new Set<string>()
+  return priority.flatMap((p) => {
+    const match = visibleNav.find((i) => i.to === p && !seen.has(i.to))
+    if (match) { seen.add(p); return [match] }
+    return []
+  })
 }
 
 // ── Theme toggle ───────────────────────────────────────────────
@@ -314,6 +348,85 @@ function SidebarNavItem({ item, collapsed, badge }: { item: NavItem; collapsed?:
   )
 }
 
+// ── Sidebar nav group (accordion) ─────────────────────────────
+
+function SidebarNavGroup({
+  item,
+  collapsed,
+  user,
+}: {
+  item: NavItem
+  collapsed?: boolean
+  user: User | null
+}) {
+  const location = useLocation()
+  const visibleChildren = (item.children ?? []).filter(c => isNavVisible(c as NavItem, user))
+  const isChildActive = visibleChildren.some(c =>
+    c.to === '/' ? location.pathname === '/' : location.pathname.startsWith(c.to),
+  )
+  const [open, setOpen] = useState(isChildActive)
+
+  useEffect(() => { if (isChildActive) setOpen(true) }, [isChildActive])
+
+  const parentCls = cn(
+    'group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-150',
+    isChildActive
+      ? 'bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400'
+      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white',
+  )
+  const iconCls = cn(
+    'h-4.5 w-4.5 shrink-0 transition-colors',
+    isChildActive
+      ? 'text-primary-600 dark:text-primary-400'
+      : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200',
+  )
+
+  if (collapsed) {
+    const dest = visibleChildren[0]?.to ?? item.to
+    return (
+      <NavLink to={dest} title={item.label} className={parentCls + ' justify-center px-2.5'}>
+        <item.icon className={iconCls} />
+      </NavLink>
+    )
+  }
+
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen(v => !v)} className={parentCls + ' w-full gap-3 px-3'}>
+        <item.icon className={iconCls} />
+        <span className="flex-1 truncate text-left">{item.label}</span>
+        <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && visibleChildren.length > 0 && (
+        <div className="ml-7 mt-0.5 space-y-0.5 border-l border-slate-100 pl-3 dark:border-slate-800">
+          {visibleChildren.map(child => (
+            <NavLink
+              key={child.to + child.label}
+              to={child.to}
+              end={child.to === '/'}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'text-primary-700 dark:text-primary-400'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white',
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <child.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400')} />
+                  {child.label}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Bottom nav item ────────────────────────────────────────────
 
 function BottomNavItem({ item }: { item: NavItem }) {
@@ -387,7 +500,13 @@ export function AppLayout() {
 
   const primaryNav = getPrimaryNav(visibleNav, user ?? null)
   const primarySet = new Set(primaryNav.map((i) => i.to))
-  const moreNav = visibleNav.filter((i) => !primarySet.has(i.to))
+  // For items with children, expand children into the mobile drawer list
+  const moreNav = visibleNav
+    .filter((i) => !primarySet.has(i.to))
+    .flatMap((i) => {
+      if (!i.children || i.children.length === 0) return [i]
+      return i.children.filter((c) => isNavVisible(c as NavItem, user ?? null)) as NavItem[]
+    })
 
   async function handleLogout() {
     try { await logoutRequest() } catch (err) { if (!axios.isAxiosError(err)) throw err }
@@ -458,18 +577,22 @@ export function AppLayout() {
         <nav className="flex-1 overflow-y-auto px-3 py-3">
           {/* Main items */}
           <div className="space-y-0.5">
-            {mainNav.map((item) => (
-              <SidebarNavItem
-                key={item.label}
-                item={item}
-                collapsed={sidebarCollapsed}
-                badge={
-                  item.to === '/keuangan' && hasPerm(user ?? null, 'konfirmasi_iuran') ? pendingIuranCount
-                  : item.to === '/pengajuan' && hasPerm(user ?? null, 'kelola_kartu_keluarga') ? pendingPengajuanCount
-                  : undefined
-                }
-              />
-            ))}
+            {mainNav.map((item) =>
+              item.children && item.children.length > 0 ? (
+                <SidebarNavGroup key={item.label} item={item} collapsed={sidebarCollapsed} user={user ?? null} />
+              ) : (
+                <SidebarNavItem
+                  key={item.label}
+                  item={item}
+                  collapsed={sidebarCollapsed}
+                  badge={
+                    item.to === '/keuangan' && hasPerm(user ?? null, 'konfirmasi_iuran') ? pendingIuranCount
+                    : item.to === '/pengajuan' && hasPerm(user ?? null, 'kelola_kartu_keluarga') ? pendingPengajuanCount
+                    : undefined
+                  }
+                />
+              ),
+            )}
           </div>
 
           {/* Admin section */}
