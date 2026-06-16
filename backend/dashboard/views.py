@@ -64,6 +64,79 @@ class DashboardPengurusView(APIView):
         # Total pending (semua bulan) — untuk badge konfirmasi
         iuran_pending_total = IuranWarga.objects.filter(status="pending").count()
 
+        # ── Arus kas 6 bulan + pemasukan/pengeluaran bulan ini ──
+        bulan_labels_id = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"]
+        months_6 = []
+        for i in range(5, -1, -1):
+            b = bulan - i
+            t = tahun
+            while b <= 0:
+                b += 12
+                t -= 1
+            months_6.append((t, b))
+        earliest_year, earliest_month = months_6[0]
+        earliest_date_6 = date(earliest_year, earliest_month, 1)
+        transaksi_agg = (
+            Transaksi.objects
+            .filter(status="confirmed", tanggal__gte=earliest_date_6)
+            .values("tipe", "tanggal__year", "tanggal__month")
+            .annotate(total=Sum("jumlah"))
+        )
+        transaksi_lookup: dict = {}
+        for row in transaksi_agg:
+            key = (row["tanggal__year"], row["tanggal__month"], row["tipe"])
+            transaksi_lookup[key] = float(row["total"] or 0)
+        pemasukan_bulan_ini = transaksi_lookup.get((tahun, bulan, "pemasukan"), 0)
+        pengeluaran_bulan_ini = transaksi_lookup.get((tahun, bulan, "pengeluaran"), 0)
+        arus_kas_6_bulan = [
+            {
+                "label": bulan_labels_id[b - 1],
+                "bulan": b,
+                "tahun": t,
+                "pemasukan": transaksi_lookup.get((t, b, "pemasukan"), 0),
+                "pengeluaran": transaksi_lookup.get((t, b, "pengeluaran"), 0),
+            }
+            for (t, b) in months_6
+        ]
+
+        # Transaksi 5 terbaru
+        transaksi_qs = (
+            Transaksi.objects
+            .filter(status="confirmed")
+            .select_related("kategori")
+            .order_by("-tanggal", "-created_at")[:5]
+        )
+        transaksi_terbaru = [
+            {
+                "id": str(tr.id),
+                "tipe": tr.tipe,
+                "jumlah": float(tr.jumlah),
+                "keterangan": tr.keterangan[:60],
+                "tanggal": tr.tanggal.isoformat(),
+                "kategori": tr.kategori.nama if tr.kategori else "",
+            }
+            for tr in transaksi_qs
+        ]
+
+        # Iuran pending list (5 terbaru untuk preview)
+        iuran_pend_qs = (
+            IuranWarga.objects
+            .filter(status="pending")
+            .select_related("warga", "jenis")
+            .order_by("-created_at")[:5]
+        )
+        iuran_pending_list = [
+            {
+                "id": str(iw.id),
+                "wargaNama": iw.warga.nama_lengkap,
+                "jumlah": float(iw.jumlah),
+                "bulan": iw.bulan,
+                "tahun": iw.tahun,
+                "jenisNama": iw.jenis.nama if iw.jenis else "Umum",
+            }
+            for iw in iuran_pend_qs
+        ]
+
         # ── Warga belum lunas — KK-aware ──
         lunas_kk_ids = IuranWarga.objects.filter(
             bulan=bulan, tahun=tahun, status="lunas", jenis__unit="per_kk",
@@ -170,6 +243,11 @@ class DashboardPengurusView(APIView):
                 "kegiatanMendatangList": kegiatan_mendatang_list,
                 "pengumumanTerbaru": pengumuman_terbaru,
                 "pengaduanTerbaru": pengaduan_terbaru,
+                "pemasukanBulanIni": pemasukan_bulan_ini,
+                "pengeluaranBulanIni": pengeluaran_bulan_ini,
+                "arusKas6Bulan": arus_kas_6_bulan,
+                "transaksiTerbaru": transaksi_terbaru,
+                "iuranPendingList": iuran_pending_list,
             }
         )
 

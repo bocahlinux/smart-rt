@@ -109,6 +109,14 @@ DEFAULT_PERMISSIONS: list[dict] = [
         "category": "konten",
         "allowed_roles": ["ketua_rt", "sekretaris", "pengurus"],
     },
+    # Surat Menyurat
+    {
+        "key": "kelola_surat",
+        "label": "Kelola Surat Menyurat",
+        "description": "Memproses, menyetujui, dan menolak permohonan surat warga",
+        "category": "surat",
+        "allowed_roles": ["ketua_rt", "sekretaris"],
+    },
     # Dashboard
     {
         "key": "akses_dashboard_pengurus",
