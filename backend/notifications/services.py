@@ -66,13 +66,26 @@ def notify_user(user, judul, isi, tipe="info", url=None):
 
 
 def notify_admins(judul, isi, url=None):
-    """Kirim notifikasi ke semua user dengan role admin/sekretaris/pengurus."""
+    """Kirim notifikasi ke semua user pengurus: admin, ketua_rt, sekretaris, pengurus."""
     from accounts.models import User  # noqa: PLC0415
     from .models import PushSubscription  # noqa: PLC0415
 
-    admins = User.objects.filter(role__in=["admin", "sekretaris", "pengurus"], is_active=True)
+    admins = User.objects.filter(role__in=["admin", "ketua_rt", "sekretaris", "pengurus"], is_active=True)
     for user in admins:
         create_notification(user=user, judul=judul, isi=isi, tipe="penting", link=url or "")
+        for sub in PushSubscription.objects.filter(user=user):
+            _send_push_with_url(sub, judul, isi, url)
+
+
+def notify_users_with_roles(roles, judul, isi, tipe="info", url=None):
+    """Kirim notifikasi ke semua user aktif dengan role tertentu (+ admin selalu disertakan)."""
+    from accounts.models import User  # noqa: PLC0415
+    from .models import PushSubscription  # noqa: PLC0415
+
+    all_roles = list(set(["admin"] + list(roles)))
+    users = User.objects.filter(role__in=all_roles, is_active=True)
+    for user in users:
+        create_notification(user=user, judul=judul, isi=isi, tipe=tipe, link=url or "")
         for sub in PushSubscription.objects.filter(user=user):
             _send_push_with_url(sub, judul, isi, url)
 
@@ -122,6 +135,7 @@ def broadcast_pengumuman(pengumuman):
             isi=pengumuman.isi[:200],
             tipe=tipe,
             pengumuman=pengumuman,
+            link=f"/pengumuman/{pengumuman.id}",
         )
         for u in users
     ]

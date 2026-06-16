@@ -172,7 +172,7 @@ export async function getPengaturanIuran(): Promise<PengaturanIuran> {
   return data.data
 }
 
-export async function updatePengaturanIuran(payload: { nominalDefault: number; saldoAwal?: number; keterangan?: string }): Promise<PengaturanIuran> {
+export async function updatePengaturanIuran(payload: { nominalDefault?: number; saldoAwal?: number; keterangan?: string }): Promise<PengaturanIuran> {
   const { data } = await apiClient.put<ApiSuccess<PengaturanIuran>>('/keuangan/pengaturan-iuran/', payload)
   return data.data
 }

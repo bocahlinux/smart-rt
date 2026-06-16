@@ -226,10 +226,11 @@ export function IuranSettingPage() {
     e.preventDefault()
     setSaldoSaving(true); setSaldoError(''); setSaldoSuccess('')
     try {
-      await updatePengaturanIuran({ nominalDefault: 50000, saldoAwal: parseFloat(saldoAwal) || 0, keterangan })
+      await updatePengaturanIuran({ saldoAwal: parseFloat(saldoAwal) || 0, keterangan })
       setSaldoSuccess('Pengaturan saldo awal berhasil disimpan.')
-    } catch {
-      setSaldoError('Gagal menyimpan pengaturan.')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Gagal menyimpan pengaturan.'
+      setSaldoError(msg)
     } finally {
       setSaldoSaving(false)
     }

@@ -1,6 +1,7 @@
 """Views keuangan RT — transaksi, kategori, iuran warga, dashboard, laporan PDF."""
 
 import io
+import uuid
 from datetime import date
 
 from decimal import Decimal
@@ -296,7 +297,7 @@ class TransaksiViewSet(viewsets.ModelViewSet):
             user=request.user,
             action="export",
             table_name="transaksi",
-            record_id="laporan",
+            record_id=uuid.uuid4(),
             new_data={"dari": dari_str, "sampai": sampai_str, "format": "pdf"},
             request=request,
         )
@@ -467,6 +468,19 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
             },
             request=request,
         )
+
+        _BULAN = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                  "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+        from notifications.services import notify_users_with_roles  # noqa: PLC0415
+        nama_warga = instance.warga.nama_lengkap if instance.warga else request.user.email
+        jenis_nama = instance.jenis.nama if instance.jenis else "Iuran"
+        notify_users_with_roles(
+            roles=["ketua_rt", "bendahara"],
+            judul="Upload Bukti Iuran",
+            isi=f"{nama_warga} mengupload bukti {jenis_nama} {_BULAN[instance.bulan]} {instance.tahun}. Menunggu konfirmasi.",
+            tipe="info",
+            url="/keuangan/iuran",
+        )
         return Response(
             {
                 "status": "success",
@@ -505,6 +519,32 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
             new_data={"status": instance.status, "keterangan": instance.keterangan},
             request=request,
         )
+        # Notify warga tentang hasil konfirmasi
+        warga_user = instance.warga.user if instance.warga else None
+        if warga_user:
+            from notifications.services import notify_user  # noqa: PLC0415
+            _BULAN_N = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+            jenis_nama = instance.jenis.nama if instance.jenis else "Iuran"
+            periode = f"{_BULAN_N[instance.bulan]} {instance.tahun}"
+            if instance.status == IuranWarga.Status.LUNAS:
+                notify_user(
+                    user=warga_user,
+                    judul=f"Iuran {jenis_nama} Dikonfirmasi ✓",
+                    isi=f"Pembayaran {jenis_nama} periode {periode} sebesar Rp {int(instance.jumlah):,.0f} telah dikonfirmasi. Terima kasih!".replace(",", "."),
+                    tipe="info",
+                    url="/iuran/upload",
+                )
+            else:
+                ket = f" Alasan: {instance.keterangan}" if instance.keterangan else ""
+                notify_user(
+                    user=warga_user,
+                    judul=f"Iuran {jenis_nama} Ditolak",
+                    isi=f"Pembayaran {jenis_nama} periode {periode} ditolak.{ket} Silakan upload ulang bukti transfer.",
+                    tipe="penting",
+                    url="/iuran/upload",
+                )
+
         verb = "dikonfirmasi" if instance.status == "lunas" else "ditolak"
         return Response({"status": "success", "message": f"Iuran berhasil {verb}"})
 
@@ -565,8 +605,9 @@ class PengaturanIuranView(APIView):
             user=request.user,
             action="update",
             table_name="pengaturan_iuran",
-            record_id=1,
+            record_id=uuid.UUID(int=1),
             new_data={
+                "saldo_awal": str(instance.saldo_awal),
                 "nominal_default": str(instance.nominal_default),
                 "keterangan": instance.keterangan,
             },

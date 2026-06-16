@@ -1,5 +1,5 @@
-import { Bell, BookOpen, CheckCheck, ExternalLink, ShieldAlert } from 'lucide-react'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { Bell, BookOpen, CheckCheck, CreditCard, ExternalLink, FileText, Megaphone, ShieldAlert, Users } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback, type ElementType } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
@@ -32,6 +32,30 @@ function playNotifSound() {
   } catch {
     // Browser AudioContext not supported — silently skip
   }
+}
+
+function resolveNotifDest(notif: Notification): string {
+  // 1. Link eksplisit dari DB — selalu prioritas
+  if (notif.link) return notif.link
+  // 2. FK pengumuman (notifikasi lama dari broadcast sebelum field link ada)
+  if (notif.pengumumanId) return `/pengumuman/${notif.pengumumanId}`
+  // 3. Inferensi dari judul/isi untuk notifikasi lama tanpa link
+  const t = (notif.judul + ' ' + notif.isi).toLowerCase()
+  if (t.includes('pengajuan') || t.includes('anggota kk') || t.includes('penghapusan') || t.includes('perubahan data')) return '/pengajuan'
+  if (t.includes('pengaduan')) return '/pengaduan'
+  if (t.includes('iuran')) return '/keuangan/iuran'
+  if (t.includes('kk saya') || t.includes('kartu keluarga')) return '/kk/saya'
+  return '/pengumuman'
+}
+
+function getNotifAction(notif: Notification): { label: string; Icon: ElementType } {
+  const dest = resolveNotifDest(notif)
+  if (dest.startsWith('/pengumuman')) return { label: 'Lihat Pengumuman', Icon: Megaphone }
+  if (dest.startsWith('/pengajuan')) return { label: 'Lihat Pengajuan', Icon: FileText }
+  if (dest.startsWith('/pengaduan')) return { label: 'Lihat Pengaduan', Icon: ShieldAlert }
+  if (dest.startsWith('/keuangan/iuran') || dest.startsWith('/iuran')) return { label: 'Lihat Iuran', Icon: CreditCard }
+  if (dest.startsWith('/kk')) return { label: 'Lihat KK Saya', Icon: Users }
+  return { label: 'Lihat Detail', Icon: ExternalLink }
 }
 
 export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownClassName?: string }) {
@@ -91,13 +115,7 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
   function handleOpen(notif: Notification) {
     handleMarkRead(notif.id)
     setOpen(false)
-    if (notif.link) {
-      navigate(notif.link)
-    } else if (notif.pengumumanId) {
-      navigate(`/pengumuman/${notif.pengumumanId}`)
-    } else {
-      navigate('/pengumuman')
-    }
+    navigate(resolveNotifDest(notif))
   }
 
   const unreadCount = items.filter((n) => !n.isRead).length
@@ -144,10 +162,7 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
             ) : (
               items.map((item) => {
                 const isRead = item.isRead
-                const isPengaduan = item.link?.startsWith('/pengaduan') || (!item.pengumumanId && !item.link && (
-                  item.judul.toLowerCase().includes('pengaduan') ||
-                  item.isi.toLowerCase().includes('pengaduan')
-                ))
+                const { label: actionLabel, Icon: ActionIcon } = getNotifAction(item)
                 return (
                   <li
                     key={item.id}
@@ -183,10 +198,8 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
                           onClick={() => handleOpen(item)}
                           className="flex items-center gap-1 rounded-lg bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600 hover:bg-primary-100 dark:bg-primary-900/20 dark:text-primary-400"
                         >
-                          {isPengaduan
-                            ? <ShieldAlert className="h-3 w-3" />
-                            : <ExternalLink className="h-3 w-3" />}
-                          Lihat Detail
+                          <ActionIcon className="h-3 w-3" />
+                          {actionLabel}
                         </button>
                         {!isRead && (
                           <button
