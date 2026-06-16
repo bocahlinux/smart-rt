@@ -7,6 +7,14 @@ from pathlib import Path
 
 from django.template.loader import render_to_string
 
+# WeasyPrint 62.3 memanggil metode baru (transform, text_matrix) yang belum
+# ada di pydyf 0.12.1. Alias ke metode lama agar kompatibel.
+import pydyf as _pydyf
+if not hasattr(_pydyf.Stream, 'transform'):
+    _pydyf.Stream.transform = _pydyf.Stream.set_matrix
+if not hasattr(_pydyf.Stream, 'text_matrix'):
+    _pydyf.Stream.text_matrix = _pydyf.Stream.set_text_matrix
+
 BULAN_ID = [
     "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
     "Juli", "Agustus", "September", "Oktober", "November", "Desember",
@@ -20,14 +28,15 @@ STATUS_PERKAWINAN_LABEL = {
 }
 
 
-def _ttd_as_base64(pengaturan) -> str | None:
-    if not pengaturan.tanda_tangan:
+def _image_as_base64(image_field) -> str | None:
+    if not image_field:
         return None
     try:
-        path = pengaturan.tanda_tangan.path
+        path = image_field.path
         data = Path(path).read_bytes()
         ext = Path(path).suffix.lower().lstrip(".")
-        mime = "image/png" if ext == "png" else "image/jpeg"
+        mime_map = {"png": "image/png", "svg": "image/svg+xml", "gif": "image/gif"}
+        mime = mime_map.get(ext, "image/jpeg")
         return f"data:{mime};base64,{base64.b64encode(data).decode()}"
     except (FileNotFoundError, OSError, ValueError):
         return None
@@ -60,7 +69,8 @@ def generate_pdf(permohonan) -> bytes:
         "pengaturan": pengaturan,
         "profile": profile,
         "tanggal_str": tanggal_str,
-        "ttd_base64": _ttd_as_base64(pengaturan),
+        "logo_base64": _image_as_base64(pengaturan.logo),
+        "ttd_base64": _image_as_base64(pengaturan.tanda_tangan),
         "nama_pemohon": profile.nama_lengkap if profile else pemohon.email,
         "nik_pemohon": (profile.nik or "-") if profile else "-",
         "alamat_pemohon": (profile.alamat or "-") if profile else "-",

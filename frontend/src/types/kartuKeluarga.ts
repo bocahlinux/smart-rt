@@ -29,6 +29,7 @@ export interface AnggotaKK {
   nik?: string | null
   hubunganKeluarga?: HubunganKeluarga | null
   hubunganKeluargaLabel?: string | null
+  statusPerkawinan?: string | null
   jenisKelamin?: string | null
   tanggalLahir?: string | null
   tempatLahir?: string | null

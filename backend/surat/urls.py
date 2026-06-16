@@ -8,6 +8,7 @@ from .views import (
     SuratPDFView,
     PengaturanRTView,
     PengaturanRTTTDView,
+    PengaturanRTLogoView,
 )
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
     path("surat/permohonan/<uuid:pk>/pdf/", SuratPDFView.as_view(), name="permohonan-surat-pdf"),
     path("surat/pengaturan/", PengaturanRTView.as_view(), name="pengaturan-rt"),
     path("surat/pengaturan/ttd/", PengaturanRTTTDView.as_view(), name="pengaturan-rt-ttd"),
+    path("surat/pengaturan/logo/", PengaturanRTLogoView.as_view(), name="pengaturan-rt-logo"),
 ]

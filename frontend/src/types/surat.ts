@@ -49,5 +49,6 @@ export interface PengaturanRT {
   namaKetuaRT: string
   nikKetuaRT: string
   hasTTD: boolean
+  hasLogo: boolean
   updatedAt: string | null
 }

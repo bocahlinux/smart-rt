@@ -1,11 +1,13 @@
-import { ArrowLeft, CheckCircle2, PenLine, Save, Trash2, Upload } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ImageIcon, PenLine, Save, Trash2, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import {
+  deleteLogo,
   deleteTTD,
   getPengaturanRT,
   updatePengaturanRT,
+  uploadLogo,
   uploadTTD,
 } from '@/services/suratService'
 import type { PengaturanRT } from '@/types/surat'
@@ -18,6 +20,12 @@ export function SuratPengaturanPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+
+  // Logo upload state
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoMsg, setLogoMsg] = useState('')
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const logoRef = useRef<HTMLInputElement>(null)
 
   // TTD upload state
   const [ttdUploading, setTtdUploading] = useState(false)
@@ -45,6 +53,42 @@ export function SuratPengaturanPage() {
       setError('Gagal menyimpan pengaturan.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setLogoMsg('File harus berupa gambar (PNG/JPG/SVG).')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = ev => setLogoPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+
+    setLogoUploading(true); setLogoMsg('')
+    try {
+      await uploadLogo(file)
+      setData(prev => prev ? { ...prev, hasLogo: true } : prev)
+      setLogoMsg('Logo berhasil diunggah.')
+    } catch {
+      setLogoMsg('Gagal mengunggah logo.')
+    } finally {
+      setLogoUploading(false)
+      if (logoRef.current) logoRef.current.value = ''
+    }
+  }
+
+  async function handleLogoDelete() {
+    if (!confirm('Hapus logo RT?')) return
+    try {
+      await deleteLogo()
+      setData(prev => prev ? { ...prev, hasLogo: false } : prev)
+      setLogoPreview(null)
+      setLogoMsg('Logo dihapus.')
+    } catch {
+      setLogoMsg('Gagal menghapus logo.')
     }
   }
 
@@ -103,7 +147,7 @@ export function SuratPengaturanPage() {
 
       <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">Pengaturan RT</h1>
       <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
-        Informasi RT dan tanda tangan digital untuk kop surat resmi.
+        Informasi RT, logo, dan tanda tangan digital untuk kop surat resmi.
       </p>
 
       {/* ── Info RT ── */}
@@ -169,6 +213,58 @@ export function SuratPengaturanPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* ── Logo RT ── */}
+      <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
+          <ImageIcon className="h-4 w-4 text-sky-500" />
+          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Logo RT</h2>
+        </div>
+        <div className="p-5">
+          <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+            Upload logo RT/desa (PNG transparan atau JPG, maks 2 MB).
+            Logo akan tampil di pojok kiri kop surat; jika tidak diunggah, digunakan ikon default.
+          </p>
+
+          <div className="mb-4 flex min-h-25 items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+            {logoPreview ? (
+              <img src={logoPreview} alt="Preview Logo" className="max-h-24 max-w-60 object-contain" />
+            ) : data?.hasLogo ? (
+              <p className="text-sm text-emerald-600 dark:text-emerald-400">✓ Logo sudah diunggah</p>
+            ) : (
+              <p className="text-sm text-slate-400">Belum ada logo</p>
+            )}
+          </div>
+
+          {logoMsg && (
+            <p className={`mb-3 text-sm ${logoMsg.includes('Gagal') ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              {logoMsg}
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+              <Upload className="h-4 w-4" />
+              {logoUploading ? 'Mengunggah…' : (data?.hasLogo ? 'Ganti Logo' : 'Upload Logo')}
+              <input
+                ref={logoRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                className="hidden"
+                onChange={e => void handleLogoUpload(e)}
+                disabled={logoUploading}
+              />
+            </label>
+
+            {data?.hasLogo && !logoPreview && (
+              <button type="button" onClick={() => void handleLogoDelete()}
+                className="flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20">
+                <Trash2 className="h-4 w-4" /> Hapus Logo
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── Tanda Tangan Digital ── */}

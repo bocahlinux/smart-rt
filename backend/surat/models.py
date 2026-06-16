@@ -107,6 +107,7 @@ class PengaturanRT(models.Model):
     kode_pos = models.CharField(max_length=10, blank=True, default="")
     nama_ketua_rt = models.CharField(max_length=255, blank=True, default="")
     nik_ketua_rt = models.CharField(max_length=16, blank=True, default="")
+    logo = models.ImageField(upload_to="pengaturan-rt/logo/", null=True, blank=True)
     tanda_tangan = models.ImageField(upload_to="pengaturan-rt/ttd/", null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(

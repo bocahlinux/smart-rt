@@ -57,14 +57,18 @@ class PengaturanRTSerializer(serializers.ModelSerializer):
     nikKetuaRT = serializers.CharField(source="nik_ketua_rt", allow_blank=True, required=False)  # noqa: N815
     kodePOS = serializers.CharField(source="kode_pos", allow_blank=True, required=False)  # noqa: N815
     hasTTD = serializers.SerializerMethodField()  # noqa: N815
+    hasLogo = serializers.SerializerMethodField()  # noqa: N815
     updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)  # noqa: N815
 
     class Meta:
         model = PengaturanRT
         fields = [
             "namaRT", "namaRW", "kelurahan", "kecamatan", "kota", "provinsi",
-            "kodePOS", "namaKetuaRT", "nikKetuaRT", "hasTTD", "updatedAt",
+            "kodePOS", "namaKetuaRT", "nikKetuaRT", "hasTTD", "hasLogo", "updatedAt",
         ]
 
     def get_hasTTD(self, obj):  # noqa: N802
         return bool(obj.tanda_tangan)
+
+    def get_hasLogo(self, obj):  # noqa: N802
+        return bool(obj.logo)

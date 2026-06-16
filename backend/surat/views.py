@@ -241,3 +241,43 @@ class PengaturanRTTTDView(APIView):
             obj.tanda_tangan = None
             obj.save()
         return _ok({"hasTTD": False, "message": "Tanda tangan dihapus."})
+
+
+class PengaturanRTLogoView(APIView):
+    """
+    POST   /surat/pengaturan/logo/  — upload logo RT (image)
+    DELETE /surat/pengaturan/logo/  — hapus logo
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        if request.user.role not in ("admin", "ketua_rt"):
+            return _err("Hanya Ketua RT atau Admin yang dapat mengunggah logo.", 403)
+        file = request.FILES.get("logo")
+        if not file:
+            return _err("File logo wajib dikirim.")
+        if not file.content_type.startswith("image/"):
+            return _err("File harus berupa gambar (PNG/JPG/SVG).")
+        if file.size > 2 * 1024 * 1024:
+            return _err("Ukuran file maksimal 2 MB.")
+        obj = PengaturanRT.get_instance()
+        if obj.logo:
+            try:
+                obj.logo.delete(save=False)
+            except Exception:
+                pass
+        obj.logo = file
+        obj.updated_by = request.user
+        obj.save()
+        return _ok({"hasLogo": True, "message": "Logo berhasil diunggah."})
+
+    def delete(self, request):
+        if request.user.role not in ("admin", "ketua_rt"):
+            return _err("Hanya Ketua RT atau Admin yang dapat menghapus logo.", 403)
+        obj = PengaturanRT.get_instance()
+        if obj.logo:
+            obj.logo.delete(save=False)
+            obj.logo = None
+            obj.save()
+        return _ok({"hasLogo": False, "message": "Logo dihapus."})

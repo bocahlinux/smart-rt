@@ -3,6 +3,7 @@ import { CheckCircle2, Edit2, X } from 'lucide-react'
 
 import { createPengajuanUbah } from '@/services/kartuKeluargaService'
 import type { AnggotaKK } from '@/types/kartuKeluarga'
+import { HUBUNGAN_LABEL, HUBUNGAN_ORDER } from '@/types/kartuKeluarga'
 
 const INPUT = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-900'
 
@@ -32,6 +33,8 @@ function toOriginal(a: AnggotaKK): Record<string, string> {
     tempat_lahir: a.tempatLahir ?? '',
     tanggal_lahir: a.tanggalLahir ?? '',
     agama: a.agama ?? '',
+    status_perkawinan: a.statusPerkawinan ?? '',
+    hubungan_keluarga: a.hubunganKeluarga ?? '',
     pendidikan: a.pendidikan ?? '',
     pekerjaan: a.pekerjaan ?? '',
     blok: a.blok ?? '',
@@ -140,6 +143,29 @@ export function UbahAnggotaModal({ anggota, onClose, onSuccess }: Props) {
                     )}
                   </div>
                 ))}
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Status Perkawinan</label>
+                  <select className={INPUT} value={form.status_perkawinan ?? ''}
+                    onChange={(e) => set('status_perkawinan', e.target.value)}>
+                    <option value="">—</option>
+                    <option value="belum_kawin">Belum Kawin</option>
+                    <option value="kawin">Kawin</option>
+                    <option value="cerai_hidup">Cerai Hidup</option>
+                    <option value="cerai_mati">Cerai Mati</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Hubungan Keluarga</label>
+                  <select className={INPUT} value={form.hubungan_keluarga ?? ''}
+                    onChange={(e) => set('hubungan_keluarga', e.target.value)}>
+                    <option value="">—</option>
+                    {HUBUNGAN_ORDER.map((h) => (
+                      <option key={h} value={h}>{HUBUNGAN_LABEL[h]}</option>
+                    ))}
+                  </select>
+                </div>
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">

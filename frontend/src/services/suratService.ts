@@ -85,3 +85,16 @@ export async function uploadTTD(file: File): Promise<{ hasTTD: boolean }> {
 export async function deleteTTD(): Promise<void> {
   await apiClient.delete('/surat/pengaturan/ttd/')
 }
+
+export async function uploadLogo(file: File): Promise<{ hasLogo: boolean }> {
+  const form = new FormData()
+  form.append('logo', file)
+  const { data } = await apiClient.post<ApiOk<{ hasLogo: boolean }>>('/surat/pengaturan/logo/', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data.data
+}
+
+export async function deleteLogo(): Promise<void> {
+  await apiClient.delete('/surat/pengaturan/logo/')
+}

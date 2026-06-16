@@ -32,7 +32,7 @@
     align-items: center;
     justify-content: center;
   }
-  .kop-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .kop-logo img { width: 64pt; height: 64pt; object-fit: contain; }
   .kop-text { flex: 1; text-align: center; }
   .kop-text .pemerintah { font-size: 10pt; text-transform: uppercase; }
   .kop-text .instansi { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
@@ -109,13 +109,17 @@
 <!-- KOP SURAT -->
 <div class="kop">
   <div class="kop-logo">
-    <!-- Lambang generik berupa lingkaran -->
-    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="32" r="30" fill="none" stroke="#000" stroke-width="2"/>
-      <text x="32" y="22" text-anchor="middle" font-size="8" font-family="serif" font-weight="bold">RUKUN</text>
-      <text x="32" y="34" text-anchor="middle" font-size="8" font-family="serif" font-weight="bold">TETANGGA</text>
-      <text x="32" y="46" text-anchor="middle" font-size="11" font-family="serif" font-weight="bold">{{ pengaturan.nama_rt }}</text>
-    </svg>
+    {% if logo_base64 %}
+      <img src="{{ logo_base64 }}" alt="Logo RT">
+    {% else %}
+      <!-- Lambang generik berupa lingkaran -->
+      <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="30" fill="none" stroke="#000" stroke-width="2"/>
+        <text x="32" y="22" text-anchor="middle" font-size="8" font-family="serif" font-weight="bold">RUKUN</text>
+        <text x="32" y="34" text-anchor="middle" font-size="8" font-family="serif" font-weight="bold">TETANGGA</text>
+        <text x="32" y="46" text-anchor="middle" font-size="11" font-family="serif" font-weight="bold">{{ pengaturan.nama_rt }}</text>
+      </svg>
+    {% endif %}
   </div>
   <div class="kop-text">
     <div class="pemerintah">Pemerintah {{ pengaturan.kota }}</div>
