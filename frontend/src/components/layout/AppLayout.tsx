@@ -402,7 +402,9 @@ export function AppLayout() {
 
       {/* ── Desktop Sidebar ─────────────────────────────────── */}
       <aside className={cn(
-        'hidden shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:flex transition-[width] duration-200 ease-in-out',
+        'hidden flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950',
+        'lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex',
+        'transition-[width] duration-200 ease-in-out',
         sidebarCollapsed ? 'w-[72px]' : 'w-64',
       )}>
 
@@ -550,7 +552,11 @@ export function AppLayout() {
       </aside>
 
       {/* ── Main area ─────────────────────────────────────────── */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className={cn(
+        'flex min-w-0 flex-1 flex-col',
+        'transition-[margin-left] duration-200 ease-in-out',
+        sidebarCollapsed ? 'lg:ml-18' : 'lg:ml-64',
+      )}>
         {/* Mobile header */}
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white/80 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 lg:hidden">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-600">
