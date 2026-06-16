@@ -51,6 +51,7 @@ export interface WargaBelumLunas {
   namaLengkap: string
   blok: string
   noRumah: string
+  noKk: string | null
 }
 
 export interface DashboardPengurus {

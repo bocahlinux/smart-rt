@@ -64,13 +64,29 @@ class DashboardPengurusView(APIView):
             bulan=bulan, tahun=tahun, status="pending"
         ).count()
 
+        # Warga belum lunas — KK-aware:
+        # - Per KK: jika satu anggota KK sudah lunas, seluruh KK dianggap lunas
+        # - Per warga: cek per individu
+        lunas_kk_ids = IuranWarga.objects.filter(
+            bulan=bulan, tahun=tahun, status="lunas", jenis__unit="per_kk",
+        ).values_list("warga__kartu_keluarga_id", flat=True).distinct()
+
         lunas_warga_ids = IuranWarga.objects.filter(
-            bulan=bulan, tahun=tahun, status="lunas"
+            bulan=bulan, tahun=tahun, status="lunas", jenis__unit="per_warga",
         ).values_list("warga_id", flat=True)
+
+        # Jika belum ada iuran bertipe per_kk sama sekali, fallback ke cek lunas semua jenis
+        if not IuranWarga.objects.filter(bulan=bulan, tahun=tahun, jenis__unit="per_kk").exists():
+            lunas_warga_ids = IuranWarga.objects.filter(
+                bulan=bulan, tahun=tahun, status="lunas",
+            ).values_list("warga_id", flat=True)
+            lunas_kk_ids = []
 
         warga_belum_lunas_qs = (
             WargaProfile.objects.filter(is_deleted=False, status="aktif")
             .exclude(id__in=lunas_warga_ids)
+            .exclude(kartu_keluarga_id__in=lunas_kk_ids)
+            .select_related("kartu_keluarga")
             .order_by("blok", "no_rumah", "nama_lengkap")[:30]
         )
         warga_belum_lunas = [
@@ -79,6 +95,7 @@ class DashboardPengurusView(APIView):
                 "namaLengkap": w.nama_lengkap,
                 "blok": w.blok or "",
                 "noRumah": w.no_rumah or "",
+                "noKk": w.kartu_keluarga.no_kk if w.kartu_keluarga else None,
             }
             for w in warga_belum_lunas_qs
         ]

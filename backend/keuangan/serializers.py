@@ -200,11 +200,45 @@ class IuranWargaUploadSerializer(serializers.ModelSerializer):
         bulan = data.get("bulan")
         tahun = data.get("tahun")
 
+        # Cek duplikat untuk warga yang sama (semua unit) — termasuk DITOLAK agar tidak ganda
         if IuranWarga.objects.filter(warga_id=warga_id, jenis_id=jenis_id, bulan=bulan, tahun=tahun).exists():
             raise serializers.ValidationError(
                 {"non_field_errors": "Iuran jenis ini untuk periode ini sudah ada."},
                 code="KEUANGAN_DUPLICATE_IURAN",
             )
+
+        # Anti-duplikat per KK: jika unit iuran adalah per_kk,
+        # cek apakah anggota KK lain sudah membayar (PENDING/LUNAS) periode ini
+        try:
+            jenis = JenisIuran.objects.get(id=jenis_id)
+        except JenisIuran.DoesNotExist:
+            return data
+
+        if jenis.unit == JenisIuran.Unit.PER_KK:
+            from accounts.models import WargaProfile  # noqa: PLC0415
+            try:
+                warga = WargaProfile.objects.select_related("kartu_keluarga").get(id=warga_id)
+            except WargaProfile.DoesNotExist:
+                return data
+
+            kk = warga.kartu_keluarga
+            if kk:
+                kk_warga_ids = WargaProfile.objects.filter(
+                    kartu_keluarga=kk,
+                ).exclude(id=warga_id).values_list("id", flat=True)
+
+                if IuranWarga.objects.filter(
+                    warga_id__in=kk_warga_ids,
+                    jenis_id=jenis_id,
+                    bulan=bulan,
+                    tahun=tahun,
+                    status__in=[IuranWarga.Status.PENDING, IuranWarga.Status.LUNAS],
+                ).exists():
+                    raise serializers.ValidationError(
+                        {"non_field_errors": f"Iuran {jenis.nama} periode ini sudah dibayar oleh anggota KK Anda. Iuran dihitung per Kartu Keluarga (1 KK, 1 pembayaran)."},
+                        code="KEUANGAN_DUPLICATE_IURAN_KK",
+                    )
+
         return data
 
     def create(self, validated_data):

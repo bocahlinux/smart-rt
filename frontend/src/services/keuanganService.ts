@@ -187,3 +187,8 @@ export async function getMyIuran(tahun?: number): Promise<MyIuran[]> {
   })
   return data.data
 }
+
+export async function getPendingIuranCount(): Promise<number> {
+  const { data } = await apiClient.get<ApiSuccess<{ count: number }>>('/iuran/pending-count/')
+  return data.data.count
+}

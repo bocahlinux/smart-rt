@@ -2,7 +2,9 @@ import { Bell, BookOpen, CheckCheck, CreditCard, ExternalLink, FileText, Megapho
 import { useEffect, useRef, useState, useCallback, type ElementType } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { hasPerm } from '@/lib/permissions'
 import { cn } from '@/lib/utils'
+import { getPendingIuranCount } from '@/services/keuanganService'
 import { listNotifications, markNotificationRead, markAllNotificationsRead } from '@/services/pengumumanService'
 import { useAuthStore } from '@/stores/authStore'
 import type { Notification } from '@/types/pengumuman'
@@ -63,8 +65,12 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<Notification[]>([])
+  const [pendingIuranCount, setPendingIuranCount] = useState(0)
   const prevUnreadRef = useRef<number>(0)
+  const prevPendingRef = useRef<number>(-1)
   const ref = useRef<HTMLDivElement>(null)
+
+  const canConfirmIuran = hasPerm(user, 'konfirmasi_iuran')
 
   // Tutup saat klik di luar
   useEffect(() => {
@@ -89,7 +95,20 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
         setItems(newItems)
       })
       .catch(() => undefined)
-  }, [user])
+
+    if (canConfirmIuran) {
+      getPendingIuranCount()
+        .then((count) => {
+          // Suara ketika ada iuran pending baru yang masuk
+          if (prevPendingRef.current >= 0 && count > prevPendingRef.current) {
+            playNotifSound()
+          }
+          prevPendingRef.current = count
+          setPendingIuranCount(count)
+        })
+        .catch(() => undefined)
+    }
+  }, [user, canConfirmIuran])
 
   // Muat notifikasi saat mount + polling tiap 60 detik
   useEffect(() => {
@@ -119,6 +138,8 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
   }
 
   const unreadCount = items.filter((n) => !n.isRead).length
+  // Badge gabungan: notif belum baca + pending iuran (untuk bendahara)
+  const totalBadge = unreadCount + (canConfirmIuran ? pendingIuranCount : 0)
 
   return (
     <div ref={ref} className="relative">
@@ -129,9 +150,9 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
         className="relative flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
       >
         <Bell className="h-4 w-4" />
-        {unreadCount > 0 && (
+        {totalBadge > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {totalBadge > 9 ? '9+' : totalBadge}
           </span>
         )}
       </button>
@@ -154,6 +175,28 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
               )}
             </div>
           </div>
+
+          {/* Pending iuran — hanya tampil untuk bendahara/ketua_rt/admin */}
+          {canConfirmIuran && pendingIuranCount > 0 && (
+            <button
+              type="button"
+              onClick={() => { setOpen(false); navigate('/keuangan/iuran') }}
+              className="flex w-full items-center gap-3 border-b border-amber-100 bg-amber-50/70 px-4 py-3 text-left transition hover:bg-amber-100/80 dark:border-amber-900/30 dark:bg-amber-900/10 dark:hover:bg-amber-900/20"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+                <CreditCard className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {pendingIuranCount} Iuran Menunggu Konfirmasi
+                </p>
+                <p className="text-xs text-amber-600/80 dark:text-amber-400/70">Klik untuk buka halaman konfirmasi iuran</p>
+              </div>
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
+                {pendingIuranCount > 9 ? '9+' : pendingIuranCount}
+              </span>
+            </button>
+          )}
 
           {/* List */}
           <ul className="max-h-[60vh] overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800/60">
