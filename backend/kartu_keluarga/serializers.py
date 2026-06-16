@@ -17,14 +17,15 @@ class AnggotaKKSerializer(serializers.ModelSerializer):
     hubunganKeluargaLabel = serializers.SerializerMethodField()  # noqa: N815
     noRumah = serializers.CharField(source="no_rumah")  # noqa: N815
     tanggalLahir = serializers.DateField(source="tanggal_lahir")  # noqa: N815
+    tempatLahir = serializers.CharField(source="tempat_lahir")  # noqa: N815
     jenisKelamin = serializers.CharField(source="jenis_kelamin")  # noqa: N815
 
     class Meta:
         model = WargaProfile
         fields = [
             "id", "namaLengkap", "nik", "hubunganKeluarga", "hubunganKeluargaLabel",
-            "jenisKelamin", "tanggalLahir", "pekerjaan", "status",
-            "alamat", "blok", "noRumah",
+            "jenisKelamin", "tanggalLahir", "tempatLahir", "agama", "pendidikan",
+            "pekerjaan", "status", "alamat", "blok", "noRumah",
         ]
 
     def get_hubunganKeluargaLabel(self, obj):  # noqa: N802

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Users, Plus, Trash2, Edit2, Home, MapPin, Hash, ArrowLeft } from 'lucide-react'
 
 
@@ -11,6 +11,7 @@ import { HUBUNGAN_LABEL, HUBUNGAN_ORDER } from '@/types/kartuKeluarga'
 import { useAuthStore } from '@/stores/authStore'
 import { HapusAnggotaModal } from './HapusAnggotaModal'
 import { TambahAnggotaModal } from './TambahAnggotaModal'
+import { UbahAnggotaModal } from './UbahAnggotaModal'
 import { WargaDetailModal } from '@/components/warga/WargaDetailModal'
 
 const STATUS_CLS: Record<string, string> = {
@@ -42,6 +43,7 @@ export function KartuKeluargaPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [hapusTarget, setHapusTarget] = useState<AnggotaKK | null>(null)
+  const [ubahTarget, setUbahTarget] = useState<AnggotaKK | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [tambahOpen, setTambahOpen] = useState(false)
 
@@ -196,13 +198,14 @@ export function KartuKeluargaPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
-                        <Link
-                          to={`/kk/${kk.id}/ubah-anggota/${m.id}`}
+                        <button
+                          type="button"
+                          onClick={() => setUbahTarget(m)}
                           className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700"
                           title="Ajukan perubahan data"
                         >
                           <Edit2 className="h-3.5 w-3.5" />
-                        </Link>
+                        </button>
                         {m.hubunganKeluarga !== 'kepala_keluarga' && (
                           <button
                             type="button"
@@ -249,12 +252,13 @@ export function KartuKeluargaPage() {
                   </div>
                 )}
                 <div className="flex justify-end gap-1 border-t border-slate-50 px-3 py-2 dark:border-slate-800">
-                  <Link
-                    to={`/kk/${kk.id}/ubah-anggota/${m.id}`}
+                  <button
+                    type="button"
+                    onClick={() => setUbahTarget(m)}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     <Edit2 className="h-3 w-3" /> Ubah
-                  </Link>
+                  </button>
                   {m.hubunganKeluarga !== 'kepala_keluarga' && (
                     <button
                       type="button"
@@ -269,6 +273,14 @@ export function KartuKeluargaPage() {
             ))}
           </div>
         </>
+      )}
+
+      {ubahTarget && (
+        <UbahAnggotaModal
+          anggota={ubahTarget}
+          onClose={() => setUbahTarget(null)}
+          onSuccess={() => setUbahTarget(null)}
+        />
       )}
 
       {hapusTarget && kk && (

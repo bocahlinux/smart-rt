@@ -55,14 +55,23 @@ export interface WargaBelumLunas {
 }
 
 export interface DashboardPengurus {
+  role: string
   totalWarga: number
   wargaAktif: number
+  totalKk: number
+  wargaBaruBulanIni: number
   saldoKas: number
   pengaduanAktif: number
   pengaduanSelesai: number
   kegiatanMendatang: number
   iuranBulanIni: IuranBulanIniPengurus
+  iuranPending: number
   wargaBelumLunas: WargaBelumLunas[]
+  pengajuanKkPending: number
+  pollingAktif: number
+  kegiatanMendatangList: KegiatanRingkas[]
+  pengumumanTerbaru: PengumumanRingkas[]
+  pengaduanTerbaru: PengaduanRingkas[]
 }
 
 export interface DashboardWarga {

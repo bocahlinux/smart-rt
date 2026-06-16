@@ -34,7 +34,6 @@ import { UserListPage } from '@/components/users/UserListPage'
 import { WargaListPage } from '@/components/warga/WargaListPage'
 import { ProfilBuatPage } from '@/components/warga/ProfilBuatPage'
 import { KartuKeluargaPage } from '@/components/kartuKeluarga/KartuKeluargaPage'
-import { UbahAnggotaPage } from '@/components/kartuKeluarga/UbahAnggotaPage'
 import { PengajuanPage } from '@/components/kartuKeluarga/PengajuanPage'
 
 function App() {
@@ -60,7 +59,6 @@ function App() {
             {/* Kartu Keluarga */}
             <Route path="/kk/saya" element={<KartuKeluargaPage />} />
             <Route path="/kk/:id" element={<KartuKeluargaPage />} />
-            <Route path="/kk/:kkId/ubah-anggota/:wargaId" element={<UbahAnggotaPage />} />
             <Route path="/pengajuan" element={<PengajuanPage />} />
 
             {/* Phase 4: Keuangan RT */}
