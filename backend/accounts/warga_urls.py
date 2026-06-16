@@ -6,7 +6,7 @@ antara non-detail actions (export/import) dan pola {pk} UUID.
 
 from django.urls import path, re_path
 
-from .warga_views import WargaViewSet
+from .warga_views import WargaViewSet, ProfilSayaView
 
 _UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
 
@@ -25,6 +25,7 @@ warga_link    = WargaViewSet.as_view({"post": "link"})
 # Non-detail actions dulu — sebelum pola {pk} — agar string literal tidak
 # salah di-resolve sebagai UUID.
 urlpatterns = [
+    path("profil-saya/", ProfilSayaView.as_view(), name="warga-profil-saya"),
     path("export/",  warga_export,  name="warga-export"),
     path("import/",  warga_import,  name="warga-import"),
     path("deleted/", warga_deleted, name="warga-deleted"),

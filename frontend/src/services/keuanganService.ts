@@ -2,13 +2,17 @@
 
 import apiClient from './apiClient'
 import type {
+  BukuKasData,
   DashboardKeuangan,
   IuranKonfirmasiPayload,
   IuranUploadPayload,
   IuranWarga,
+  JenisIuran,
+  JenisIuranFormPayload,
   KategoriTransaksi,
   MyIuran,
   Pagination,
+  PengaturanIuran,
   Transaksi,
   TransaksiFormPayload,
 } from '../types/keuangan'
@@ -18,6 +22,29 @@ interface ApiSuccess<T> {
   data: T
   message?: string
   pagination?: Pagination
+}
+
+// ─── Jenis Iuran ─────────────────────────────────────────────
+
+export async function listJenisIuran(aktifOnly = false): Promise<JenisIuran[]> {
+  const { data } = await apiClient.get<ApiSuccess<JenisIuran[]>>('/iuran/jenis/', {
+    params: aktifOnly ? { aktif: '1' } : {},
+  })
+  return data.data
+}
+
+export async function createJenisIuran(payload: JenisIuranFormPayload): Promise<JenisIuran> {
+  const { data } = await apiClient.post<ApiSuccess<JenisIuran>>('/iuran/jenis/', payload)
+  return data.data
+}
+
+export async function updateJenisIuran(id: string, payload: Partial<JenisIuranFormPayload>): Promise<JenisIuran> {
+  const { data } = await apiClient.put<ApiSuccess<JenisIuran>>(`/iuran/jenis/${id}/`, payload)
+  return data.data
+}
+
+export async function deleteJenisIuran(id: string): Promise<void> {
+  await apiClient.delete(`/iuran/jenis/${id}/`)
 }
 
 // ─── Kategori Transaksi ───────────────────────────────────────
@@ -120,7 +147,7 @@ export async function getIuran(id: string): Promise<IuranWarga> {
 
 export async function uploadIuran(payload: IuranUploadPayload): Promise<{ id: string; status: string }> {
   const formData = new FormData()
-  formData.append('wargaId', payload.wargaId)
+  formData.append('jenisId', payload.jenisId)
   formData.append('bulan', String(payload.bulan))
   formData.append('tahun', String(payload.tahun))
   formData.append('jumlah', String(payload.jumlah))
@@ -128,6 +155,25 @@ export async function uploadIuran(payload: IuranUploadPayload): Promise<{ id: st
   const { data } = await apiClient.post<ApiSuccess<{ id: string; status: string }>>('/iuran/upload/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
+  return data.data
+}
+
+// ─── Buku Kas ─────────────────────────────────────────────────
+
+export async function getBukuKas(params: { tahun?: number; bulan?: number } = {}): Promise<BukuKasData> {
+  const { data } = await apiClient.get<{ status: string; data: BukuKasData }>('/keuangan/buku-kas/', { params })
+  return data.data
+}
+
+// ─── Pengaturan Iuran ─────────────────────────────────────────
+
+export async function getPengaturanIuran(): Promise<PengaturanIuran> {
+  const { data } = await apiClient.get<ApiSuccess<PengaturanIuran>>('/keuangan/pengaturan-iuran/')
+  return data.data
+}
+
+export async function updatePengaturanIuran(payload: { nominalDefault: number; saldoAwal?: number; keterangan?: string }): Promise<PengaturanIuran> {
+  const { data } = await apiClient.put<ApiSuccess<PengaturanIuran>>('/keuangan/pengaturan-iuran/', payload)
   return data.data
 }
 

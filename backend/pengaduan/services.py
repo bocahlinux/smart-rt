@@ -35,6 +35,7 @@ def notify_status_change(pengaduan, new_status: str, keterangan: str = "") -> No
             judul=judul,
             isi=isi,
             tipe="info",
+            link="/pengaduan",
         )
         logger.info(
             "Notifikasi status pengaduan '%s' → '%s' dikirim ke %s.",

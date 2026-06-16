@@ -8,12 +8,12 @@ import { useAuthStore } from '../../stores/authStore'
 import { listPolls } from '../../services/pollingService'
 import type { PollListItem } from '../../types/polling'
 
-function formatDeadline(iso: string) {
+function formatDateTime(iso: string) {
   return new Date(iso).toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  })
+  }) + ', ' + new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 }
 
 function timeLeft(iso: string) {
@@ -28,15 +28,15 @@ function timeLeft(iso: string) {
 type FilterKey = '' | 'aktif' | 'expired'
 
 const FILTER_PILLS: { key: FilterKey; label: string }[] = [
+  { key: '', label: 'Semua' },
   { key: 'aktif', label: 'Aktif' },
   { key: 'expired', label: 'Berakhir' },
-  { key: '', label: 'Semua' },
 ]
 
 export function PollingListPage() {
   const { user } = useAuthStore()
   const [polls, setPolls] = useState<PollListItem[]>([])
-  const [filter, setFilter] = useState<FilterKey>('aktif')
+  const [filter, setFilter] = useState<FilterKey>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -120,7 +120,7 @@ export function PollingListPage() {
         <div className="rounded-2xl border border-slate-200 bg-white py-16 text-center dark:border-slate-700 dark:bg-slate-900">
           <Vote className="mx-auto mb-3 h-8 w-8 text-slate-300 dark:text-slate-600" />
           <p className="text-sm text-slate-400 dark:text-slate-500">
-            Tidak ada polling{filter === 'aktif' ? ' yang sedang aktif' : ''}.
+            {filter === 'aktif' ? 'Tidak ada polling yang sedang aktif.' : filter === 'expired' ? 'Tidak ada polling yang berakhir.' : 'Belum ada polling.'}
           </p>
         </div>
       )}
@@ -172,7 +172,9 @@ export function PollingListPage() {
                     {/* Question */}
                     <h3 className="font-semibold text-slate-900 dark:text-white leading-snug">{p.pertanyaan}</h3>
                     <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                      Oleh {p.createdBy.namaLengkap} · Deadline {formatDeadline(p.deadline)}
+                      Oleh {p.createdBy.namaLengkap}
+                      {p.startsAt && ` · Mulai ${formatDateTime(p.startsAt)}`}
+                      {' · '}Berakhir {formatDateTime(p.deadline)}
                       {p.totalVotes !== null && ` · ${p.totalVotes} suara`}
                     </p>
                   </div>

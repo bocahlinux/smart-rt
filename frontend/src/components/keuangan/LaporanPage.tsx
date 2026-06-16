@@ -1,17 +1,21 @@
-/**
- * Halaman laporan keuangan — download PDF.
- * Lihat docs/06-API-CONTRACT.md §4.10 dan docs/07-TASK-BREAKDOWN.md §4.8, §4.18.
- */
-
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeft, FileDown } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { downloadLaporan } from '../../services/keuanganService'
 
+const INPUT = cn(
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition',
+  'focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20',
+  'dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800',
+)
+
 export function LaporanPage() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const currentYear = new Date().getFullYear()
   const [dari, setDari] = useState(`${currentYear}-01-01`)
   const [sampai, setSampai] = useState(`${currentYear}-12-31`)
@@ -37,64 +41,89 @@ export function LaporanPage() {
   }
 
   if (!canAccess) {
-    return <div className="p-6 text-center text-gray-500">Akses ditolak. Hanya bendahara dan admin.</div>
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-slate-500 dark:text-slate-400">Akses ditolak. Hanya bendahara dan admin.</p>
+      </div>
+    )
   }
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-6 lg:px-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Link to="/keuangan/dashboard" className="text-gray-500 hover:text-gray-700 text-sm">← Dashboard</Link>
-        <h1 className="text-2xl font-bold text-gray-800">Laporan Keuangan</h1>
-      </div>
+    <div className="mx-auto max-w-xl px-4 py-4 lg:px-8 lg:py-6">
+      <button
+        type="button"
+        onClick={() => navigate('/keuangan')}
+        className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Kembali
+      </button>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <p className="text-sm text-gray-600 mb-5">
+      <h1 className="mb-5 text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">Laporan Keuangan</h1>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <p className="mb-5 text-sm text-slate-500 dark:text-slate-400">
           Generate laporan keuangan RT dalam format PDF berisi semua transaksi yang sudah dikonfirmasi.
         </p>
 
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 mb-4 text-sm">{error}</div>}
-        {success && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded px-4 py-3 mb-4 text-sm">{success}</div>}
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-900/20 dark:text-emerald-300">
+            {success}
+          </div>
+        )}
 
-        <form onSubmit={handleDownload} className="space-y-4">
+        <form onSubmit={(e) => void handleDownload(e)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Periode Dari</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Periode Dari
+            </label>
             <input
               type="date"
               value={dari}
               onChange={(e) => setDari(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={INPUT}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Periode Sampai</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Periode Sampai
+            </label>
             <input
               type="date"
               value={sampai}
               onChange={(e) => setSampai(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={INPUT}
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white px-5 py-2.5 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {loading ? (
               <>
-                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 Mengunduh...
               </>
             ) : (
-              'Download Laporan PDF'
+              <>
+                <FileDown className="h-4 w-4" />
+                Download Laporan PDF
+              </>
             )}
           </button>
         </form>
       </div>
 
-      <div className="mt-4 text-xs text-gray-500">
+      <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
         Laporan akan berisi semua transaksi yang berstatus <em>confirmed</em> dalam rentang periode yang dipilih.
         File akan diunduh otomatis ke perangkat Anda.
-      </div>
+      </p>
     </div>
   )
 }

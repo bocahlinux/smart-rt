@@ -14,6 +14,7 @@ from rest_framework import filters, permissions, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import User, WargaProfile
@@ -797,6 +798,61 @@ class WargaViewSet(ModelViewSet):
 # ------------------------------------------------------------------ #
 # Helpers                                                              #
 # ------------------------------------------------------------------ #
+
+class ProfilSayaView(APIView):
+    """GET/POST /warga/profil-saya/ — buat atau cek profil sendiri tanpa perlu izin tambah_edit_warga.
+
+    Berlaku untuk semua role yang sudah login (ketua_rt, pengurus, bendahara, sekretaris, warga).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            profile = WargaProfile.objects.get(user=request.user, is_deleted=False)
+            return success_response({
+                "id": str(profile.id),
+                "namaLengkap": profile.nama_lengkap,
+                "nik": profile.nik,
+                "hasProfile": True,
+            })
+        except WargaProfile.DoesNotExist:
+            return success_response({"hasProfile": False})
+
+    def post(self, request):
+        if WargaProfile.objects.filter(user=request.user, is_deleted=False).exists():
+            return error_response(
+                "PROFILE_EXISTS",
+                "Anda sudah memiliki profil warga.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = WargaWriteSerializer(data=request.data, context={"request": request})
+        if not serializer.is_valid():
+            return error_response(
+                "VALIDATION_ERROR",
+                "Data tidak valid",
+                errors=_serializer_errors(serializer),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        vd = dict(serializer.validated_data)
+        vd.pop("userId", None)
+        instance = WargaProfile.objects.create(user=request.user, **vd)
+        log_action(
+            user=request.user,
+            action="create",
+            table_name="warga_profiles",
+            record_id=instance.id,
+            new_data=_profile_dict(instance),
+            request=request,
+        )
+        return success_response(
+            data={"id": str(instance.id), "namaLengkap": instance.nama_lengkap},
+            message="Profil berhasil dibuat.",
+            status_code=status.HTTP_201_CREATED,
+        )
+
 
 def _profile_dict(profile: WargaProfile) -> dict:
     """Ambil dict data profil untuk audit log (field sensitif akan di-mask oleh audit.services)."""

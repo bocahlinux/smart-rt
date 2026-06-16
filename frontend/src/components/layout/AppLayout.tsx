@@ -13,6 +13,8 @@ import {
   Megaphone,
   MessageSquare,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings2,
   ShieldAlert,
   ShieldCheck,
@@ -29,6 +31,8 @@ import { useTheme } from '@/hooks/useTheme'
 import { hasPerm } from '@/lib/permissions'
 import { cn } from '@/lib/utils'
 import { logout as logoutRequest } from '@/services/authService'
+import apiClient from '@/services/apiClient'
+import { listPengajuanTambah, listPengajuanHapus, listPengajuanUbah } from '@/services/kartuKeluargaService'
 import { useAuthStore } from '@/stores/authStore'
 import type { User } from '@/types/auth'
 
@@ -47,7 +51,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/',             label: 'Beranda',        icon: LayoutDashboard },
   { to: '/warga',        label: 'Warga',          icon: Users,             permAny: ['tambah_edit_warga', 'verifikasi_warga', 'export_import_warga'] },
-  { to: '/keuangan',     label: 'Keuangan',       icon: CircleDollarSign,  permAny: ['kelola_keuangan', 'konfirmasi_iuran'] },
+  { to: '/keuangan',     label: 'Keuangan',       icon: CircleDollarSign },
   { to: '/pengumuman',   label: 'Pengumuman',     icon: Megaphone },
   { to: '/pengaduan',    label: 'Pengaduan',      icon: ShieldAlert },
   { to: '/forum',        label: 'Forum',          icon: MessageSquare },
@@ -57,6 +61,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/kk/saya',      label: 'Kartu Keluarga', icon: Home,              roles: ['warga'] },
   { to: '/iuran/upload', label: 'Iuran Saya',     icon: Wallet,            roles: ['warga'] },
   { to: '/pengajuan',    label: 'Pengajuan',      icon: ClipboardList,     roles: ['warga'] },
+  // Manajemen KK untuk pengurus/admin
+  { to: '/pengajuan',    label: 'Pengajuan KK',   icon: ClipboardList,     permAny: ['kelola_kartu_keluarga'] },
   // Admin-only (disendirikan ke bawah)
   { to: '/users',        label: 'Pengguna',       icon: ShieldCheck,       roles: ['admin'] },
   { to: '/permissions',  label: 'Izin Role',      icon: Settings2,         roles: ['admin'] },
@@ -260,14 +266,16 @@ function MoreDrawer({
 
 // ── Sidebar nav item ───────────────────────────────────────────
 
-function SidebarNavItem({ item }: { item: NavItem }) {
+function SidebarNavItem({ item, collapsed, badge }: { item: NavItem; collapsed?: boolean; badge?: number }) {
   return (
     <NavLink
       to={item.to}
       end={item.to === '/'}
+      title={collapsed ? item.label : undefined}
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
+          'group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-150',
+          collapsed ? 'justify-center px-2.5' : 'gap-3 px-3',
           isActive
             ? 'bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400'
             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white',
@@ -276,18 +284,30 @@ function SidebarNavItem({ item }: { item: NavItem }) {
     >
       {({ isActive }) => (
         <>
-          {isActive && (
+          {isActive && !collapsed && (
             <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-primary-600 dark:bg-primary-400" />
           )}
-          <item.icon
-            className={cn(
-              'h-4.5 w-4.5 shrink-0 transition-colors',
-              isActive
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200',
+          <div className="relative shrink-0">
+            <item.icon
+              className={cn(
+                'h-4.5 w-4.5 transition-colors',
+                isActive
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200',
+              )}
+            />
+            {!!badge && badge > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-bold text-white">
+                {badge > 99 ? '99+' : badge}
+              </span>
             )}
-          />
-          <span className="truncate">{item.label}</span>
+          </div>
+          {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+          {!collapsed && !!badge && badge > 0 && (
+            <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+              {badge > 99 ? '99+' : badge}
+            </span>
+          )}
         </>
       )}
     </NavLink>
@@ -327,6 +347,37 @@ export function AppLayout() {
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
   const [moreOpen, setMoreOpen] = useState(false)
+  const [pendingIuranCount, setPendingIuranCount] = useState(0)
+  const [pendingPengajuanCount, setPendingPengajuanCount] = useState(0)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebar-collapsed') === 'true' } catch { return false }
+  })
+
+  useEffect(() => {
+    if (!hasPerm(user ?? null, 'konfirmasi_iuran')) return
+    apiClient.get<{ status: string; data: { count: number } }>('/iuran/pending-count/')
+      .then((res) => setPendingIuranCount(res.data.data.count))
+      .catch(() => {/* silent */})
+  }, [user])
+
+  useEffect(() => {
+    if (!hasPerm(user ?? null, 'kelola_kartu_keluarga')) return
+    Promise.all([
+      listPengajuanTambah('pending'),
+      listPengajuanHapus('pending'),
+      listPengajuanUbah('pending'),
+    ])
+      .then(([a, b, c]) => setPendingPengajuanCount(a.length + b.length + c.length))
+      .catch(() => {/* silent */})
+  }, [user])
+
+  function toggleSidebar() {
+    setSidebarCollapsed((v) => {
+      const next = !v
+      try { localStorage.setItem('sidebar-collapsed', String(next)) } catch {}
+      return next
+    })
+  }
 
   const visibleNav = NAV_ITEMS.filter((item) => isNavVisible(item, user ?? null))
 
@@ -350,23 +401,55 @@ export function AppLayout() {
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
 
       {/* ── Desktop Sidebar ─────────────────────────────────── */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:flex">
+      <aside className={cn(
+        'hidden shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:flex transition-[width] duration-200 ease-in-out',
+        sidebarCollapsed ? 'w-[72px]' : 'w-64',
+      )}>
 
-        {/* Brand area */}
-        <div className="flex h-15 shrink-0 items-center gap-3 border-b border-slate-100 px-4 dark:border-slate-800/80">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 shadow-sm">
-            <Building2 className="h-4 w-4 text-white" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold leading-snug text-slate-900 dark:text-white">Smart-RT</p>
-            <p className="text-[10px] font-medium leading-snug text-slate-400 dark:text-slate-500">
-              Sistem Informasi RT
-            </p>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
-            <AnnouncementBell dropdownClassName="left-0" />
-          </div>
+        {/* Brand area + collapse toggle */}
+        <div className={cn(
+          'flex h-14 shrink-0 items-center border-b border-slate-100 dark:border-slate-800/80',
+          sidebarCollapsed ? 'justify-between px-2' : 'gap-3 px-3',
+        )}>
+          {sidebarCollapsed ? (
+            <>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 shadow-sm">
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                title="Perluas sidebar"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 shadow-sm">
+                <Building2 className="h-4 w-4 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold leading-snug text-slate-900 dark:text-white">Smart-RT</p>
+                <p className="text-[10px] font-medium leading-snug text-slate-400 dark:text-slate-500">
+                  Sistem Informasi RT
+                </p>
+              </div>
+              <div className="flex items-center gap-0.5">
+                <ThemeToggle theme={theme} onToggle={toggleTheme} />
+                <AnnouncementBell dropdownClassName="left-0" />
+                <button
+                  type="button"
+                  onClick={toggleSidebar}
+                  title="Perkecil sidebar"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Navigation */}
@@ -374,33 +457,48 @@ export function AppLayout() {
           {/* Main items */}
           <div className="space-y-0.5">
             {mainNav.map((item) => (
-              <SidebarNavItem key={item.to} item={item} />
+              <SidebarNavItem
+                key={item.label}
+                item={item}
+                collapsed={sidebarCollapsed}
+                badge={
+                  item.to === '/keuangan' && hasPerm(user ?? null, 'konfirmasi_iuran') ? pendingIuranCount
+                  : item.to === '/pengajuan' && hasPerm(user ?? null, 'kelola_kartu_keluarga') ? pendingPengajuanCount
+                  : undefined
+                }
+              />
             ))}
           </div>
 
           {/* Admin section */}
           {adminNav.length > 0 && (
             <div className="mt-5">
-              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-600">
-                Administrasi
-              </p>
+              {sidebarCollapsed ? (
+                <div className="mb-2 border-t border-slate-200 dark:border-slate-700" />
+              ) : (
+                <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-600">
+                  Administrasi
+                </p>
+              )}
               <div className="space-y-0.5">
                 {adminNav.map((item) => (
-                  <SidebarNavItem key={item.to} item={item} />
+                  <SidebarNavItem key={item.to} item={item} collapsed={sidebarCollapsed} />
                 ))}
               </div>
             </div>
           )}
         </nav>
 
-        {/* User + logout */}
+        {/* User + logout + collapse toggle */}
         <div className="shrink-0 border-t border-slate-100 p-3 dark:border-slate-800">
           {user && (
             <NavLink
               to="/profile"
+              title={sidebarCollapsed ? username : undefined}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                  'flex items-center rounded-lg transition-colors',
+                  sidebarCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5',
                   isActive
                     ? 'bg-primary-50 dark:bg-primary-500/10'
                     : 'hover:bg-slate-100 dark:hover:bg-slate-800/60',
@@ -412,21 +510,25 @@ export function AppLayout() {
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
                     {initials}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={cn(
-                      'truncate text-sm font-semibold leading-snug',
-                      isActive ? 'text-primary-700 dark:text-primary-400' : 'text-slate-800 dark:text-slate-100',
-                    )}>
-                      {username}
-                    </p>
-                    <span className="inline-flex items-center rounded-full bg-primary-50 px-1.5 py-px text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-                      {ROLE_LABEL[user.role] ?? user.role}
-                    </span>
-                  </div>
-                  <ChevronRight className={cn(
-                    'h-3.5 w-3.5 shrink-0',
-                    isActive ? 'text-primary-400' : 'text-slate-300 dark:text-slate-600',
-                  )} />
+                  {!sidebarCollapsed && (
+                    <>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn(
+                          'truncate text-sm font-semibold leading-snug',
+                          isActive ? 'text-primary-700 dark:text-primary-400' : 'text-slate-800 dark:text-slate-100',
+                        )}>
+                          {username}
+                        </p>
+                        <span className="inline-flex items-center rounded-full bg-primary-50 px-1.5 py-px text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                          {ROLE_LABEL[user.role] ?? user.role}
+                        </span>
+                      </div>
+                      <ChevronRight className={cn(
+                        'h-3.5 w-3.5 shrink-0',
+                        isActive ? 'text-primary-400' : 'text-slate-300 dark:text-slate-600',
+                      )} />
+                    </>
+                  )}
                 </>
               )}
             </NavLink>
@@ -434,11 +536,16 @@ export function AppLayout() {
           <button
             type="button"
             onClick={() => void handleLogout()}
-            className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+            title={sidebarCollapsed ? 'Keluar' : undefined}
+            className={cn(
+              'mt-1 flex w-full items-center rounded-lg text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400',
+              sidebarCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-2',
+            )}
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            Keluar
+            {!sidebarCollapsed && 'Keluar'}
           </button>
+
         </div>
       </aside>
 

@@ -17,12 +17,14 @@ from .utils import clear_refresh_cookie, error_response, set_refresh_cookie, suc
 
 
 def _user_payload(user):
+    from accounts.permissions import get_user_permissions
     return {
         "id": str(user.id),
         "email": user.email,
         "phone": user.phone,
         "role": user.role,
         "status": user.status,
+        "permissions": get_user_permissions(user),
     }
 
 

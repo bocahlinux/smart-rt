@@ -36,7 +36,7 @@ const FILTER_PILLS: { key: FilterKey; label: string }[] = [
 export function KegiatanListPage() {
   const { user } = useAuthStore()
   const [kegiatan, setKegiatan] = useState<Kegiatan[]>([])
-  const [filter, setFilter] = useState<FilterKey>('mendatang')
+  const [filter, setFilter] = useState<FilterKey>('semua')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -166,7 +166,9 @@ export function KegiatanListPage() {
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400 dark:text-slate-500">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {formatTanggal(k.tanggal)}, {formatJam(k.tanggal)}
+                      {formatTanggal(k.tanggal)},{' '}
+                      {formatJam(k.tanggal)}
+                      {k.tanggalSelesai ? ` – ${formatJam(k.tanggalSelesai)}` : ''}
                     </span>
                     {k.lokasi && (
                       <span className="flex items-center gap-1">

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, ChevronUp, Lock, MessageSquare, Pin, Trash2 } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import {
@@ -23,14 +25,36 @@ const KATEGORI_LABEL: Record<string, string> = {
   lainnya: 'Lainnya',
 }
 
+const KATEGORI_COLOR: Record<string, string> = {
+  keamanan: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  kebersihan: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  acara: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  usul: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+  lainnya: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+}
+
+const INPUT = cn(
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition',
+  'focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20',
+  'dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800',
+)
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   })
+}
+
+function Avatar({ name, size = 8, color = 'primary' }: { name: string; size?: number; color?: 'primary' | 'violet' }) {
+  const cls = color === 'violet'
+    ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
+    : 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+  return (
+    <div className={cn(`flex h-${size} w-${size} shrink-0 items-center justify-center rounded-full text-xs font-bold`, cls)}>
+      {name[0]?.toUpperCase()}
+    </div>
+  )
 }
 
 interface CommentItemProps {
@@ -43,21 +67,12 @@ interface CommentItemProps {
   isThreadLocked: boolean
 }
 
-function CommentItem({
-  comment,
-  onDelete,
-  onEdit,
-  currentUserId,
-  isModerator,
-  onReply,
-  isThreadLocked,
-}: CommentItemProps) {
+function CommentItem({ comment, onDelete, onEdit, currentUserId, isModerator, onReply, isThreadLocked }: CommentItemProps) {
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(comment.isi)
 
   const isOwner = currentUserId === comment.createdBy.id
   const canEdit = isOwner || isModerator
-  const canDelete = isModerator
 
   async function handleSaveEdit() {
     if (!editText.trim()) return
@@ -67,89 +82,70 @@ function CommentItem({
 
   return (
     <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
-        {comment.createdBy.namaLengkap[0]}
-      </div>
-      <div className="flex-1">
-        <div className="bg-gray-50 rounded-xl px-4 py-3">
-          <p className="text-xs font-semibold text-gray-700 mb-1">{comment.createdBy.namaLengkap}</p>
+      <Avatar name={comment.createdBy.namaLengkap} size={8} />
+      <div className="flex-1 min-w-0">
+        <div className="rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
+          <p className="mb-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+            {comment.createdBy.namaLengkap}
+          </p>
           {editing ? (
             <div className="space-y-2">
               <textarea
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
                 rows={2}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className={cn(INPUT, 'resize-none')}
               />
               <div className="flex gap-2">
-                <button
-                  onClick={handleSaveEdit}
-                  className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
+                <button onClick={() => void handleSaveEdit()}
+                  className="rounded-lg bg-primary-600 px-3 py-1 text-xs font-semibold text-white hover:bg-primary-700">
                   Simpan
                 </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                >
+                <button onClick={() => setEditing(false)}
+                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">
                   Batal
                 </button>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-700 whitespace-pre-line">{comment.isi}</p>
+            <p className="whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{comment.isi}</p>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-1 px-1">
-          <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
+        <div className="mt-1 flex items-center gap-3 px-1">
+          <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(comment.createdAt)}</span>
           {!isThreadLocked && (
-            <button
-              onClick={() => onReply(comment.id)}
-              className="text-xs text-blue-500 hover:underline"
-            >
+            <button onClick={() => onReply(comment.id)} className="text-xs text-primary-500 hover:text-primary-600 dark:text-primary-400">
               Balas
             </button>
           )}
           {canEdit && !editing && (
-            <button
-              onClick={() => setEditing(true)}
-              className="text-xs text-gray-500 hover:underline"
-            >
+            <button onClick={() => setEditing(true)} className="text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500">
               Edit
             </button>
           )}
-          {canDelete && (
-            <button
-              onClick={() => onDelete(comment.id)}
-              className="text-xs text-rose-500 hover:underline"
-            >
+          {isModerator && (
+            <button onClick={() => onDelete(comment.id)} className="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400">
               Hapus
             </button>
           )}
         </div>
 
-        {/* Replies */}
         {comment.replies.length > 0 && (
-          <div className="ml-4 mt-2 space-y-2 border-l-2 border-gray-200 pl-4">
+          <div className="ml-4 mt-2 space-y-2 border-l-2 border-slate-200 pl-4 dark:border-slate-700">
             {comment.replies.map((reply) => (
-              <div key={reply.id} className="flex gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                  {reply.createdBy.namaLengkap[0]}
-                </div>
-                <div className="flex-1">
-                  <div className="bg-white rounded-xl px-4 py-2 border border-gray-100">
-                    <p className="text-xs font-semibold text-gray-700 mb-0.5">
+              <div key={reply.id} className="flex gap-2.5">
+                <Avatar name={reply.createdBy.namaLengkap} size={6} color="violet" />
+                <div className="flex-1 min-w-0">
+                  <div className="rounded-xl border border-slate-100 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                    <p className="mb-0.5 text-xs font-semibold text-slate-700 dark:text-slate-200">
                       {reply.createdBy.namaLengkap}
                     </p>
-                    <p className="text-sm text-gray-700 whitespace-pre-line">{reply.isi}</p>
+                    <p className="whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{reply.isi}</p>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5 px-1">
-                    <span className="text-xs text-gray-400">{formatDate(reply.createdAt)}</span>
+                  <div className="mt-0.5 flex items-center gap-3 px-1">
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(reply.createdAt)}</span>
                     {isModerator && (
-                      <button
-                        onClick={() => onDelete(reply.id)}
-                        className="text-xs text-rose-500 hover:underline"
-                      >
+                      <button onClick={() => onDelete(reply.id)} className="text-xs text-rose-500 hover:text-rose-600">
                         Hapus
                       </button>
                     )}
@@ -181,7 +177,7 @@ export function ThreadDetailPage() {
   const isLocked = thread?.status === 'locked'
 
   useEffect(() => {
-    if (id) loadThread(id)
+    if (id) void loadThread(id)
   }, [id])
 
   async function loadThread(threadId: string) {
@@ -199,44 +195,35 @@ export function ThreadDetailPage() {
   async function handleVote() {
     if (!thread) return
     const result = await toggleVote(thread.id)
-    setThread((prev) =>
-      prev ? { ...prev, voteCount: result.voteCount, hasVoted: result.hasVoted } : prev
-    )
+    setThread((prev) => prev ? { ...prev, voteCount: result.voteCount, hasVoted: result.hasVoted } : prev)
   }
 
   async function handleDeleteThread() {
     if (!thread || !confirm(`Hapus thread "${thread.judul}"?`)) return
-    try {
-      await deleteThread(thread.id)
-      navigate('/forum')
-    } catch {
-      setMsg('Gagal menghapus thread.')
-    }
+    try { await deleteThread(thread.id); navigate('/forum') }
+    catch { setMsg('Gagal menghapus thread.') }
   }
 
   async function handlePin() {
     if (!thread) return
     await pinThread(thread.id)
-    loadThread(thread.id)
+    void loadThread(thread.id)
   }
 
   async function handleLock() {
     if (!thread) return
     await lockThread(thread.id)
-    loadThread(thread.id)
+    void loadThread(thread.id)
   }
 
   async function handleSubmitComment() {
     if (!thread || !commentText.trim()) return
     setSubmittingComment(true)
     try {
-      await addComment(thread.id, {
-        isi: commentText.trim(),
-        parentId: replyingTo ?? undefined,
-      })
+      await addComment(thread.id, { isi: commentText.trim(), parentId: replyingTo ?? undefined })
       setCommentText('')
       setReplyingTo(null)
-      loadThread(thread.id)
+      void loadThread(thread.id)
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { code?: string } } }
       if (axiosErr?.response?.data?.code === 'FORUM_THREAD_LOCKED') {
@@ -251,107 +238,127 @@ export function ThreadDetailPage() {
 
   async function handleDeleteComment(commentId: string) {
     if (!confirm('Hapus komentar ini?')) return
-    try {
-      await deleteComment(commentId)
-      if (thread) loadThread(thread.id)
-    } catch {
-      setMsg('Gagal menghapus komentar.')
-    }
+    try { await deleteComment(commentId); if (thread) void loadThread(thread.id) }
+    catch { setMsg('Gagal menghapus komentar.') }
   }
 
   async function handleEditComment(commentId: string, isi: string) {
-    try {
-      await updateComment(commentId, isi)
-      if (thread) loadThread(thread.id)
-    } catch {
-      setMsg('Gagal mengedit komentar.')
-    }
+    try { await updateComment(commentId, isi); if (thread) void loadThread(thread.id) }
+    catch { setMsg('Gagal mengedit komentar.') }
   }
 
-  if (loading) return <p className="text-center text-gray-400 py-16">Memuat...</p>
-  if (!thread) return <p className="text-center text-gray-500 py-16">{msg || 'Thread tidak ditemukan.'}</p>
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (!thread) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-8 text-center">
+        <p className="text-slate-400 dark:text-slate-500">{msg || 'Thread tidak ditemukan.'}</p>
+        <Link to="/forum" className="mt-3 inline-block text-sm text-primary-600 hover:underline">← Kembali ke Forum</Link>
+      </div>
+    )
+  }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
-      {/* Breadcrumb */}
-      <div className="text-sm text-gray-500 mb-4">
-        <Link to="/forum" className="hover:text-blue-600">Forum</Link>
-        <span className="mx-2">›</span>
-        <span className="text-gray-700">{thread.judul}</span>
+    <div className="mx-auto max-w-4xl px-4 py-4 lg:px-8 lg:py-6">
+
+      {/* Header */}
+      <div className="mb-5 flex items-center gap-3">
+        <Link
+          to="/forum"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
+            <MessageSquare className="h-4.5 w-4.5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <h1 className="line-clamp-1 text-lg font-bold text-slate-900 dark:text-white">
+              {thread.judul}
+            </h1>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Forum Diskusi RT</p>
+          </div>
+        </div>
       </div>
 
       {msg && (
-        <div className="mb-4 px-4 py-3 rounded text-sm bg-red-50 border border-red-200 text-red-700">
+        <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300">
           {msg}
         </div>
       )}
 
-      {/* Thread header */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
-                {KATEGORI_LABEL[thread.kategori] ?? thread.kategori}
-              </span>
-              {thread.status === 'pinned' && (
-                <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 font-medium">
-                  📌 Pinned
-                </span>
-              )}
-              {thread.status === 'locked' && (
-                <span className="text-xs px-2 py-0.5 rounded bg-rose-100 text-rose-700 font-medium">
-                  🔒 Terkunci
-                </span>
-              )}
-            </div>
-            <h1 className="text-xl font-bold text-gray-800 mb-3">{thread.judul}</h1>
-            <p className="text-gray-700 whitespace-pre-line">{thread.isi}</p>
-            <p className="text-xs text-gray-400 mt-3">
-              {formatDate(thread.createdAt)} · {thread.createdBy.namaLengkap}
-            </p>
-          </div>
+      {/* Thread body */}
+      <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        {/* Badges */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', KATEGORI_COLOR[thread.kategori] ?? 'bg-slate-100 text-slate-600')}>
+            {KATEGORI_LABEL[thread.kategori] ?? thread.kategori}
+          </span>
+          {thread.status === 'pinned' && (
+            <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <Pin className="h-3 w-3" /> Pinned
+            </span>
+          )}
+          {thread.status === 'locked' && (
+            <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
+              <Lock className="h-3 w-3" /> Terkunci
+            </span>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
-          {/* Vote */}
+        <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+          {thread.isi}
+        </p>
+
+        <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+          {formatDate(thread.createdAt)} · {thread.createdBy.namaLengkap}
+        </p>
+
+        {/* Actions bar */}
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
           <button
-            onClick={handleVote}
-            className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+            onClick={() => void handleVote()}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
               thread.hasVoted
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-            }`}
+                ? 'border-primary-500 bg-primary-600 text-white'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800',
+            )}
           >
-            ▲ {thread.voteCount}
+            <ChevronUp className="h-3.5 w-3.5" />
+            {thread.voteCount}
           </button>
 
-          <span className="text-sm text-gray-500">{thread.comments.length} komentar</span>
+          <span className="text-sm text-slate-400 dark:text-slate-500">
+            {thread.comments.reduce((s, c) => s + 1 + c.replies.length, 0)} komentar
+          </span>
 
           <div className="flex-1" />
 
-          {/* Owner actions */}
           {(isOwner || isModerator) && (
-            <Link
-              to={`/forum/${thread.id}/edit`}
-              className="text-xs text-blue-600 hover:underline"
-            >
+            <Link to={`/forum/${thread.id}/edit`}
+              className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400">
               Edit
             </Link>
           )}
-
-          {/* Moderator actions */}
           {isModerator && (
             <>
-              <button onClick={handlePin} className="text-xs text-yellow-600 hover:underline">
+              <button onClick={() => void handlePin()} className="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400">
                 {thread.status === 'pinned' ? 'Unpin' : 'Pin'}
               </button>
-              <button onClick={handleLock} className="text-xs text-orange-600 hover:underline">
+              <button onClick={() => void handleLock()} className="text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400">
                 {thread.status === 'locked' ? 'Unlock' : 'Lock'}
               </button>
-              <button onClick={handleDeleteThread} className="text-xs text-rose-600 hover:underline">
-                Hapus Thread
+              <button onClick={() => void handleDeleteThread()}
+                className="flex items-center gap-1 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400">
+                <Trash2 className="h-3 w-3" /> Hapus
               </button>
             </>
           )}
@@ -359,17 +366,20 @@ export function ThreadDetailPage() {
       </div>
 
       {/* Komentar */}
-      <h2 className="font-semibold text-gray-700 mb-3">
-        Komentar ({thread.comments.reduce((sum, c) => sum + 1 + c.replies.length, 0)})
+      <h2 className="mb-3 font-semibold text-slate-700 dark:text-slate-200">
+        Komentar ({thread.comments.reduce((s, c) => s + 1 + c.replies.length, 0)})
       </h2>
 
-      <div className="space-y-4 mb-6">
+      <div className="mb-5 space-y-4">
+        {thread.comments.length === 0 && (
+          <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">Belum ada komentar. Jadilah yang pertama!</p>
+        )}
         {thread.comments.map((comment) => (
           <CommentItem
             key={comment.id}
             comment={comment}
-            onDelete={handleDeleteComment}
-            onEdit={handleEditComment}
+            onDelete={(cid) => void handleDeleteComment(cid)}
+            onEdit={(cid, isi) => void handleEditComment(cid, isi)}
             currentUserId={user?.id}
             isModerator={!!isModerator}
             onReply={(parentId) => {
@@ -382,15 +392,13 @@ export function ThreadDetailPage() {
       </div>
 
       {/* Form komentar */}
-      {!isLocked && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      {!isLocked ? (
+        <div>
           {replyingTo && (
-            <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-xs text-blue-600">Membalas komentar...</span>
-              <button
-                onClick={() => setReplyingTo(null)}
-                className="text-xs text-gray-400 hover:text-gray-600"
-              >
+            <div className="mb-2 flex items-center justify-between rounded-lg bg-primary-50 px-3 py-1.5 text-xs dark:bg-primary-900/20">
+              <span className="text-primary-600 dark:text-primary-400">Membalas komentar...</span>
+              <button onClick={() => setReplyingTo(null)}
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
                 Batal
               </button>
             </div>
@@ -401,22 +409,20 @@ export function ThreadDetailPage() {
             onChange={(e) => setCommentText(e.target.value)}
             placeholder={replyingTo ? 'Tulis balasan...' : 'Tulis komentar...'}
             rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            className={cn(INPUT, 'resize-none')}
           />
-          <div className="flex justify-end mt-2">
+          <div className="mt-2 flex justify-end">
             <button
-              onClick={handleSubmitComment}
+              onClick={() => void handleSubmitComment()}
               disabled={submittingComment || !commentText.trim()}
-              className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40"
+              className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-40"
             >
               {submittingComment ? 'Mengirim...' : 'Kirim Komentar'}
             </button>
           </div>
         </div>
-      )}
-
-      {isLocked && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-4 py-3 text-sm text-center">
+      ) : (
+        <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-center text-sm text-rose-700 dark:border-rose-900/30 dark:bg-rose-900/20 dark:text-rose-300">
           Thread ini terkunci. Komentar baru tidak dapat ditambahkan.
         </div>
       )}

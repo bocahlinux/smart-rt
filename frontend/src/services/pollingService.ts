@@ -15,6 +15,7 @@ export async function createPoll(data: {
   pertanyaan: string
   opsi: string[]
   deadline: string
+  starts_at?: string | null
 }): Promise<PollDetail> {
   const res = await apiClient.post<PollDetailResponse>('/polling/', data)
   return res.data.data

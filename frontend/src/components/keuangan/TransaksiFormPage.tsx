@@ -195,12 +195,12 @@ export function TransaksiFormPage() {
           {/* Jumlah */}
           <Field label="Jumlah (Rp)" required>
             <input
-              type="number"
-              value={form.jumlah}
-              onChange={(e) => set('jumlah', e.target.value)}
+              type="text"
+              inputMode="numeric"
+              value={form.jumlah ? new Intl.NumberFormat('id-ID').format(Number(form.jumlah)) : ''}
+              onChange={(e) => set('jumlah', e.target.value.replace(/[^0-9]/g, ''))}
               required
-              min={1}
-              placeholder="50000"
+              placeholder="0"
               className={INPUT}
             />
           </Field>

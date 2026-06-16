@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, Home, ChevronDown, Edit2, Trash2, Download, Upload, Plus, RotateCcw } from 'lucide-react'
+import { Users, Home, ChevronDown, Edit2, Trash2, Download, Upload, Plus, RotateCcw, ClipboardList, ArrowRight } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/authStore'
 import { deleteWarga, downloadBlob, exportWarga, importWarga, listDeletedWarga, listWarga, restoreWarga, verifyWarga } from '@/services/wargaService'
-import { listKK } from '@/services/kartuKeluargaService'
+import { listKK, listPengajuanTambah, listPengajuanHapus, listPengajuanUbah } from '@/services/kartuKeluargaService'
 import type { Pagination, WargaAny, WargaFull } from '@/types/warga'
 import type { KartuKeluarga } from '@/types/kartuKeluarga'
 import { HUBUNGAN_LABEL } from '@/types/kartuKeluarga'
@@ -204,6 +204,26 @@ export function WargaListPage() {
   const canExport = hasPerm(user, 'export_import_warga')
   const canDelete = hasPerm(user, 'hapus_restore_warga')
   const canSeeKK = hasPerm(user, 'tambah_edit_warga')
+  const canReviewPengajuan = hasPerm(user, 'kelola_kartu_keluarga')
+
+  const [pendingTambah, setPendingTambah] = useState(0)
+  const [pendingHapus, setPendingHapus] = useState(0)
+  const [pendingUbah, setPendingUbah] = useState(0)
+
+  useEffect(() => {
+    if (!canReviewPengajuan) return
+    Promise.all([
+      listPengajuanTambah('pending'),
+      listPengajuanHapus('pending'),
+      listPengajuanUbah('pending'),
+    ])
+      .then(([a, b, c]) => {
+        setPendingTambah(a.length)
+        setPendingHapus(b.length)
+        setPendingUbah(c.length)
+      })
+      .catch(() => {})
+  }, [canReviewPengajuan])
 
   async function load(p = page) {
     setLoading(true)
@@ -385,6 +405,31 @@ export function WargaListPage() {
         <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm text-blue-700 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-300">
           {importMsg}
         </div>
+      )}
+
+      {/* Pengajuan pending banner */}
+      {canReviewPengajuan && (pendingTambah + pendingHapus + pendingUbah) > 0 && (
+        <Link
+          to="/pengajuan"
+          className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 transition hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/20 dark:hover:bg-amber-900/30"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
+            <ClipboardList className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              {pendingTambah + pendingHapus + pendingUbah} Pengajuan Menunggu Persetujuan
+            </p>
+            <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
+              {[
+                pendingTambah > 0 && `${pendingTambah} tambah anggota`,
+                pendingHapus > 0 && `${pendingHapus} penghapusan`,
+                pendingUbah > 0 && `${pendingUbah} perubahan data`,
+              ].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+          <ArrowRight className="h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400" />
+        </Link>
       )}
 
       {/* Mode toggle */}

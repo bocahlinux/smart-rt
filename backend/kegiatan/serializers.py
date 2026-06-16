@@ -35,11 +35,12 @@ class KegiatanListSerializer(serializers.ModelSerializer):
     penanggungJawab = serializers.SerializerMethodField()
     rsvpCount = serializers.SerializerMethodField()
     tanggal = serializers.DateTimeField(read_only=True)
+    tanggalSelesai = serializers.DateTimeField(source="tanggal_selesai", read_only=True, allow_null=True)
 
     class Meta:
         model = Kegiatan
         fields = [
-            "id", "nama", "deskripsi", "tanggal", "lokasi",
+            "id", "nama", "deskripsi", "tanggal", "tanggalSelesai", "lokasi",
             "penanggungJawab", "rsvpCount",
         ]
 
@@ -63,6 +64,7 @@ class KegiatanDetailSerializer(serializers.ModelSerializer):
     rsvpList = serializers.SerializerMethodField()
     rsvpCount = serializers.SerializerMethodField()
     tanggal = serializers.DateTimeField(read_only=True)
+    tanggalSelesai = serializers.DateTimeField(source="tanggal_selesai", read_only=True, allow_null=True)
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
     # RSVP status user yang sedang login (null jika belum RSVP)
@@ -71,7 +73,7 @@ class KegiatanDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Kegiatan
         fields = [
-            "id", "nama", "deskripsi", "tanggal", "lokasi",
+            "id", "nama", "deskripsi", "tanggal", "tanggalSelesai", "lokasi",
             "kuotaPeserta", "penanggungJawab",
             "rsvpCount", "rsvpList", "myRsvp", "createdAt", "updatedAt",
         ]
@@ -109,10 +111,11 @@ class KegiatanCreateSerializer(serializers.ModelSerializer):
         write_only=True, required=False, allow_null=True, source="penanggung_jawab_id"
     )
     tanggal = serializers.DateTimeField()
+    tanggal_selesai = serializers.DateTimeField(required=False, allow_null=True)
 
     class Meta:
         model = Kegiatan
-        fields = ["nama", "deskripsi", "tanggal", "lokasi", "kuota_peserta", "penanggungJawabId"]
+        fields = ["nama", "deskripsi", "tanggal", "tanggal_selesai", "lokasi", "kuota_peserta", "penanggungJawabId"]
 
     def validate_penanggungJawabId(self, value):
         if value and not User.objects.filter(id=value).exists():

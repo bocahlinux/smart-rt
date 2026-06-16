@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from accounts.models import User, WargaProfile
 from accounts.permissions import has_perm
 from kegiatan.models import Kegiatan
-from keuangan.models import IuranWarga, Transaksi
+from keuangan.models import IuranWarga, PengaturanIuran, Transaksi
 from pengaduan.models import Pengaduan
 from pengumuman.models import Pengumuman
 
@@ -29,19 +29,26 @@ class DashboardPengurusView(APIView):
         total_warga = User.objects.filter(status="active", role="warga").count()
         warga_aktif = WargaProfile.objects.filter(is_deleted=False, status="aktif").count()
 
-        saldo_pemasukan = (
+        saldo_pemasukan = float(
             Transaksi.objects.filter(tipe="pemasukan", status="confirmed").aggregate(
                 total=Sum("jumlah")
             )["total"]
             or 0
         )
-        saldo_pengeluaran = (
+        saldo_pengeluaran = float(
             Transaksi.objects.filter(tipe="pengeluaran", status="confirmed").aggregate(
                 total=Sum("jumlah")
             )["total"]
             or 0
         )
-        saldo_kas = saldo_pemasukan - saldo_pengeluaran
+        iuran_lunas_total = float(
+            IuranWarga.objects.filter(status="lunas").aggregate(
+                total=Sum("jumlah")
+            )["total"]
+            or 0
+        )
+        saldo_awal_pengaturan = float(PengaturanIuran.get_instance().saldo_awal)
+        saldo_kas = saldo_awal_pengaturan + saldo_pemasukan + iuran_lunas_total - saldo_pengeluaran
 
         pengaduan_aktif = Pengaduan.objects.filter(
             status__in=["diajukan", "diproses"]
@@ -57,11 +64,30 @@ class DashboardPengurusView(APIView):
             bulan=bulan, tahun=tahun, status="pending"
         ).count()
 
+        lunas_warga_ids = IuranWarga.objects.filter(
+            bulan=bulan, tahun=tahun, status="lunas"
+        ).values_list("warga_id", flat=True)
+
+        warga_belum_lunas_qs = (
+            WargaProfile.objects.filter(is_deleted=False, status="aktif")
+            .exclude(id__in=lunas_warga_ids)
+            .order_by("blok", "no_rumah", "nama_lengkap")[:30]
+        )
+        warga_belum_lunas = [
+            {
+                "id": str(w.id),
+                "namaLengkap": w.nama_lengkap,
+                "blok": w.blok or "",
+                "noRumah": w.no_rumah or "",
+            }
+            for w in warga_belum_lunas_qs
+        ]
+
         return Response(
             {
                 "totalWarga": total_warga,
                 "wargaAktif": warga_aktif,
-                "saldoKas": float(saldo_kas),
+                "saldoKas": saldo_kas,
                 "pengaduanAktif": pengaduan_aktif,
                 "pengaduanSelesai": pengaduan_selesai,
                 "kegiatanMendatang": kegiatan_mendatang,
@@ -71,6 +97,7 @@ class DashboardPengurusView(APIView):
                     "lunas": iuran_lunas,
                     "pending": iuran_pending,
                 },
+                "wargaBelumLunas": warga_belum_lunas,
             }
         )
 

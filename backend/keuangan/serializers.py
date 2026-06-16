@@ -1,10 +1,11 @@
 import os
 
+from django.utils.text import slugify
 from django.utils import timezone
 from rest_framework import serializers
 
 from accounts.models import WargaProfile
-from .models import IuranWarga, KategoriTransaksi, Transaksi
+from .models import IuranWarga, JenisIuran, KategoriTransaksi, PengaturanIuran, Transaksi
 
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".pdf"}
@@ -55,6 +56,34 @@ def validate_bukti_file(file):
         )
 
     return file
+
+
+class JenisIuranSerializer(serializers.ModelSerializer):
+    isActive = serializers.BooleanField(source="is_active")
+    updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
+
+    class Meta:
+        model = JenisIuran
+        fields = ["id", "nama", "slug", "tipe", "unit", "nominal", "keterangan", "isActive", "urutan", "updatedAt"]
+        read_only_fields = ["id", "slug", "updatedAt"]
+
+    def validate_nominal(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Nominal tidak boleh negatif.")
+        return value
+
+    def create(self, validated_data):
+        validated_data["is_active"] = validated_data.pop("is_active", True) if "is_active" in validated_data else True
+        nama = validated_data.get("nama", "")
+        validated_data["slug"] = slugify(nama)
+        if JenisIuran.objects.filter(slug=validated_data["slug"]).exists():
+            validated_data["slug"] = f"{validated_data['slug']}-{JenisIuran.objects.count() + 1}"
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "is_active" in validated_data:
+            validated_data["is_active"] = validated_data.pop("is_active")
+        return super().update(instance, validated_data)
 
 
 class KategoriTransaksiSerializer(serializers.ModelSerializer):
@@ -111,13 +140,14 @@ class TransaksiCreateSerializer(serializers.ModelSerializer):
 
 class IuranWargaListSerializer(serializers.ModelSerializer):
     warga = serializers.SerializerMethodField()
+    jenis = JenisIuranSerializer(read_only=True)
     buktiUrl = serializers.SerializerMethodField()
     confirmed_by = serializers.SerializerMethodField()
 
     class Meta:
         model = IuranWarga
         fields = [
-            "id", "warga", "bulan", "tahun", "jumlah",
+            "id", "warga", "jenis", "bulan", "tahun", "jumlah",
             "status", "buktiUrl", "keterangan",
             "confirmed_by", "confirmed_at", "created_at",
         ]
@@ -149,28 +179,39 @@ class IuranWargaListSerializer(serializers.ModelSerializer):
 
 class IuranWargaUploadSerializer(serializers.ModelSerializer):
     """Serializer untuk warga mengupload bukti iuran."""
-    wargaId = serializers.UUIDField(write_only=True, source="warga_id")
+    wargaId = serializers.UUIDField(write_only=True, source="warga_id", required=False)
+    jenisId = serializers.UUIDField(write_only=True, source="jenis_id", required=True)
 
     class Meta:
         model = IuranWarga
-        fields = ["wargaId", "bulan", "tahun", "jumlah", "bukti_transfer"]
+        fields = ["wargaId", "jenisId", "bulan", "tahun", "jumlah", "bukti_transfer"]
 
     def validate_bukti_transfer(self, value):
         return validate_bukti_file(value)
 
+    def validate_jenisId(self, value):
+        if not JenisIuran.objects.filter(id=value, is_active=True).exists():
+            raise serializers.ValidationError("Jenis iuran tidak ditemukan atau tidak aktif.")
+        return value
+
     def validate(self, data):
         warga_id = data.get("warga_id")
+        jenis_id = data.get("jenis_id")
         bulan = data.get("bulan")
         tahun = data.get("tahun")
 
-        if IuranWarga.objects.filter(warga_id=warga_id, bulan=bulan, tahun=tahun).exists():
+        if IuranWarga.objects.filter(warga_id=warga_id, jenis_id=jenis_id, bulan=bulan, tahun=tahun).exists():
             raise serializers.ValidationError(
-                {"non_field_errors": "Iuran untuk periode ini sudah ada."},
+                {"non_field_errors": "Iuran jenis ini untuk periode ini sudah ada."},
                 code="KEUANGAN_DUPLICATE_IURAN",
             )
         return data
 
     def create(self, validated_data):
+        # Jika jumlah tidak diisi, ambil dari JenisIuran
+        if "jumlah" not in validated_data or not validated_data.get("jumlah"):
+            jenis = JenisIuran.objects.get(id=validated_data["jenis_id"])
+            validated_data["jumlah"] = jenis.nominal
         validated_data["status"] = IuranWarga.Status.PENDING
         return super().create(validated_data)
 
@@ -199,13 +240,34 @@ class DashboardKeuanganSerializer(serializers.Serializer):
     bulanan = serializers.ListField()
 
 
+class PengaturanIuranSerializer(serializers.ModelSerializer):
+    nominalDefault = serializers.DecimalField(source="nominal_default", max_digits=15, decimal_places=2)
+    saldoAwal = serializers.DecimalField(source="saldo_awal", max_digits=15, decimal_places=2, required=False)
+    updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
+
+    class Meta:
+        model = PengaturanIuran
+        fields = ["nominalDefault", "saldoAwal", "keterangan", "updatedAt"]
+
+    def validate_nominalDefault(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Nominal iuran harus lebih dari 0.")
+        return value
+
+    def validate_saldoAwal(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Saldo awal tidak boleh negatif.")
+        return value
+
+
 class WargaIuranSerializer(serializers.ModelSerializer):
     """Serializer untuk riwayat iuran milik warga (endpoint /iuran/saya)."""
     buktiUrl = serializers.SerializerMethodField()
+    jenis = JenisIuranSerializer(read_only=True)
 
     class Meta:
         model = IuranWarga
-        fields = ["id", "bulan", "tahun", "jumlah", "status", "buktiUrl", "keterangan", "created_at"]
+        fields = ["id", "jenis", "bulan", "tahun", "jumlah", "status", "buktiUrl", "keterangan", "created_at"]
 
     def get_buktiUrl(self, obj):
         if not obj.bukti_transfer:

@@ -20,6 +20,7 @@ export async function createKegiatan(data: {
   nama: string
   deskripsi?: string
   tanggal: string
+  tanggal_selesai?: string | null
   lokasi?: string
   kuota_peserta?: number | null
   penanggungJawabId?: string | null
@@ -32,6 +33,7 @@ export async function updateKegiatan(id: string, data: Partial<{
   nama: string
   deskripsi: string
   tanggal: string
+  tanggal_selesai: string | null
   lokasi: string
   kuota_peserta: number | null
 }>): Promise<KegiatanDetail> {

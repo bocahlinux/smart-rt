@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Calendar, Clock, MapPin, Pencil, Trash2, Users } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { hasPerm } from '@/lib/permissions'
 import { useAuthStore } from '../../stores/authStore'
 import { deleteKegiatan, getKegiatan, rsvpKegiatan } from '../../services/kegiatanService'
@@ -12,21 +14,27 @@ const RSVP_LABELS: Record<RSVPStatus, string> = {
   masih_ragu: 'Masih Ragu',
 }
 
-const RSVP_COLOR: Record<RSVPStatus, string> = {
-  hadir: 'bg-green-100 text-green-700 border-green-200',
-  tidak_hadir: 'bg-red-100 text-red-700 border-red-200',
-  masih_ragu: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+const RSVP_ACTIVE: Record<RSVPStatus, string> = {
+  hadir: 'border-emerald-500 bg-emerald-600 text-white',
+  tidak_hadir: 'border-rose-500 bg-rose-600 text-white',
+  masih_ragu: 'border-amber-500 bg-amber-500 text-white',
+}
+
+const RSVP_PILL: Record<RSVPStatus, string> = {
+  hadir: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  tidak_hadir: 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  masih_ragu: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
 }
 
 function formatTanggal(iso: string) {
   return new Date(iso).toLocaleString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   })
+}
+
+function formatJam(iso: string) {
+  return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 }
 
 export function KegiatanDetailPage() {
@@ -44,7 +52,7 @@ export function KegiatanDetailPage() {
 
   useEffect(() => {
     if (!id) return
-    load()
+    void load()
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
@@ -66,7 +74,7 @@ export function KegiatanDetailPage() {
     setMsg('')
     try {
       const res = await rsvpKegiatan(kegiatan.id, rsvpStatus)
-      setMsg(`RSVP berhasil diperbarui: ${RSVP_LABELS[res.rsvpStatus]}.`)
+      setMsg(`RSVP diperbarui: ${RSVP_LABELS[res.rsvpStatus]}.`)
       await load()
     } catch {
       setMsg('Gagal memperbarui RSVP.')
@@ -86,139 +94,179 @@ export function KegiatanDetailPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-24 text-gray-400">Memuat...</div>
-  }
-  if (error) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-6 lg:px-8">
-        <button onClick={() => navigate('/kegiatan')} className="text-sm text-gray-500 mb-4">
-          ← Kembali
-        </button>
-        <div className="px-4 py-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>
+      <div className="flex justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
       </div>
     )
   }
-  if (!kegiatan) return null
+
+  if (error || !kegiatan) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-8 text-center">
+        <p className="text-slate-400 dark:text-slate-500">{error || 'Kegiatan tidak ditemukan.'}</p>
+        <Link to="/kegiatan" className="mt-3 inline-block text-sm text-primary-600 hover:underline">
+          ← Kembali ke Kegiatan
+        </Link>
+      </div>
+    )
+  }
 
   const isMendatang = new Date(kegiatan.tanggal) > new Date()
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <button onClick={() => navigate('/kegiatan')} className="text-sm text-gray-500 hover:text-gray-700 mb-5 flex items-center gap-1">
-        ← Semua Kegiatan
-      </button>
+    <div className="mx-auto max-w-2xl px-4 py-4 lg:px-8 lg:py-6">
+
+      {/* Header */}
+      <div className="mb-5 flex items-center gap-3">
+        <Link
+          to="/kegiatan"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div className="flex flex-1 items-center gap-2.5 min-w-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
+            <Calendar className="h-4.5 w-4.5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="line-clamp-1 text-lg font-bold text-slate-900 dark:text-white">{kegiatan.nama}</h1>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Detail Kegiatan</p>
+          </div>
+        </div>
+        {isModerator && (
+          <Link
+            to={`/kegiatan/${kegiatan.id}/edit`}
+            className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit
+          </Link>
+        )}
+      </div>
 
       {msg && (
-        <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-green-50 border border-green-200 text-green-700">{msg}</div>
+        <div className={cn(
+          'mb-4 rounded-xl border px-4 py-3 text-sm',
+          msg.includes('Gagal')
+            ? 'border-red-100 bg-red-50 text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300'
+            : 'border-emerald-100 bg-emerald-50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-900/20 dark:text-emerald-300',
+        )}>
+          {msg}
+        </div>
       )}
 
-      {/* Card utama */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          {isMendatang ? (
-            <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium border border-blue-200">
-              📅 Mendatang
-            </span>
-          ) : (
-            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">Selesai</span>
-          )}
-        </div>
-
-        <h1 className="text-xl font-bold text-gray-900 mb-1">{kegiatan.nama}</h1>
-        {kegiatan.deskripsi && (
-          <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{kegiatan.deskripsi}</p>
+      {/* Status badge */}
+      <div className="mb-4">
+        {isMendatang ? (
+          <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
+            Mendatang
+          </span>
+        ) : (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            Selesai
+          </span>
         )}
+      </div>
 
-        <div className="mt-4 space-y-2 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <span>📅</span>
-            <span>{formatTanggal(kegiatan.tanggal)}</span>
-          </div>
-          {kegiatan.lokasi && (
-            <div className="flex items-center gap-2">
-              <span>📍</span>
-              <span>{kegiatan.lokasi}</span>
-            </div>
-          )}
-          {kegiatan.penanggungJawab && (
-            <div className="flex items-center gap-2">
-              <span>👤</span>
-              <span>PJ: {kegiatan.penanggungJawab.namaLengkap}</span>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <span>👥</span>
-            <span>
-              {kegiatan.rsvpCount} hadir
-              {kegiatan.kuotaPeserta ? ` / Kuota ${kegiatan.kuotaPeserta}` : ''}
-            </span>
-          </div>
+      {/* Deskripsi */}
+      {kegiatan.deskripsi && (
+        <p className="mb-5 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+          {kegiatan.deskripsi}
+        </p>
+      )}
+
+      {/* Meta info */}
+      <div className="mb-5 space-y-2.5">
+        <div className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+          <Calendar className="h-4 w-4 shrink-0 text-slate-400" />
+          <span>{formatTanggal(kegiatan.tanggal)}</span>
         </div>
-
-        {/* RSVP section — hanya jika kegiatan masih mendatang */}
-        {isMendatang && (
-          <div className="mt-5 pt-5 border-t border-gray-100">
-            <p className="text-sm font-medium text-gray-700 mb-2">
-              Konfirmasi Kehadiran Anda:
-              {kegiatan.myRsvp && (
-                <span className={`ml-2 text-xs px-2 py-0.5 rounded border font-medium ${RSVP_COLOR[kegiatan.myRsvp]}`}>
-                  {RSVP_LABELS[kegiatan.myRsvp]}
-                </span>
-              )}
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {(['hadir', 'masih_ragu', 'tidak_hadir'] as RSVPStatus[]).map((s) => (
-                <button
-                  key={s}
-                  id={`rsvp-${s}`}
-                  onClick={() => handleRSVP(s)}
-                  disabled={rsvpLoading}
-                  className={`text-sm px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
-                    kegiatan.myRsvp === s
-                      ? `${RSVP_COLOR[s]} border font-semibold`
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                  }`}
-                >
-                  {RSVP_LABELS[s]}
-                </button>
-              ))}
-            </div>
+        {kegiatan.tanggalSelesai && (
+          <div className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+            <Clock className="h-4 w-4 shrink-0 text-slate-400" />
+            <span>Selesai pukul {formatJam(kegiatan.tanggalSelesai)}</span>
           </div>
         )}
-
-        {/* Aksi moderator */}
-        {isModerator && (
-          <div className="mt-4 flex gap-2">
-            <button
-              onClick={() => navigate(`/kegiatan/${kegiatan.id}/edit`)}
-              className="text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-            >
-              Edit Kegiatan
-            </button>
-            <button
-              onClick={handleDelete}
-              className="text-sm px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-            >
-              Hapus
-            </button>
+        {kegiatan.lokasi && (
+          <div className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+            <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+            <span>{kegiatan.lokasi}</span>
+          </div>
+        )}
+        <div className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+          <Users className="h-4 w-4 shrink-0 text-slate-400" />
+          <span>
+            {kegiatan.rsvpCount} konfirmasi hadir
+            {kegiatan.kuotaPeserta ? ` · Kuota ${kegiatan.kuotaPeserta} orang` : ''}
+          </span>
+        </div>
+        {kegiatan.penanggungJawab && (
+          <div className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+            <span className="text-slate-400">PJ:</span>
+            <span>{kegiatan.penanggungJawab.namaLengkap}</span>
           </div>
         )}
       </div>
 
-      {/* Daftar peserta RSVP */}
+      {/* RSVP */}
+      {isMendatang && (
+        <div className="mb-5 border-t border-slate-100 pt-5 dark:border-slate-800">
+          <div className="mb-3 flex items-center gap-2">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Konfirmasi Kehadiran Anda</p>
+            {kegiatan.myRsvp && (
+              <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', RSVP_PILL[kegiatan.myRsvp])}>
+                {RSVP_LABELS[kegiatan.myRsvp]}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(['hadir', 'masih_ragu', 'tidak_hadir'] as RSVPStatus[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => void handleRSVP(s)}
+                disabled={rsvpLoading}
+                className={cn(
+                  'rounded-xl border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50',
+                  kegiatan.myRsvp === s
+                    ? RSVP_ACTIVE[s]
+                    : 'border-slate-200 text-slate-600 hover:border-slate-400 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500',
+                )}
+              >
+                {RSVP_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Moderator delete */}
+      {isModerator && (
+        <div className="mb-6 flex gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <button
+            onClick={() => void handleDelete()}
+            className="flex items-center gap-1.5 rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Hapus Kegiatan
+          </button>
+        </div>
+      )}
+
+      {/* Daftar RSVP */}
       {kegiatan.rsvpList.length > 0 && (
         <div>
-          <h2 className="text-base font-semibold text-gray-700 mb-3">
+          <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
             Daftar RSVP ({kegiatan.rsvpList.length})
           </h2>
           <div className="space-y-2">
             {kegiatan.rsvpList.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between bg-white rounded-lg border border-gray-200 px-4 py-2.5 text-sm"
+                className="flex items-center justify-between rounded-xl border border-slate-100 px-4 py-2.5 dark:border-slate-800"
               >
-                <span className="text-gray-800">{r.user.namaLengkap}</span>
-                <span className={`text-xs px-2 py-0.5 rounded border font-medium ${RSVP_COLOR[r.status]}`}>
+                <span className="text-sm text-slate-800 dark:text-slate-200">{r.user.namaLengkap}</span>
+                <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', RSVP_PILL[r.status])}>
                   {RSVP_LABELS[r.status]}
                 </span>
               </div>

@@ -13,7 +13,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-def create_notification(user, judul, isi, tipe="info", pengumuman=None):
+def create_notification(user, judul, isi, tipe="info", pengumuman=None, link=""):
     """Buat Notification in-app untuk user."""
     from .models import Notification  # noqa: PLC0415
 
@@ -23,6 +23,7 @@ def create_notification(user, judul, isi, tipe="info", pengumuman=None):
         isi=isi,
         tipe=tipe,
         pengumuman=pengumuman,
+        link=link or "",
     )
 
 
@@ -59,8 +60,7 @@ def notify_user(user, judul, isi, tipe="info", url=None):
     """Kirim notifikasi in-app + web push ke satu user."""
     from .models import PushSubscription  # noqa: PLC0415
 
-    create_notification(user=user, judul=judul, isi=isi, tipe=tipe)
-    payload_extra = {"url": url} if url else {}
+    create_notification(user=user, judul=judul, isi=isi, tipe=tipe, link=url or "")
     for sub in PushSubscription.objects.filter(user=user):
         _send_push_with_url(sub, judul, isi, url)
 
@@ -72,7 +72,7 @@ def notify_admins(judul, isi, url=None):
 
     admins = User.objects.filter(role__in=["admin", "sekretaris", "pengurus"], is_active=True)
     for user in admins:
-        create_notification(user=user, judul=judul, isi=isi, tipe="penting")
+        create_notification(user=user, judul=judul, isi=isi, tipe="penting", link=url or "")
         for sub in PushSubscription.objects.filter(user=user):
             _send_push_with_url(sub, judul, isi, url)
 

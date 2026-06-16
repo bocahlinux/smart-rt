@@ -29,6 +29,7 @@ class Notification(models.Model):
         blank=True,
         related_name="notifications",
     )
+    link = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

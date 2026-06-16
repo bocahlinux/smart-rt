@@ -20,7 +20,9 @@ class IuranWargaFilter(django_filters.FilterSet):
     bulan = django_filters.NumberFilter(field_name="bulan")
     status = django_filters.ChoiceFilter(choices=IuranWarga.Status.choices)
     warga = django_filters.UUIDFilter(field_name="warga__id")
+    jenis = django_filters.UUIDFilter(field_name="jenis__id")
+    jenis_slug = django_filters.CharFilter(field_name="jenis__slug")
 
     class Meta:
         model = IuranWarga
-        fields = ["tahun", "bulan", "status", "warga"]
+        fields = ["tahun", "bulan", "status", "warga", "jenis", "jenis_slug"]

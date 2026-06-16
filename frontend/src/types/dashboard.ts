@@ -46,6 +46,13 @@ export interface IuranBulanIniPengurus {
   pending: number
 }
 
+export interface WargaBelumLunas {
+  id: string
+  namaLengkap: string
+  blok: string
+  noRumah: string
+}
+
 export interface DashboardPengurus {
   totalWarga: number
   wargaAktif: number
@@ -54,6 +61,7 @@ export interface DashboardPengurus {
   pengaduanSelesai: number
   kegiatanMendatang: number
   iuranBulanIni: IuranBulanIniPengurus
+  wargaBelumLunas: WargaBelumLunas[]
 }
 
 export interface DashboardWarga {

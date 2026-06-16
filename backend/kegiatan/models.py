@@ -12,6 +12,7 @@ class Kegiatan(models.Model):
     nama = models.CharField(max_length=255)
     deskripsi = models.TextField(null=True, blank=True)
     tanggal = models.DateTimeField()
+    tanggal_selesai = models.DateTimeField(null=True, blank=True, help_text="Jam selesai kegiatan (opsional)")
     lokasi = models.CharField(max_length=255, null=True, blank=True)
 
     # Opsional: batas maksimal peserta (null = tanpa batas)

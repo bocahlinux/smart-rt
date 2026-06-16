@@ -14,9 +14,11 @@ class PollListSerializer(serializers.ModelSerializer):
     isExpired = serializers.SerializerMethodField()
     totalVotes = serializers.SerializerMethodField()
 
+    startsAt = serializers.DateTimeField(source="starts_at", read_only=True, allow_null=True)
+
     class Meta:
         model = Poll
-        fields = ["id", "pertanyaan", "deadline", "createdBy", "hasVoted", "isExpired", "totalVotes"]
+        fields = ["id", "pertanyaan", "startsAt", "deadline", "createdBy", "hasVoted", "isExpired", "totalVotes"]
 
     def get_createdBy(self, obj):
         profile = getattr(obj.created_by, "profile", None)
@@ -43,6 +45,7 @@ class PollDetailSerializer(serializers.ModelSerializer):
     """
 
     createdBy = serializers.SerializerMethodField()
+    startsAt = serializers.DateTimeField(source="starts_at", read_only=True, allow_null=True)
     deadline = serializers.DateTimeField(read_only=True)
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     hasVoted = serializers.SerializerMethodField()
@@ -54,7 +57,7 @@ class PollDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poll
         fields = [
-            "id", "pertanyaan", "opsi", "deadline",
+            "id", "pertanyaan", "opsi", "startsAt", "deadline",
             "createdBy", "createdAt",
             "hasVoted", "myVote", "isExpired",
             "results", "totalVotes",
@@ -116,11 +119,12 @@ class PollCreateSerializer(serializers.ModelSerializer):
         min_length=2,
         max_length=10,
     )
+    starts_at = serializers.DateTimeField(required=False, allow_null=True)
     deadline = serializers.DateTimeField()
 
     class Meta:
         model = Poll
-        fields = ["pertanyaan", "opsi", "deadline"]
+        fields = ["pertanyaan", "opsi", "starts_at", "deadline"]
 
     def validate_opsi(self, value):
         if len(value) != len(set(value)):

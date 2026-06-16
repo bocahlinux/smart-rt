@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, MessageSquare } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import {
@@ -96,24 +96,26 @@ export function ThreadFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4 lg:px-8 lg:py-6">
-      <button
-        type="button"
-        onClick={() => navigate(isEdit && id ? `/forum/${id}` : '/forum')}
-        className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Kembali
-      </button>
-
-      <div className="mb-5">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">
-          {isEdit ? 'Edit Thread' : 'Buat Thread Baru'}
-        </h1>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-          {isEdit
-            ? 'Perbarui judul, isi, atau kategori thread.'
-            : 'Mulai diskusi baru dengan warga RT lainnya.'}
-        </p>
+      <div className="mb-5 flex items-center gap-3">
+        <Link
+          to={isEdit && id ? `/forum/${id}` : '/forum'}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
+            <MessageSquare className="h-4.5 w-4.5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">
+              {isEdit ? 'Edit Thread' : 'Buat Thread Baru'}
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {isEdit ? 'Perbarui judul, isi, atau kategori thread.' : 'Mulai diskusi baru dengan warga RT.'}
+            </p>
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -124,7 +126,7 @@ export function ThreadFormPage() {
 
       <form
         onSubmit={(e) => void handleSubmit(e)}
-        className="space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+        className="space-y-4"
         noValidate
       >
         <div>
@@ -189,13 +191,12 @@ export function ThreadFormPage() {
               ? isEdit ? 'Menyimpan...' : 'Membuat...'
               : isEdit ? 'Simpan Perubahan' : 'Buat Thread'}
           </button>
-          <button
-            type="button"
-            onClick={() => navigate(isEdit && id ? `/forum/${id}` : '/forum')}
+          <Link
+            to={isEdit && id ? `/forum/${id}` : '/forum'}
             className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Batal
-          </button>
+          </Link>
         </div>
       </form>
     </div>

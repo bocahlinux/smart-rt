@@ -6,6 +6,7 @@ export interface PollListItem {
   id: string
   pertanyaan: string
   deadline: string
+  startsAt: string | null
   createdBy: PollCreator
   hasVoted: boolean
   isExpired: boolean
@@ -17,6 +18,7 @@ export interface PollDetail {
   pertanyaan: string
   opsi: string[]
   deadline: string
+  startsAt: string | null
   createdBy: PollCreator
   createdAt: string
   hasVoted: boolean

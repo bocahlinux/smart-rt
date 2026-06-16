@@ -35,6 +35,8 @@ export interface Notification {
   tipe: string
   isRead: boolean
   createdAt: string
+  pengumumanId: string | null
+  link: string
 }
 
 export interface NotificationListResponse {

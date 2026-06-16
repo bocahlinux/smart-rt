@@ -1,7 +1,28 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { createKegiatan, getKegiatan, updateKegiatan } from '../../services/kegiatanService'
+
+const INPUT = cn(
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition',
+  'focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20',
+  'dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800',
+)
+
+function toLocalDateStr(iso: string): string {
+  const d = new Date(iso)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function toLocalTimeStr(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 
 export function KegiatanFormPage() {
   const { id } = useParams<{ id?: string }>()
@@ -10,7 +31,9 @@ export function KegiatanFormPage() {
 
   const [nama, setNama] = useState('')
   const [deskripsi, setDeskripsi] = useState('')
-  const [tanggal, setTanggal] = useState('')
+  const [tanggal, setTanggal] = useState('')      // date string YYYY-MM-DD
+  const [jamMulai, setJamMulai] = useState('')    // time string HH:mm
+  const [jamSelesai, setJamSelesai] = useState('') // time string HH:mm (optional)
   const [lokasi, setLokasi] = useState('')
   const [kuota, setKuota] = useState<number | ''>('')
   const [loading, setLoading] = useState(false)
@@ -21,8 +44,9 @@ export function KegiatanFormPage() {
       getKegiatan(id!).then((k) => {
         setNama(k.nama)
         setDeskripsi(k.deskripsi ?? '')
-        // Format ISO datetime ke datetime-local input
-        setTanggal(k.tanggal.slice(0, 16))
+        setTanggal(toLocalDateStr(k.tanggal))
+        setJamMulai(toLocalTimeStr(k.tanggal))
+        setJamSelesai(k.tanggalSelesai ? toLocalTimeStr(k.tanggalSelesai) : '')
         setLokasi(k.lokasi ?? '')
         setKuota(k.kuotaPeserta ?? '')
       }).catch(() => setError('Gagal memuat data kegiatan.'))
@@ -33,14 +57,17 @@ export function KegiatanFormPage() {
     e.preventDefault()
     if (!nama.trim()) { setError('Nama kegiatan wajib diisi.'); return }
     if (!tanggal) { setError('Tanggal kegiatan wajib diisi.'); return }
-
+    if (!jamMulai) { setError('Jam mulai kegiatan wajib diisi.'); return }
     setLoading(true)
     setError('')
     try {
+      const tanggalMulai = new Date(`${tanggal}T${jamMulai}:00`).toISOString()
+      const tanggalSelesai = jamSelesai ? new Date(`${tanggal}T${jamSelesai}:00`).toISOString() : null
       const payload = {
         nama,
         deskripsi: deskripsi || undefined,
-        tanggal: new Date(tanggal).toISOString(),
+        tanggal: tanggalMulai,
+        tanggal_selesai: tanggalSelesai,
         lokasi: lokasi || undefined,
         kuota_peserta: kuota !== '' ? Number(kuota) : null,
       }
@@ -54,8 +81,7 @@ export function KegiatanFormPage() {
       const axiosErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
       const detail = axiosErr.response?.data?.errors
       if (detail) {
-        const msgs = Object.values(detail).flat()
-        setError(msgs.join(' '))
+        setError(Object.values(detail).flat().join(' '))
       } else {
         setError(axiosErr.response?.data?.message ?? 'Gagal menyimpan kegiatan.')
       }
@@ -65,109 +91,146 @@ export function KegiatanFormPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-6 lg:px-8">
-      <div className="mb-6">
-        <button onClick={() => navigate('/kegiatan')} className="text-sm text-gray-500 hover:text-gray-700">
-          ← Kembali
-        </button>
-        <h1 className="text-2xl font-bold text-gray-800 mt-3">
-          {isEdit ? 'Edit Kegiatan' : 'Tambah Kegiatan'}
-        </h1>
+    <div className="mx-auto max-w-xl px-4 py-4 lg:px-8 lg:py-6">
+
+      {/* Header */}
+      <div className="mb-5 flex items-center gap-3">
+        <Link
+          to="/kegiatan"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">
+            {isEdit ? 'Edit Kegiatan' : 'Tambah Kegiatan'}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {isEdit ? 'Perbarui detail kegiatan RT' : 'Buat jadwal kegiatan baru'}
+          </p>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">{error}</div>
+        <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300">
+          {error}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Nama Kegiatan <span className="text-red-500">*</span>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Nama Kegiatan<span className="ml-0.5 text-red-500">*</span>
           </label>
           <input
-            id="nama-kegiatan"
             type="text"
             value={nama}
             onChange={(e) => setNama(e.target.value)}
             required
             maxLength={255}
             placeholder="Contoh: Kerja Bakti Bulanan"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={INPUT}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Tanggal & Waktu <span className="text-red-500">*</span>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Tanggal<span className="ml-0.5 text-red-500">*</span>
           </label>
           <input
-            id="tanggal-kegiatan"
-            type="datetime-local"
+            type="date"
             value={tanggal}
             onChange={(e) => setTanggal(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={INPUT}
           />
         </div>
 
+        {/* Jam mulai & selesai side by side */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Jam Mulai<span className="ml-0.5 text-red-500">*</span>
+            </label>
+            <input
+              type="time"
+              value={jamMulai}
+              onChange={(e) => setJamMulai(e.target.value)}
+              required
+              className={INPUT}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Jam Selesai{' '}
+              <span className="font-normal text-slate-400">(opsional)</span>
+            </label>
+            <input
+              type="time"
+              value={jamSelesai}
+              onChange={(e) => setJamSelesai(e.target.value)}
+              className={INPUT}
+            />
+          </div>
+        </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Lokasi</label>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Lokasi
+          </label>
           <input
-            id="lokasi-kegiatan"
             type="text"
             value={lokasi}
             onChange={(e) => setLokasi(e.target.value)}
             maxLength={255}
             placeholder="Contoh: Balai RT Blok B"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={INPUT}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Deskripsi <span className="text-gray-400 font-normal">(opsional)</span>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Deskripsi{' '}
+            <span className="font-normal text-slate-400">(opsional)</span>
           </label>
           <textarea
-            id="deskripsi-kegiatan"
             value={deskripsi}
             onChange={(e) => setDeskripsi(e.target.value)}
             rows={4}
             placeholder="Jelaskan detail kegiatan..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className={cn(INPUT, 'resize-none')}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Kuota Peserta <span className="text-gray-400 font-normal">(opsional, kosongkan = tanpa batas)</span>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Kuota Peserta{' '}
+            <span className="font-normal text-slate-400">(opsional, kosongkan = tanpa batas)</span>
           </label>
           <input
-            id="kuota-kegiatan"
             type="number"
             value={kuota}
             onChange={(e) => setKuota(e.target.value === '' ? '' : Number(e.target.value))}
             min={1}
             placeholder="Contoh: 50"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={INPUT}
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-1">
           <button
-            type="button"
-            onClick={() => navigate('/kegiatan')}
-            className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Batal
-          </button>
-          <button
-            id="submit-kegiatan"
             type="submit"
             disabled={loading}
-            className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {loading ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Buat Kegiatan'}
           </button>
+          <Link
+            to="/kegiatan"
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            Batal
+          </Link>
         </div>
       </form>
     </div>

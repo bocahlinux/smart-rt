@@ -1,13 +1,13 @@
-import { Bell, BookOpen, CheckCheck, ExternalLink } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Bell, BookOpen, CheckCheck, ExternalLink, ShieldAlert } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
-import { listPengumuman } from '@/services/pengumumanService'
+import { listNotifications, markNotificationRead, markAllNotificationsRead } from '@/services/pengumumanService'
 import { useAuthStore } from '@/stores/authStore'
-import type { Pengumuman } from '@/types/pengumuman'
+import type { Notification } from '@/types/pengumuman'
 
-const KATEGORI_CLS: Record<string, string> = {
+const TIPE_CLS: Record<string, string> = {
   penting:   'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
   acara:     'bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400',
   info:      'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
@@ -15,29 +15,31 @@ const KATEGORI_CLS: Record<string, string> = {
   lainnya:   'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
 }
 
-function storageKey(userId: string) {
-  return `smartrt_read_pengumuman_${userId}`
-}
-
-function getReadIds(userId: string): Set<string> {
+function playNotifSound() {
   try {
-    const raw = localStorage.getItem(storageKey(userId))
-    return new Set(raw ? (JSON.parse(raw) as string[]) : [])
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(880, ctx.currentTime)
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15)
+    gain.gain.setValueAtTime(0.18, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.25)
   } catch {
-    return new Set()
+    // Browser AudioContext not supported — silently skip
   }
-}
-
-function persistRead(userId: string, ids: Set<string>) {
-  localStorage.setItem(storageKey(userId), JSON.stringify([...ids]))
 }
 
 export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownClassName?: string }) {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState<Pengumuman[]>([])
-  const [readIds, setReadIds] = useState<Set<string>>(new Set())
+  const [items, setItems] = useState<Notification[]>([])
+  const prevUnreadRef = useRef<number>(0)
   const ref = useRef<HTMLDivElement>(null)
 
   // Tutup saat klik di luar
@@ -50,47 +52,62 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  // Muat pengumuman dan read-state
-  useEffect(() => {
+  const loadNotifications = useCallback(() => {
     if (!user) return
-    const ids = getReadIds(user.id)
-    setReadIds(ids)
-    listPengumuman({ limit: 15, is_published: true })
-      .then((res) => setItems(res.data))
+    listNotifications({ limit: 20 })
+      .then((res) => {
+        const newItems = res.data
+        const newUnread = newItems.filter((n) => !n.isRead).length
+        if (newUnread > prevUnreadRef.current && prevUnreadRef.current >= 0) {
+          playNotifSound()
+        }
+        prevUnreadRef.current = newUnread
+        setItems(newItems)
+      })
       .catch(() => undefined)
   }, [user])
 
-  function markRead(id: string) {
-    if (!user) return
-    setReadIds((prev) => {
-      const next = new Set(prev)
-      next.add(id)
-      persistRead(user.id, next)
-      return next
-    })
+  // Muat notifikasi saat mount + polling tiap 60 detik
+  useEffect(() => {
+    loadNotifications()
+    const id = window.setInterval(loadNotifications, 60_000)
+    return () => clearInterval(id)
+  }, [loadNotifications])
+
+  async function handleMarkRead(id: string) {
+    await markNotificationRead(id).catch(() => undefined)
+    setItems((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    )
+    prevUnreadRef.current = Math.max(0, prevUnreadRef.current - 1)
   }
 
-  function markAllRead() {
-    if (!user) return
-    const all = new Set(items.map((i) => i.id))
-    persistRead(user.id, all)
-    setReadIds(all)
+  async function handleMarkAllRead() {
+    await markAllNotificationsRead().catch(() => undefined)
+    setItems((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    prevUnreadRef.current = 0
   }
 
-  function handleOpen(id: string) {
-    markRead(id)
+  function handleOpen(notif: Notification) {
+    handleMarkRead(notif.id)
     setOpen(false)
-    navigate(`/pengumuman/${id}`)
+    if (notif.link) {
+      navigate(notif.link)
+    } else if (notif.pengumumanId) {
+      navigate(`/pengumuman/${notif.pengumumanId}`)
+    } else {
+      navigate('/pengumuman')
+    }
   }
 
-  const unreadCount = items.filter((i) => !readIds.has(i.id)).length
+  const unreadCount = items.filter((n) => !n.isRead).length
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="Pengumuman"
+        aria-label="Notifikasi"
         className="relative flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
       >
         <Bell className="h-4 w-4" />
@@ -105,12 +122,12 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
         <div className={cn('absolute z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 sm:w-96', dropdownClassName)}>
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-            <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">Pengumuman</span>
+            <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">Notifikasi</span>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
                   type="button"
-                  onClick={markAllRead}
+                  onClick={handleMarkAllRead}
                   className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20"
                 >
                   <CheckCheck className="h-3.5 w-3.5" />
@@ -123,10 +140,14 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
           {/* List */}
           <ul className="max-h-[60vh] overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800/60">
             {items.length === 0 ? (
-              <li className="py-10 text-center text-sm text-slate-400">Belum ada pengumuman.</li>
+              <li className="py-10 text-center text-sm text-slate-400">Belum ada notifikasi.</li>
             ) : (
               items.map((item) => {
-                const isRead = readIds.has(item.id)
+                const isRead = item.isRead
+                const isPengaduan = item.link?.startsWith('/pengaduan') || (!item.pengumumanId && !item.link && (
+                  item.judul.toLowerCase().includes('pengaduan') ||
+                  item.isi.toLowerCase().includes('pengaduan')
+                ))
                 return (
                   <li
                     key={item.id}
@@ -144,9 +165,12 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
                       <p className={cn('text-sm leading-snug', isRead ? 'text-slate-500 dark:text-slate-400' : 'font-medium text-slate-800 dark:text-slate-100')}>
                         {item.judul}
                       </p>
+                      {item.isi && (
+                        <p className="mt-0.5 line-clamp-2 text-xs text-slate-400 dark:text-slate-500">{item.isi}</p>
+                      )}
                       <div className="mt-1 flex items-center gap-2">
-                        <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium capitalize', KATEGORI_CLS[item.kategori] ?? KATEGORI_CLS['lainnya'])}>
-                          {item.kategori}
+                        <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium capitalize', TIPE_CLS[item.tipe] ?? TIPE_CLS['lainnya'])}>
+                          {item.tipe}
                         </span>
                         <span className="text-[10px] text-slate-400">
                           {new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
@@ -156,16 +180,18 @@ export function AnnouncementBell({ dropdownClassName = 'right-0' }: { dropdownCl
                       <div className="mt-2 flex gap-2">
                         <button
                           type="button"
-                          onClick={() => handleOpen(item.id)}
+                          onClick={() => handleOpen(item)}
                           className="flex items-center gap-1 rounded-lg bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600 hover:bg-primary-100 dark:bg-primary-900/20 dark:text-primary-400"
                         >
-                          <ExternalLink className="h-3 w-3" />
+                          {isPengaduan
+                            ? <ShieldAlert className="h-3 w-3" />
+                            : <ExternalLink className="h-3 w-3" />}
                           Lihat Detail
                         </button>
                         {!isRead && (
                           <button
                             type="button"
-                            onClick={() => markRead(item.id)}
+                            onClick={() => handleMarkRead(item.id)}
                             className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
                           >
                             <BookOpen className="h-3 w-3" />

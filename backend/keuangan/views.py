@@ -3,7 +3,9 @@
 import io
 from datetime import date
 
-from django.db.models import Sum
+from decimal import Decimal
+
+from django.db.models import Q, Sum
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
@@ -18,18 +20,73 @@ from rest_framework.views import APIView
 from accounts.permissions import IsBendahara
 from audit.services import log_action
 from .filters import IuranWargaFilter, TransaksiFilter
-from .models import IuranWarga, KategoriTransaksi, Transaksi
+from .models import IuranWarga, JenisIuran, KategoriTransaksi, PengaturanIuran, Transaksi
 from .permissions import IsBendaharaOrAdmin, IsOwnerIuranOrBendahara
 from .serializers import (
     DashboardKeuanganSerializer,
     IuranKonfirmasiSerializer,
     IuranWargaListSerializer,
     IuranWargaUploadSerializer,
+    JenisIuranSerializer,
     KategoriTransaksiSerializer,
+    PengaturanIuranSerializer,
     TransaksiCreateSerializer,
     TransaksiListSerializer,
     WargaIuranSerializer,
 )
+
+
+class JenisIuranViewSet(viewsets.ModelViewSet):
+    """CRUD jenis/kategori iuran — list terbuka untuk semua user login, CUD hanya bendahara/admin."""
+
+    queryset = JenisIuran.objects.all()
+    serializer_class = JenisIuranSerializer
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [IsAuthenticated()]
+        return [IsBendaharaOrAdmin()]
+
+    def list(self, request, *args, **kwargs):
+        aktif_only = request.query_params.get("aktif", "").lower() in ("1", "true", "yes")
+        qs = self.get_queryset()
+        if aktif_only:
+            qs = qs.filter(is_active=True)
+        serializer = self.get_serializer(qs, many=True)
+        return Response({"status": "success", "data": serializer.data})
+
+    def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object())
+        return Response({"status": "success", "data": serializer.data})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        log_action(user=request.user, action="create", table_name="jenis_iuran",
+                   record_id=instance.id, new_data={"nama": instance.nama, "tipe": instance.tipe}, request=request)
+        return Response({"status": "success", "data": serializer.data, "message": "Jenis iuran berhasil ditambahkan"},
+                        status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        log_action(user=request.user, action="update", table_name="jenis_iuran",
+                   record_id=instance.id, new_data={"nama": instance.nama, "nominal": str(instance.nominal)}, request=request)
+        return Response({"status": "success", "data": self.get_serializer(instance).data})
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.iuran_set.exists():
+            return Response({"status": "error", "message": "Jenis iuran tidak dapat dihapus karena sudah memiliki data iuran.",
+                             "code": "HAS_RELATED_DATA"}, status=status.HTTP_400_BAD_REQUEST)
+        log_action(user=request.user, action="delete", table_name="jenis_iuran",
+                   record_id=instance.id, old_data={"nama": instance.nama}, request=request)
+        instance.delete()
+        return Response({"status": "success", "message": "Jenis iuran berhasil dihapus"})
 
 
 class KategoriTransaksiViewSet(viewsets.ModelViewSet):
@@ -338,10 +395,11 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
     """Upload bukti iuran (warga) + konfirmasi (bendahara/admin) + list."""
 
     queryset = IuranWarga.objects.select_related(
-        "warga", "warga__user", "confirmed_by"
+        "warga", "warga__user", "jenis", "confirmed_by"
     )
     filter_backends = [DjangoFilterBackend]
     filterset_class = IuranWargaFilter
+    pagination_class = None  # Return semua item sekaligus untuk filter client-side
 
     def get_permissions(self):
         if self.action in ["upload", "saya", "retrieve"]:
@@ -378,24 +436,19 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"], url_path="upload", parser_classes=[MultiPartParser, FormParser])
     def upload(self, request):
-        """Warga upload bukti iuran — hanya untuk iuran miliknya sendiri."""
+        """Warga upload bukti iuran — wargaId diambil otomatis dari user yang login."""
         profile = getattr(request.user, "profile", None)
         if not profile:
             return Response(
-                {"status": "error", "message": "Profil warga tidak ditemukan.", "code": "WARGA_NOT_FOUND"},
+                {"status": "error", "message": "Profil warga tidak ditemukan. Pastikan akun sudah terdaftar sebagai warga.", "code": "WARGA_NOT_FOUND"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Object-level: warga hanya bisa upload iuran untuk dirinya sendiri
-        if request.user.role == "warga":
-            requested_warga_id = request.data.get("wargaId") or request.data.get("warga_id")
-            if requested_warga_id and str(requested_warga_id) != str(profile.id):
-                return Response(
-                    {"status": "error", "message": "Anda hanya bisa upload iuran untuk diri sendiri.", "code": "PERMISSION_DENIED_OBJECT_LEVEL"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        # Inject wargaId dari profil user yang login — frontend tidak perlu mengirim ini
+        data = request.data.copy()
+        data["wargaId"] = str(profile.id)
 
-        serializer = IuranWargaUploadSerializer(data=request.data, context={"request": request})
+        serializer = IuranWargaUploadSerializer(data=data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
         instance = serializer.save()
@@ -406,6 +459,7 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
             record_id=instance.id,
             new_data={
                 "warga_id": str(instance.warga_id),
+                "jenis_id": str(instance.jenis_id) if instance.jenis_id else None,
                 "bulan": instance.bulan,
                 "tahun": instance.tahun,
                 "jumlah": str(instance.jumlah),
@@ -418,6 +472,7 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
                 "status": "success",
                 "data": {
                     "id": str(instance.id),
+                    "jenis": JenisIuranSerializer(instance.jenis).data if instance.jenis else None,
                     "bulan": instance.bulan,
                     "tahun": instance.tahun,
                     "jumlah": str(instance.jumlah),
@@ -469,6 +524,12 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
         serializer = WargaIuranSerializer(qs, many=True, context={"request": request})
         return Response({"status": "success", "data": serializer.data})
 
+    @action(detail=False, methods=["get"], url_path="pending-count")
+    def pending_count(self, request):
+        """Jumlah iuran pending — untuk badge notifikasi bendahara/admin."""
+        count = IuranWarga.objects.filter(status=IuranWarga.Status.PENDING).count()
+        return Response({"status": "success", "data": {"count": count}})
+
     def retrieve(self, request, pk=None):
         """Detail satu iuran — cek object-level permission."""
         instance = self.get_object()
@@ -482,6 +543,146 @@ class IuranWargaViewSet(viewsets.GenericViewSet):
         return Response({"status": "success", "data": serializer.data})
 
 
+class PengaturanIuranView(APIView):
+    """GET/PUT pengaturan iuran — GET oleh semua user login, PUT hanya bendahara/admin."""
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsBendaharaOrAdmin()]
+
+    def get(self, request):
+        obj = PengaturanIuran.get_instance()
+        serializer = PengaturanIuranSerializer(obj)
+        return Response({"status": "success", "data": serializer.data})
+
+    def put(self, request):
+        obj = PengaturanIuran.get_instance()
+        serializer = PengaturanIuranSerializer(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(updated_by=request.user)
+        log_action(
+            user=request.user,
+            action="update",
+            table_name="pengaturan_iuran",
+            record_id=1,
+            new_data={
+                "nominal_default": str(instance.nominal_default),
+                "keterangan": instance.keterangan,
+            },
+            request=request,
+        )
+        return Response({
+            "status": "success",
+            "data": PengaturanIuranSerializer(instance).data,
+            "message": "Pengaturan iuran berhasil disimpan.",
+        })
+
+
+class BukuKasView(APIView):
+    """GET /keuangan/buku-kas/ — Buku kas gabungan (Transaksi + IuranWarga lunas).
+
+    Dapat diakses semua user login untuk transparansi keuangan RT.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    _BULAN = [
+        '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    ]
+
+    def get(self, request):
+        tahun = int(request.query_params.get('tahun', date.today().year))
+        bulan_str = request.query_params.get('bulan', '')
+        bulan = int(bulan_str) if bulan_str else None
+
+        transaksi_base = Transaksi.objects.filter(status='confirmed')
+        iuran_base = IuranWarga.objects.filter(status='lunas')
+
+        # ── Hitung saldo awal (sebelum periode yang dipilih) ──────────
+        if bulan:
+            batas = date(tahun, bulan, 1)
+            t_sebelum = transaksi_base.filter(tanggal__lt=batas)
+            i_sebelum = iuran_base.filter(
+                Q(tahun__lt=tahun) | Q(tahun=tahun, bulan__lt=bulan)
+            )
+        else:
+            t_sebelum = transaksi_base.filter(tanggal__year__lt=tahun)
+            i_sebelum = iuran_base.filter(tahun__lt=tahun)
+
+        t_masuk_awal = t_sebelum.filter(tipe='pemasukan').aggregate(t=Sum('jumlah'))['t'] or 0
+        t_keluar_awal = t_sebelum.filter(tipe='pengeluaran').aggregate(t=Sum('jumlah'))['t'] or 0
+        i_masuk_awal = i_sebelum.aggregate(t=Sum('jumlah'))['t'] or 0
+        # Tambah saldo_awal dari pengaturan (modal awal go-production)
+        pengaturan_saldo = Decimal(PengaturanIuran.get_instance().saldo_awal)
+        saldo_awal = pengaturan_saldo + Decimal(t_masuk_awal) + Decimal(i_masuk_awal) - Decimal(t_keluar_awal)
+
+        # ── Ambil data periode ─────────────────────────────────────────
+        t_periode = transaksi_base.filter(tanggal__year=tahun)
+        i_periode = iuran_base.filter(tahun=tahun)
+        if bulan:
+            t_periode = t_periode.filter(tanggal__month=bulan)
+            i_periode = i_periode.filter(bulan=bulan)
+
+        t_periode = t_periode.select_related('kategori', 'created_by__profile')
+        i_periode = i_periode.select_related('warga')
+
+        # ── Gabungkan & urutkan ────────────────────────────────────────
+        entries = []
+
+        for t in t_periode:
+            entries.append({
+                'id': str(t.id),
+                'tanggal': str(t.tanggal),
+                'keterangan': t.keterangan or t.kategori.nama,
+                'kategori': t.kategori.nama,
+                'tipe': t.tipe,
+                'jumlah': str(t.jumlah),
+                'sumber': 'manual',
+            })
+
+        for i in i_periode:
+            tgl = i.confirmed_at.date() if i.confirmed_at else date(i.tahun, i.bulan, 28)
+            entries.append({
+                'id': str(i.id),
+                'tanggal': str(tgl),
+                'keterangan': f'Iuran {self._BULAN[i.bulan]} {i.tahun} — {i.warga.nama_lengkap}',
+                'kategori': 'Iuran Warga',
+                'tipe': 'pemasukan',
+                'jumlah': str(i.jumlah),
+                'sumber': 'iuran',
+            })
+
+        entries.sort(key=lambda x: x['tanggal'])
+
+        # ── Running saldo ──────────────────────────────────────────────
+        saldo = saldo_awal
+        total_masuk = Decimal(0)
+        total_keluar = Decimal(0)
+        for idx, e in enumerate(entries, 1):
+            e['no'] = idx
+            jml = Decimal(e['jumlah'])
+            if e['tipe'] == 'pemasukan':
+                saldo += jml
+                total_masuk += jml
+            else:
+                saldo -= jml
+                total_keluar += jml
+            e['saldo'] = str(saldo)
+
+        return Response({
+            'status': 'success',
+            'data': {
+                'saldo_awal': str(saldo_awal),
+                'entries': entries,
+                'total_masuk': str(total_masuk),
+                'total_keluar': str(total_keluar),
+                'saldo_akhir': str(saldo_awal + total_masuk - total_keluar),
+            },
+        })
+
+
 class DashboardKeuanganView(APIView):
     """Dashboard ringkasan keuangan RT — hanya bendahara/admin."""
 
@@ -491,10 +692,14 @@ class DashboardKeuanganView(APIView):
         tahun = int(request.query_params.get("tahun", date.today().year))
 
         qs = Transaksi.objects.filter(status=Transaksi.Status.CONFIRMED)
+        iuran_qs = IuranWarga.objects.filter(status=IuranWarga.Status.LUNAS)
 
-        total_pemasukan = qs.filter(tipe="pemasukan").aggregate(t=Sum("jumlah"))["t"] or 0
-        total_pengeluaran = qs.filter(tipe="pengeluaran").aggregate(t=Sum("jumlah"))["t"] or 0
-        saldo = total_pemasukan - total_pengeluaran
+        transaksi_pemasukan = float(qs.filter(tipe="pemasukan").aggregate(t=Sum("jumlah"))["t"] or 0)
+        iuran_pemasukan = float(iuran_qs.aggregate(t=Sum("jumlah"))["t"] or 0)
+        total_pengeluaran = float(qs.filter(tipe="pengeluaran").aggregate(t=Sum("jumlah"))["t"] or 0)
+        total_pemasukan = transaksi_pemasukan + iuran_pemasukan
+        saldo_awal = float(PengaturanIuran.get_instance().saldo_awal)
+        saldo = saldo_awal + total_pemasukan - total_pengeluaran
 
         # Ringkasan bulanan untuk tahun yang diminta
         monthly_pemasukan = {
@@ -511,6 +716,12 @@ class DashboardKeuanganView(APIView):
             .values("bulan")
             .annotate(total=Sum("jumlah"))
         }
+        monthly_iuran = {
+            item["bulan"]: item["total"]
+            for item in iuran_qs.filter(tahun=tahun)
+            .values("bulan")
+            .annotate(total=Sum("jumlah"))
+        }
 
         bulanan = []
         for m in range(1, 13):
@@ -518,16 +729,16 @@ class DashboardKeuanganView(APIView):
             key = dt(tahun, m, 1)
             bulanan.append({
                 "bulan": m,
-                "pemasukan": float(monthly_pemasukan.get(key, 0) or 0),
+                "pemasukan": float(monthly_pemasukan.get(key, 0) or 0) + float(monthly_iuran.get(m, 0) or 0),
                 "pengeluaran": float(monthly_pengeluaran.get(key, 0) or 0),
             })
 
         return Response({
             "status": "success",
             "data": {
-                "saldo": float(saldo),
-                "totalPemasukan": float(total_pemasukan),
-                "totalPengeluaran": float(total_pengeluaran),
+                "saldo": saldo,
+                "totalPemasukan": total_pemasukan,
+                "totalPengeluaran": total_pengeluaran,
                 "bulanan": bulanan,
             },
         })

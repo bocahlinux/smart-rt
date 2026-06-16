@@ -20,7 +20,9 @@ import { PollingDetailPage } from '@/components/polling/PollingDetailPage'
 import { PollingFormPage } from '@/components/polling/PollingFormPage'
 import { PollingListPage } from '@/components/polling/PollingListPage'
 import { IuranKonfirmasiPage } from '@/components/keuangan/IuranKonfirmasiPage'
+import { IuranSettingPage } from '@/components/keuangan/IuranSettingPage'
 import { IuranUploadPage } from '@/components/keuangan/IuranUploadPage'
+import { KeuanganBukuKasPage } from '@/components/keuangan/KeuanganBukuKasPage'
 import { KeuanganDashboardPage } from '@/components/keuangan/KeuanganDashboardPage'
 import { KeuanganListPage } from '@/components/keuangan/KeuanganListPage'
 import { LaporanPage } from '@/components/keuangan/LaporanPage'
@@ -30,6 +32,7 @@ import { PengumumanFormPage } from '@/components/pengumuman/PengumumanFormPage'
 import { PengumumanListPage } from '@/components/pengumuman/PengumumanListPage'
 import { UserListPage } from '@/components/users/UserListPage'
 import { WargaListPage } from '@/components/warga/WargaListPage'
+import { ProfilBuatPage } from '@/components/warga/ProfilBuatPage'
 import { KartuKeluargaPage } from '@/components/kartuKeluarga/KartuKeluargaPage'
 import { UbahAnggotaPage } from '@/components/kartuKeluarga/UbahAnggotaPage'
 import { PengajuanPage } from '@/components/kartuKeluarga/PengajuanPage'
@@ -52,6 +55,7 @@ function App() {
 
             {/* Phase 3: Data Warga */}
             <Route path="/warga" element={<WargaListPage />} />
+            <Route path="/profil/buat" element={<ProfilBuatPage />} />
 
             {/* Kartu Keluarga */}
             <Route path="/kk/saya" element={<KartuKeluargaPage />} />
@@ -60,11 +64,12 @@ function App() {
             <Route path="/pengajuan" element={<PengajuanPage />} />
 
             {/* Phase 4: Keuangan RT */}
-            <Route path="/keuangan" element={<KeuanganListPage />} />
+            <Route path="/keuangan" element={<KeuanganBukuKasPage />} />
             <Route path="/keuangan/dashboard" element={<KeuanganDashboardPage />} />
             <Route path="/keuangan/baru" element={<TransaksiFormPage />} />
             <Route path="/keuangan/laporan" element={<LaporanPage />} />
             <Route path="/keuangan/iuran" element={<IuranKonfirmasiPage />} />
+            <Route path="/keuangan/pengaturan-iuran" element={<IuranSettingPage />} />
             <Route path="/iuran/upload" element={<IuranUploadPage />} />
 
             {/* Phase 5: Pengumuman & Notifikasi */}

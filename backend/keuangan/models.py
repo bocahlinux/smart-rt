@@ -87,8 +87,42 @@ class Transaksi(models.Model):
         return f"{self.tipe} Rp{self.jumlah:,.0f} ({self.tanggal})"
 
 
+class JenisIuran(models.Model):
+    """Jenis/kategori iuran RT — configurable oleh bendahara/admin."""
+
+    class Tipe(models.TextChoices):
+        WAJIB = "wajib", "Wajib"
+        OPSIONAL = "opsional", "Opsional"
+
+    class Unit(models.TextChoices):
+        PER_WARGA = "per_warga", "Per Orang/Warga"
+        PER_KK = "per_kk", "Per KK"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nama = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=50, unique=True)
+    tipe = models.CharField(max_length=20, choices=Tipe.choices, default=Tipe.WAJIB)
+    unit = models.CharField(max_length=20, choices=Unit.choices, default=Unit.PER_WARGA)
+    nominal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    keterangan = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    urutan = models.IntegerField(default=0, help_text="Urutan tampil (kecil = pertama)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "jenis_iuran"
+        ordering = ["urutan", "nama"]
+        indexes = [
+            models.Index(fields=["is_active"], name="idx_jenis_iuran_active"),
+        ]
+
+    def __str__(self):
+        return f"{self.nama} ({self.tipe}/{self.unit})"
+
+
 class IuranWarga(models.Model):
-    """Iuran bulanan warga RT — dengan bukti transfer."""
+    """Iuran bulanan warga RT — dengan bukti transfer, per jenis iuran."""
 
     class Status(models.TextChoices):
         PENDING = "pending", "Menunggu Konfirmasi"
@@ -100,6 +134,13 @@ class IuranWarga(models.Model):
         "accounts.WargaProfile",
         on_delete=models.CASCADE,
         related_name="iuran_set",
+    )
+    jenis = models.ForeignKey(
+        JenisIuran,
+        on_delete=models.PROTECT,
+        related_name="iuran_set",
+        null=True,
+        blank=True,
     )
     bulan = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(12)]
@@ -129,12 +170,48 @@ class IuranWarga(models.Model):
     class Meta:
         db_table = "iuran_warga"
         ordering = ["-tahun", "-bulan"]
-        unique_together = [("warga", "bulan", "tahun")]
+        unique_together = [("warga", "jenis", "bulan", "tahun")]
         indexes = [
             models.Index(fields=["warga"], name="idx_iuran_warga"),
             models.Index(fields=["tahun", "bulan"], name="idx_iuran_periode"),
             models.Index(fields=["status"], name="idx_iuran_status"),
+            models.Index(fields=["jenis"], name="idx_iuran_jenis"),
         ]
 
     def __str__(self):
-        return f"Iuran {self.warga.nama_lengkap} {self.bulan}/{self.tahun} — {self.status}"
+        jenis_nama = self.jenis.nama if self.jenis else "Umum"
+        return f"Iuran {jenis_nama} — {self.warga.nama_lengkap} {self.bulan}/{self.tahun} — {self.status}"
+
+
+class PengaturanIuran(models.Model):
+    """Pengaturan iuran warga RT — singleton (selalu hanya 1 row, pk=1)."""
+
+    nominal_default = models.DecimalField(
+        max_digits=15, decimal_places=2, default=50000,
+        help_text="Nominal default iuran bulanan warga (Rp)",
+    )
+    saldo_awal = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        help_text="Saldo awal kas RT saat pertama kali go-production (Rp)",
+    )
+    keterangan = models.TextField(blank=True, default="", help_text="Deskripsi iuran bulanan")
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="pengaturan_iuran_updated",
+    )
+
+    class Meta:
+        db_table = "pengaturan_iuran"
+        verbose_name = "Pengaturan Iuran"
+
+    def __str__(self):
+        return f"Pengaturan Iuran — Rp{self.nominal_default:,.0f}"
+
+    @classmethod
+    def get_instance(cls):
+        """Ambil atau buat row singleton pengaturan iuran."""
+        obj, _ = cls.objects.get_or_create(pk=1, defaults={"nominal_default": 50000})
+        return obj

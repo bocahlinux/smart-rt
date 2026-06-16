@@ -16,6 +16,7 @@ class Poll(models.Model):
     # Daftar opsi disimpan sebagai JSON array, misal: ["Sabtu pagi", "Minggu sore"]
     opsi = models.JSONField()
 
+    starts_at = models.DateTimeField(null=True, blank=True, help_text="Waktu mulai voting (null = segera)")
     deadline = models.DateTimeField()
 
     created_by = models.ForeignKey(

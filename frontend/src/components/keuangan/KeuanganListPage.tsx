@@ -139,6 +139,13 @@ export function KeuanganListPage() {
                   Kategori
                 </button>
                 <Link
+                  to="/keuangan/pengaturan-iuran"
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                  Pengaturan Iuran
+                </Link>
+                <Link
                   to="/keuangan/baru"
                   className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-xs font-semibold text-white hover:bg-primary-700"
                 >

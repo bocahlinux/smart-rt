@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ImageIcon } from 'lucide-react'
+import { ArrowLeft, ImageIcon, Megaphone } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { hasPerm } from '@/lib/permissions'
@@ -114,18 +114,27 @@ export function PengumumanFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4 lg:px-8 lg:py-6">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Kembali
-      </button>
-
-      <h1 className="mb-5 text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">
-        {isEdit ? 'Edit Pengumuman' : 'Buat Pengumuman'}
-      </h1>
+      <div className="mb-5 flex items-center gap-3">
+        <Link
+          to="/pengumuman"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
+            <Megaphone className="h-4.5 w-4.5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">
+              {isEdit ? 'Edit Pengumuman' : 'Buat Pengumuman'}
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {isEdit ? 'Perbarui pengumuman RT' : 'Sampaikan informasi kepada warga RT'}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {error && (
         <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300">
@@ -135,7 +144,7 @@ export function PengumumanFormPage() {
 
       <form
         onSubmit={(e) => void handleSubmit(e)}
-        className="space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+        className="space-y-4"
       >
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">

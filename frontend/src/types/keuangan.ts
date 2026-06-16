@@ -4,6 +4,31 @@
 export type TransaksiTipe = 'pemasukan' | 'pengeluaran'
 export type TransaksiStatus = 'draft' | 'confirmed' | 'rejected'
 export type IuranStatus = 'pending' | 'lunas' | 'ditolak'
+export type JenisIuranTipe = 'wajib' | 'opsional'
+export type JenisIuranUnit = 'per_warga' | 'per_kk'
+
+export interface JenisIuran {
+  id: string
+  nama: string
+  slug: string
+  tipe: JenisIuranTipe
+  unit: JenisIuranUnit
+  nominal: string
+  keterangan: string
+  isActive: boolean
+  urutan: number
+  updatedAt: string
+}
+
+export interface JenisIuranFormPayload {
+  nama: string
+  tipe: JenisIuranTipe
+  unit: JenisIuranUnit
+  nominal: number
+  keterangan?: string
+  isActive?: boolean
+  urutan?: number
+}
 
 export interface KategoriTransaksi {
   id: string
@@ -47,6 +72,7 @@ export interface IuranWargaRef {
 export interface IuranWarga {
   id: string
   warga: IuranWargaRef
+  jenis: JenisIuran | null
   bulan: number
   tahun: number
   jumlah: string
@@ -60,6 +86,7 @@ export interface IuranWarga {
 
 export interface MyIuran {
   id: string
+  jenis: JenisIuran | null
   bulan: number
   tahun: number
   jumlah: string
@@ -70,16 +97,43 @@ export interface MyIuran {
 }
 
 export interface IuranUploadPayload {
-  wargaId: string
+  jenisId: string
   bulan: number
   tahun: number
   jumlah: number
   bukti_transfer: File
 }
 
+export interface PengaturanIuran {
+  nominalDefault: number
+  saldoAwal: number
+  keterangan: string
+  updatedAt: string
+}
+
 export interface IuranKonfirmasiPayload {
   status: 'lunas' | 'ditolak'
   keterangan?: string
+}
+
+export interface BukuKasEntry {
+  no: number
+  id: string
+  tanggal: string
+  keterangan: string
+  kategori: string
+  tipe: 'pemasukan' | 'pengeluaran'
+  jumlah: string
+  saldo: string
+  sumber: 'manual' | 'iuran'
+}
+
+export interface BukuKasData {
+  saldo_awal: string
+  entries: BukuKasEntry[]
+  total_masuk: string
+  total_keluar: string
+  saldo_akhir: string
 }
 
 export interface BulananData {

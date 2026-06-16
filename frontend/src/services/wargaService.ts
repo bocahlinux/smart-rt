@@ -67,6 +67,16 @@ export async function restoreWarga(id: string): Promise<void> {
   await apiClient.put(`/warga/${id}/restore/`)
 }
 
+export async function getProfilSaya(): Promise<{ id: string; namaLengkap: string; nik: string; hasProfile: boolean }> {
+  const { data } = await apiClient.get<ApiSuccess<{ id: string; namaLengkap: string; nik: string; hasProfile: boolean }>>('/warga/profil-saya/')
+  return data.data
+}
+
+export async function createProfilSaya(payload: Partial<WargaFormPayload>): Promise<{ id: string; namaLengkap: string }> {
+  const { data } = await apiClient.post<ApiSuccess<{ id: string; namaLengkap: string }>>('/warga/profil-saya/', payload)
+  return data.data
+}
+
 export async function verifyWarga(id: string, payload: VerifyPayload): Promise<void> {
   await apiClient.put(`/warga/${id}/verify/`, payload)
 }

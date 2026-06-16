@@ -16,6 +16,7 @@ export interface Kegiatan {
   nama: string
   deskripsi: string | null
   tanggal: string
+  tanggalSelesai: string | null
   lokasi: string | null
   penanggungJawab: PenanggungJawab | null
   rsvpCount: number

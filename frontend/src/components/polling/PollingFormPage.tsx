@@ -1,12 +1,26 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Plus, Vote, X } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { createPoll } from '../../services/pollingService'
+
+const INPUT = cn(
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition',
+  'focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20',
+  'dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800',
+)
+
+function nowPlusMinutes(mins: number) {
+  const d = new Date(Date.now() + mins * 60 * 1000)
+  return d.toISOString().slice(0, 16)
+}
 
 export function PollingFormPage() {
   const navigate = useNavigate()
   const [pertanyaan, setPertanyaan] = useState('')
   const [opsi, setOpsi] = useState<string[]>(['', ''])
+  const [startsAt, setStartsAt] = useState('')
   const [deadline, setDeadline] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -30,9 +44,12 @@ export function PollingFormPage() {
     const filledOpsi = opsi.filter((o) => o.trim())
     if (!pertanyaan.trim()) { setError('Pertanyaan wajib diisi.'); return }
     if (filledOpsi.length < 2) { setError('Minimal 2 opsi jawaban.'); return }
-    if (!deadline) { setError('Deadline wajib diisi.'); return }
+    if (!deadline) { setError('Jam selesai (deadline) wajib diisi.'); return }
     if (new Date(deadline) <= new Date()) { setError('Deadline harus di masa depan.'); return }
-
+    if (startsAt && new Date(startsAt) >= new Date(deadline)) {
+      setError('Jam mulai harus sebelum jam selesai.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -40,6 +57,7 @@ export function PollingFormPage() {
         pertanyaan,
         opsi: filledOpsi,
         deadline: new Date(deadline).toISOString(),
+        starts_at: startsAt ? new Date(startsAt).toISOString() : null,
       })
       navigate(`/polling/${result.id}`)
     } catch (err: unknown) {
@@ -56,63 +74,74 @@ export function PollingFormPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-6 lg:px-8">
-      <div className="mb-6">
-        <button onClick={() => navigate('/polling')} className="text-sm text-gray-500 hover:text-gray-700">
-          ← Kembali
-        </button>
-        <h1 className="text-2xl font-bold text-gray-800 mt-3">Buat Polling</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Kumpulkan suara warga untuk keputusan bersama</p>
+    <div className="mx-auto max-w-xl px-4 py-4 lg:px-8 lg:py-6">
+
+      {/* Header */}
+      <div className="mb-5 flex items-center gap-3">
+        <Link
+          to="/polling"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
+            <Vote className="h-4.5 w-4.5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white lg:text-2xl">Buat Polling</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Kumpulkan suara warga untuk keputusan bersama</p>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">{error}</div>
+        <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-300">
+          {error}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
-        {/* Pertanyaan */}
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Pertanyaan <span className="text-red-500">*</span>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Pertanyaan<span className="ml-0.5 text-red-500">*</span>
           </label>
           <textarea
-            id="pertanyaan-poll"
             value={pertanyaan}
             onChange={(e) => setPertanyaan(e.target.value)}
             required
             maxLength={500}
             rows={3}
             placeholder="Contoh: Kapan waktu yang paling cocok untuk kerja bakti?"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+            className={cn(INPUT, 'resize-none')}
           />
         </div>
 
-        {/* Opsi jawaban */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Opsi Jawaban <span className="text-red-500">*</span>{' '}
-            <span className="text-gray-400 font-normal">(min 2, maks 10)</span>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Opsi Jawaban<span className="ml-0.5 text-red-500">*</span>{' '}
+            <span className="font-normal text-slate-400">(min 2, maks 10)</span>
           </label>
           <div className="space-y-2">
             {opsi.map((o, idx) => (
               <div key={idx} className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 w-5">{idx + 1}.</span>
+                <span className="w-5 shrink-0 text-right text-xs text-slate-400">{idx + 1}.</span>
                 <input
                   type="text"
                   value={o}
                   onChange={(e) => updateOpsi(idx, e.target.value)}
                   placeholder={`Opsi ${idx + 1}`}
                   maxLength={255}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className={cn(INPUT, 'flex-1')}
                 />
                 {opsi.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeOpsi(idx)}
-                    className="text-red-400 hover:text-red-600 text-xs px-2"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                     title="Hapus opsi"
                   >
-                    ✕
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
@@ -122,48 +151,61 @@ export function PollingFormPage() {
             <button
               type="button"
               onClick={addOpsi}
-              className="mt-2 text-sm text-purple-600 hover:text-purple-800 flex items-center gap-1"
+              className="mt-2 flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
             >
-              + Tambah Opsi
+              <Plus className="h-3.5 w-3.5" />
+              Tambah Opsi
             </button>
           )}
         </div>
 
-        {/* Deadline */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Deadline Voting <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="deadline-poll"
-            type="datetime-local"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            required
-            min={new Date().toISOString().slice(0, 16)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            Setelah deadline, hasil voting akan ditampilkan kepada semua warga.
-          </p>
+        {/* Periode voting: jam mulai dan jam selesai */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Jam Mulai Voting{' '}
+              <span className="font-normal text-slate-400">(opsional)</span>
+            </label>
+            <input
+              type="datetime-local"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+              min={nowPlusMinutes(1)}
+              className={INPUT}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Jam Selesai (Deadline)<span className="ml-0.5 text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              required
+              min={nowPlusMinutes(5)}
+              className={INPUT}
+            />
+          </div>
         </div>
+        <p className="text-xs text-slate-400 dark:text-slate-500">
+          Kosongkan jam mulai agar voting langsung aktif. Setelah deadline, hasil ditampilkan ke semua warga.
+        </p>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-1">
           <button
-            type="button"
-            onClick={() => navigate('/polling')}
-            className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Batal
-          </button>
-          <button
-            id="submit-poll"
             type="submit"
             disabled={loading}
-            className="flex-1 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {loading ? 'Membuat...' : 'Buat Polling'}
           </button>
+          <Link
+            to="/polling"
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            Batal
+          </Link>
         </div>
       </form>
     </div>

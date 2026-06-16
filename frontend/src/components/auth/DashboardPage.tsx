@@ -9,6 +9,8 @@ import {
   MessageSquare,
   Megaphone,
   ShieldAlert,
+  TrendingUp,
+  UserPlus,
   Users,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -17,8 +19,9 @@ import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { hasPerm } from '@/lib/permissions'
 import { getDashboardPengurus, getDashboardWarga } from '@/services/dashboardService'
+import { getBukuKas } from '@/services/keuanganService'
 import { useAuthStore } from '@/stores/authStore'
-import type { DashboardPengurus, DashboardWarga, IuranBulanIni, IuranRiwayat, ProfileInfoWarga } from '@/types/dashboard'
+import type { DashboardPengurus, DashboardWarga, IuranBulanIni, IuranRiwayat, ProfileInfoWarga, WargaBelumLunas } from '@/types/dashboard'
 
 // ── Constants ──────────────────────────────────────────────────
 
@@ -106,6 +109,44 @@ function IuranProgress({ lunas, total, bulan, tahun }: { lunas: number; total: n
   )
 }
 
+// ── Warga belum lunas list (pengurus) ─────────────────────────
+
+function WargaBelumLunasWidget({ list, bulan, tahun }: { list: WargaBelumLunas[]; bulan: number; tahun: number }) {
+  if (list.length === 0) return null
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            Belum Melunasi Iuran
+          </h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            {BULAN[bulan]} {tahun} · {list.length} warga
+          </p>
+        </div>
+        <Link to="/keuangan" className="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400">
+          Kelola →
+        </Link>
+      </div>
+      <ul className="divide-y divide-slate-50 dark:divide-slate-800/60">
+        {list.map((w) => (
+          <li key={w.id} className="flex items-center gap-3 px-5 py-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-900/20">
+              <Users className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <span className="flex-1 text-sm text-slate-700 dark:text-slate-300">{w.namaLengkap}</span>
+            {(w.blok || w.noRumah) && (
+              <span className="text-xs text-slate-400 dark:text-slate-500">
+                {[w.blok, w.noRumah].filter(Boolean).join(' / ')}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 // ── Pengurus dashboard ─────────────────────────────────────────
 
 function PengurusDashboard({ data }: { data: DashboardPengurus }) {
@@ -141,6 +182,14 @@ function PengurusDashboard({ data }: { data: DashboardPengurus }) {
         bulan={iuranBulanIni.bulan}
         tahun={iuranBulanIni.tahun}
       />
+
+      {data.wargaBelumLunas?.length > 0 && (
+        <WargaBelumLunasWidget
+          list={data.wargaBelumLunas}
+          bulan={iuranBulanIni.bulan}
+          tahun={iuranBulanIni.tahun}
+        />
+      )}
     </div>
   )
 }
@@ -359,24 +408,91 @@ const PENGUMUMAN_KATEGORI_CLS: Record<string, string> = {
   lainnya:  'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
 }
 
+// ── Kas RT transparency widget (warga) ─────────────────────────
+
+function KasRTWidget() {
+  const [saldo, setSaldo] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getBukuKas({ tahun: new Date().getFullYear() })
+      .then((d) => setSaldo(d.saldo_akhir))
+      .catch(() => setSaldo(null))
+      .finally(() => setLoading(false))
+  }, [])
+
+  return (
+    <Link
+      to="/keuangan"
+      className="flex items-center gap-4 rounded-2xl border border-indigo-100 bg-linear-to-r from-indigo-50 to-white p-5 shadow-sm transition hover:shadow-md dark:border-indigo-900/30 dark:from-indigo-900/10 dark:to-slate-900"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/30">
+        <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-400 dark:text-indigo-500">
+          Kas RT · Transparansi Keuangan
+        </p>
+        {loading ? (
+          <div className="mt-1 h-5 w-32 animate-pulse rounded bg-indigo-100 dark:bg-indigo-900/30" />
+        ) : saldo !== null ? (
+          <p className="text-lg font-bold text-indigo-700 dark:text-indigo-300">
+            {formatRupiah(Number(saldo))}
+          </p>
+        ) : (
+          <p className="text-sm text-slate-400">Data tidak tersedia</p>
+        )}
+        <p className="mt-0.5 text-xs text-indigo-400 dark:text-indigo-500">
+          Saldo kas RT tahun ini · Tap untuk lihat buku kas →
+        </p>
+      </div>
+      <CircleDollarSign className="h-5 w-5 shrink-0 text-indigo-300 dark:text-indigo-700" />
+    </Link>
+  )
+}
+
 // ── Warga dashboard ────────────────────────────────────────────
 
 function WargaDashboard({ data }: { data: DashboardWarga }) {
   const { iuranBulanIni, riwayatIuran, profileInfo, pengumumanTerbaru, pengaduanSaya, kegiatanMendatang } = data
   const hasKK = !!profileInfo?.noKk
+  const hasProfile = profileInfo !== null
 
   return (
     <div className="space-y-5">
+      {/* Banner buat profil jika belum ada */}
+      {!hasProfile && (
+        <Link
+          to="/profil/buat"
+          className="flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 transition hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/20 dark:hover:bg-amber-900/30"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
+            <UserPlus className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              Profil data diri belum dibuat
+            </p>
+            <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
+              Tap di sini untuk melengkapi data diri Anda sebagai warga RT
+            </p>
+          </div>
+        </Link>
+      )}
+
       {/* Row 1: Iuran + KK cards */}
       <div className={cn('grid gap-4', hasKK ? 'lg:grid-cols-2' : '')}>
         <IuranCard iuran={iuranBulanIni} riwayat={riwayatIuran} />
         {hasKK && profileInfo && <KKCard profile={profileInfo} />}
       </div>
 
-      {/* Row 2: Quick actions */}
+      {/* Row 2: Kas RT transparency */}
+      <KasRTWidget />
+
+      {/* Row 3: Quick actions */}
       <QuickActions iuranStatus={iuranBulanIni.status} />
 
-      {/* Row 3: Pengumuman + Kegiatan */}
+      {/* Row 4: Pengumuman + Kegiatan */}
       {(pengumumanTerbaru.length > 0 || kegiatanMendatang.length > 0) && (
         <div className="grid gap-4 lg:grid-cols-2">
           {pengumumanTerbaru.length > 0 && (
@@ -426,7 +542,7 @@ function WargaDashboard({ data }: { data: DashboardWarga }) {
         </div>
       )}
 
-      {/* Row 4: Pengaduan saya */}
+      {/* Row 5: Pengaduan saya */}
       {pengaduanSaya.length > 0 && (
         <SectionCard title="Pengaduan Saya" to="/pengaduan">
           {pengaduanSaya.map((p) => (
@@ -491,14 +607,22 @@ export function DashboardPage() {
   const [wargaData, setWargaData] = useState<DashboardWarga | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pengurusHasProfile, setPengurusHasProfile] = useState<boolean | null>(null)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       try {
         if (isPengurus) {
-          const data = await getDashboardPengurus()
-          if (!cancelled) setPengurusData(data)
+          const [data, profilRes] = await Promise.allSettled([
+            getDashboardPengurus(),
+            import('@/services/wargaService').then((m) => m.getProfilSaya()),
+          ])
+          if (!cancelled) {
+            if (data.status === 'fulfilled') setPengurusData(data.value)
+            if (profilRes.status === 'fulfilled') setPengurusHasProfile(profilRes.value.hasProfile)
+            else setPengurusHasProfile(false)
+          }
         } else {
           const data = await getDashboardWarga()
           if (!cancelled) setWargaData(data)
@@ -536,6 +660,24 @@ export function DashboardPage() {
         </div>
       )}
 
+      {!loading && !error && isPengurus && pengurusHasProfile === false && (
+        <Link
+          to="/profil/buat"
+          className="mb-4 flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 transition hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/20 dark:hover:bg-amber-900/30"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
+            <UserPlus className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              Profil data diri belum dibuat
+            </p>
+            <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
+              Tap di sini untuk melengkapi data diri Anda sebagai anggota RT
+            </p>
+          </div>
+        </Link>
+      )}
       {!loading && !error && isPengurus && pengurusData && <PengurusDashboard data={pengurusData} />}
       {!loading && !error && !isPengurus && wargaData && <WargaDashboard data={wargaData} />}
     </div>
