@@ -93,3 +93,37 @@ class PermohonanSurat(models.Model):
 
     def __str__(self):
         return f"{self.jenis.nama} — {self.pemohon.email} ({self.status})"
+
+
+class PengaturanRT(models.Model):
+    """Konfigurasi RT untuk keperluan surat — singleton (pk=1)."""
+
+    nama_rt = models.CharField(max_length=20, default="RT 04")
+    nama_rw = models.CharField(max_length=20, default="RW 03")
+    kelurahan = models.CharField(max_length=100, default="Kelurahan ...")
+    kecamatan = models.CharField(max_length=100, default="Kecamatan ...")
+    kota = models.CharField(max_length=100, default="Kota ...")
+    provinsi = models.CharField(max_length=100, default="Jawa Timur")
+    kode_pos = models.CharField(max_length=10, blank=True, default="")
+    nama_ketua_rt = models.CharField(max_length=255, blank=True, default="")
+    nik_ketua_rt = models.CharField(max_length=16, blank=True, default="")
+    tanda_tangan = models.ImageField(upload_to="pengaturan-rt/ttd/", null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="pengaturan_rt_updated",
+    )
+
+    class Meta:
+        db_table = "pengaturan_rt"
+        verbose_name = "Pengaturan RT"
+
+    @classmethod
+    def get_instance(cls):
+        obj, _ = cls.objects.get_or_create(pk=1, defaults={})
+        return obj
+
+    def __str__(self):
+        return f"{self.nama_rt}/{self.nama_rw} — {self.kelurahan}"

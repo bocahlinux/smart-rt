@@ -1,10 +1,19 @@
-import { ArrowLeft, CheckCircle2, Clock, FileText, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock, Download, FileText, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
-import { listPermohonan } from '@/services/suratService'
+import { downloadSuratPDF, listPermohonan } from '@/services/suratService'
 import type { PermohonanSurat, StatusPermohonan } from '@/types/surat'
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 const BULAN = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
 
@@ -19,6 +28,29 @@ const STATUS_CFG: Record<StatusPermohonan, { label: string; cls: string; icon: R
 function formatDate(iso: string) {
   const d = new Date(iso)
   return `${d.getDate()} ${BULAN[d.getMonth() + 1]} ${d.getFullYear()}`
+}
+
+function DownloadButton({ id, jenisKode }: { id: string; jenisKode: string }) {
+  const [downloading, setDownloading] = useState(false)
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      const blob = await downloadSuratPDF(id)
+      triggerDownload(blob, `surat-${jenisKode}-${id.slice(0, 8)}.pdf`)
+    } catch {/* silent */}
+    finally { setDownloading(false) }
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => void handleDownload()}
+      disabled={downloading}
+      className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400"
+    >
+      <Download className="h-3.5 w-3.5" />
+      {downloading ? 'Memuat…' : 'Unduh PDF'}
+    </button>
+  )
 }
 
 export function SuratRiwayatPage() {
@@ -94,12 +126,15 @@ export function SuratRiwayatPage() {
                   </div>
                 )}
 
-                {/* No surat jika sudah disetujui */}
-                {p.noSurat && (
-                  <div className="border-t border-emerald-50 bg-emerald-50/50 px-5 py-2.5 dark:border-emerald-900/20 dark:bg-emerald-900/10">
+                {/* No surat + tombol download jika sudah disetujui */}
+                {(p.status === 'disetujui' || p.status === 'selesai') && (
+                  <div className="flex items-center justify-between border-t border-emerald-50 bg-emerald-50/50 px-5 py-2.5 dark:border-emerald-900/20 dark:bg-emerald-900/10">
                     <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                      No. Surat: <span className="font-mono font-semibold">{p.noSurat}</span>
+                      {p.noSurat
+                        ? <>No. Surat: <span className="font-mono font-semibold">{p.noSurat}</span></>
+                        : <span className="italic">Surat disetujui</span>}
                     </p>
+                    <DownloadButton id={p.id} jenisKode={p.jenisKode} />
                   </div>
                 )}
               </div>

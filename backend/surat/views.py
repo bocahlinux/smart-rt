@@ -1,12 +1,13 @@
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import permissions, status
-from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import has_perm
-from .models import JenisSurat, PermohonanSurat
-from .serializers import JenisSuratSerializer, PermohonanSuratSerializer
+from .models import JenisSurat, PermohonanSurat, PengaturanRT
+from .serializers import JenisSuratSerializer, PermohonanSuratSerializer, PengaturanRTSerializer
 
 
 def _ok(data, status_code=200, pagination=None):
@@ -140,3 +141,103 @@ class PermohonanReviewView(APIView):
         obj.reviewed_at = timezone.now()
         obj.save()
         return _ok(PermohonanSuratSerializer(obj).data)
+
+
+# ── PDF Download ───────────────────────────────────────────────
+
+class SuratPDFView(APIView):
+    """
+    GET /surat/permohonan/{pk}/pdf/
+    Download surat dalam bentuk PDF.
+    Hanya tersedia jika status = disetujui / selesai.
+    Pemohon hanya bisa download miliknya sendiri; kelola_surat bisa semua.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            qs = PermohonanSurat.objects.select_related("pemohon__profile", "jenis", "reviewed_by")
+            if not has_perm(request.user, "kelola_surat"):
+                qs = qs.filter(pemohon=request.user)
+            obj = qs.get(pk=pk)
+        except PermohonanSurat.DoesNotExist:
+            return _err("Tidak ditemukan.", 404)
+
+        if obj.status not in (PermohonanSurat.Status.DISETUJUI, PermohonanSurat.Status.SELESAI):
+            return _err("Surat belum disetujui dan tidak dapat diunduh.", 400)
+
+        try:
+            from .pdf import generate_pdf
+            pdf_bytes = generate_pdf(obj)
+        except Exception as exc:
+            return _err(f"Gagal membuat PDF: {exc}", 500)
+
+        safe_nama = obj.jenis.kode.replace("_", "-")
+        filename = f"surat-{safe_nama}-{obj.id}.pdf"
+        resp = HttpResponse(pdf_bytes, content_type="application/pdf")
+        resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return resp
+
+
+# ── Pengaturan RT ──────────────────────────────────────────────
+
+class PengaturanRTView(APIView):
+    """
+    GET  /surat/pengaturan/        — ambil konfigurasi RT (semua yang login)
+    PATCH /surat/pengaturan/       — update konfigurasi RT (ketua_rt / admin)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        obj = PengaturanRT.get_instance()
+        return _ok(PengaturanRTSerializer(obj).data)
+
+    def patch(self, request):
+        if request.user.role not in ("admin", "ketua_rt", "sekretaris"):
+            return _err("Tidak memiliki izin.", 403)
+        obj = PengaturanRT.get_instance()
+        ser = PengaturanRTSerializer(obj, data=request.data, partial=True)
+        if not ser.is_valid():
+            return Response({"status": "error", "errors": ser.errors}, status=400)
+        ser.save(updated_by=request.user)
+        return _ok(PengaturanRTSerializer(obj).data)
+
+
+class PengaturanRTTTDView(APIView):
+    """
+    POST /surat/pengaturan/ttd/    — upload tanda tangan digital (image)
+    DELETE /surat/pengaturan/ttd/  — hapus tanda tangan
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        if request.user.role not in ("admin", "ketua_rt"):
+            return _err("Hanya Ketua RT atau Admin yang dapat mengunggah TTD.", 403)
+        file = request.FILES.get("tanda_tangan")
+        if not file:
+            return _err("File tanda_tangan wajib dikirim.")
+        if not file.content_type.startswith("image/"):
+            return _err("File harus berupa gambar (PNG/JPG).")
+        if file.size > 2 * 1024 * 1024:
+            return _err("Ukuran file maksimal 2 MB.")
+        obj = PengaturanRT.get_instance()
+        if obj.tanda_tangan:
+            try:
+                obj.tanda_tangan.delete(save=False)
+            except Exception:
+                pass
+        obj.tanda_tangan = file
+        obj.updated_by = request.user
+        obj.save()
+        return _ok({"hasTTD": True, "message": "Tanda tangan berhasil diunggah."})
+
+    def delete(self, request):
+        if request.user.role not in ("admin", "ketua_rt"):
+            return _err("Hanya Ketua RT atau Admin yang dapat menghapus TTD.", 403)
+        obj = PengaturanRT.get_instance()
+        if obj.tanda_tangan:
+            obj.tanda_tangan.delete(save=False)
+            obj.tanda_tangan = None
+            obj.save()
+        return _ok({"hasTTD": False, "message": "Tanda tangan dihapus."})

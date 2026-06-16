@@ -1,9 +1,36 @@
-import { CheckCircle2, ChevronDown, Clock, FileText, X, XCircle } from 'lucide-react'
+import { CheckCircle2, ChevronDown, Clock, Download, FileText, Settings2, X, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
-import { listPermohonan, reviewPermohonan } from '@/services/suratService'
+import { downloadSuratPDF, listPermohonan, reviewPermohonan } from '@/services/suratService'
 import type { PermohonanSurat, ReviewPermohonanPayload, StatusPermohonan } from '@/types/surat'
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
+function DownloadBtn({ id, jenisKode }: { id: string; jenisKode: string }) {
+  const [loading, setLoading] = useState(false)
+  async function go() {
+    setLoading(true)
+    try {
+      const blob = await downloadSuratPDF(id)
+      triggerDownload(blob, `surat-${jenisKode}-${id.slice(0, 8)}.pdf`)
+    } catch {/* silent */}
+    finally { setLoading(false) }
+  }
+  return (
+    <button type="button" onClick={() => void go()} disabled={loading}
+      className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
+      <Download className="h-3.5 w-3.5" />
+      {loading ? '…' : 'PDF'}
+    </button>
+  )
+}
 
 const BULAN = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
 
@@ -257,7 +284,12 @@ export function SuratKelolaPage() {
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">Kelola Surat Menyurat</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">Tinjau dan proses permohonan surat warga</p>
         </div>
-
+        <div className="flex items-center gap-2">
+          <Link to="/surat/pengaturan"
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+            <Settings2 className="h-4 w-4" /> Pengaturan RT
+          </Link>
+        </div>
         {/* Filter status */}
         <div className="relative">
           <select
@@ -323,13 +355,18 @@ export function SuratKelolaPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setReviewed(p)}
-                            className="rounded-lg border border-slate-200 px-3.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                          >
-                            {NEXT_STATUS[p.status].length > 0 ? 'Review' : 'Detail'}
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {(p.status === 'disetujui' || p.status === 'selesai') && (
+                              <DownloadBtn id={p.id} jenisKode={p.jenisKode} />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setReviewed(p)}
+                              className="rounded-lg border border-slate-200 px-3.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                            >
+                              {NEXT_STATUS[p.status].length > 0 ? 'Review' : 'Detail'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )

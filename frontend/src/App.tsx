@@ -38,6 +38,7 @@ import { PengajuanPage } from '@/components/kartuKeluarga/PengajuanPage'
 import { SuratPage } from '@/components/surat/SuratPage'
 import { SuratRiwayatPage } from '@/components/surat/SuratRiwayatPage'
 import { SuratKelolaPage } from '@/components/surat/SuratKelolaPage'
+import { SuratPengaturanPage } from '@/components/surat/SuratPengaturanPage'
 
 function App() {
   return (
@@ -103,6 +104,7 @@ function App() {
             <Route path="/surat" element={<SuratPage />} />
             <Route path="/surat/riwayat" element={<SuratRiwayatPage />} />
             <Route path="/surat/kelola" element={<SuratKelolaPage />} />
+            <Route path="/surat/pengaturan" element={<SuratPengaturanPage />} />
           </Route>
         </Route>
 

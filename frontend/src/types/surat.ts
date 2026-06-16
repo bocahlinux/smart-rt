@@ -37,3 +37,17 @@ export interface ReviewPermohonanPayload {
   catatan_admin?: string
   no_surat?: string
 }
+
+export interface PengaturanRT {
+  namaRT: string
+  namaRW: string
+  kelurahan: string
+  kecamatan: string
+  kota: string
+  provinsi: string
+  kodePOS: string
+  namaKetuaRT: string
+  nikKetuaRT: string
+  hasTTD: boolean
+  updatedAt: string | null
+}

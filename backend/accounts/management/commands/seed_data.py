@@ -1,28 +1,70 @@
 """
-Buat sample data untuk semua modul Smart-RT.
+Seed sample data untuk semua modul Smart-RT.
 
-Jalankan dengan:
+Jalankan:
     python manage.py seed_data
 
-Idempotent — aman dijalankan berkali-kali (pakai get_or_create).
-Untuk menghapus semua data lalu seed ulang:
+Seed ulang bersih:
     python manage.py seed_data --reset
+
+Idempotent — aman dijalankan berkali-kali.
 """
 import random
 from datetime import date, timedelta
+from itertools import cycle
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.utils.text import slugify
 
 User = get_user_model()
-
-# ── Konstanta ──────────────────────────────────────────────────────────────────
 
 TAHUN = date.today().year
 BULAN = date.today().month
 
-USERS = [
+# ── 100 nama warga Indonesia ──────────────────────────────────────────────────
+
+NAMA_LAKI = [
+    "Budi Santoso", "Agus Setiawan", "Andi Pratama", "Riko Firmansyah", "Doni Herwanto",
+    "Fajar Nugroho", "Hendra Kusuma", "Irwan Saputra", "Joko Widodo", "Kurniawan Aji",
+    "Lukman Hakim", "Muhammad Faisal", "Nanda Putra", "Oscar Ramadhan", "Prasetyo Wibowo",
+    "Qori Hidayat", "Rizki Permana", "Sandi Putra", "Teguh Santoso", "Usman Harun",
+    "Vino Bastian", "Wahyu Setiabudi", "Xaverius Hadi", "Yudi Prasetyo", "Zainal Abidin",
+    "Bambang Purnomo", "Cahyo Wicaksono", "Dedy Supriadi", "Eko Prabowo", "Ferry Andrianto",
+    "Gunawan Saputra", "Haryanto Susilo", "Imam Syafii", "Jimmy Sutomo", "Kevin Halim",
+    "Latif Hamdani", "Maman Suryadi", "Nanang Wijaya", "Oni Kurniawan", "Puguh Hartono",
+    "Qifli Hamdani", "Raffi Ahmad", "Surya Dharma", "Toni Wahyudi", "Udin Saputra",
+    "Valerian Hariadi", "Wawan Susanto", "Yoga Adiputra", "Zulkifli Hasim", "Aris Munandar",
+],
+
+NAMA_PEREMPUAN = [
+    "Sri Wahyuni", "Dewi Lestari", "Siti Rahayu", "Rina Marlina", "Yuni Astuti",
+    "Fitri Handayani", "Hesti Purwanti", "Indah Permatasari", "Juliana Susanti", "Kartika Dewi",
+    "Linda Wulandari", "Maya Anggraini", "Nisa Fauziyah", "Okta Ratnasari", "Putri Maharani",
+    "Rini Astuti", "Sari Dewi", "Tuti Handayani", "Umi Kulsum", "Vina Melati",
+    "Wati Rahayu", "Yani Kusuma", "Zakia Nur", "Anis Fitriana", "Baiq Rohani",
+    "Citra Lestari", "Dini Anggraini", "Endang Susilowati", "Farida Hanum", "Galuh Pramesthi",
+    "Hana Permata", "Iis Sumiati", "Juwita Sari", "Kiki Amelia", "Lilis Suryani",
+    "Mira Septiani", "Nana Supriyati", "Oni Rahayu", "Pipit Setiawati", "Qori Anisa",
+    "Retno Wulandari", "Suci Ramadhani", "Tika Fitriani", "Ummi Kalsum", "Vivi Oktavia",
+    "Wiwin Hartati", "Yayuk Prasetya", "Zeni Mardiana", "Anni Kusuma", "Bella Puspita",
+]
+
+# Flatten (NAMA_LAKI adalah tuple karena trailing comma)
+NAMA_LAKI = list(NAMA_LAKI[0])
+
+PEKERJAAN = [
+    "Karyawan Swasta", "PNS", "Wirausaha", "Buruh", "Petani",
+    "Pedagang", "Guru", "Dokter", "Polisi", "TNI",
+    "Ibu Rumah Tangga", "Driver Ojek Online", "Teknisi", "Wiraswasta", "Freelancer",
+]
+
+AGAMA = ["Islam", "Islam", "Islam", "Islam", "Kristen", "Katolik", "Hindu", "Buddha"]
+
+BLOK = ["A", "B", "C", "D", "E"]
+
+LOGIN_USERS = [
     # email, password, role, phone, nama
     ("admin@smart-rt.id",       "admin123",       "admin",      "08100000001", "Admin Sistem"),
     ("ketua@smart-rt.id",       "ketua123",       "ketua_rt",   "08100000002", "Bapak Suharto"),
@@ -36,38 +78,24 @@ USERS = [
     ("warga5@smart-rt.id",      "warga123",       "warga",      "08100000015", "Riko Firmansyah"),
 ]
 
-KK_LIST = [
-    # no_kk, alamat
-    ("3578010101010001", "Jl. Mawar No. 12, Blok A"),
-    ("3578010101010002", "Jl. Melati No. 5, Blok B"),
-    ("3578010101010003", "Jl. Anggrek No. 8, Blok C"),
-]
 
-# anggota per KK: (email_user, hubungan, blok, no_rumah, nik, jenis_kelamin)
-KK_ANGGOTA = {
-    "3578010101010001": [
-        ("warga1@smart-rt.id",  "kepala_keluarga", "A", "12", "3578010101010011", "L"),
-        ("warga2@smart-rt.id",  "istri",            "A", "12", "3578010101010012", "P"),
-    ],
-    "3578010101010002": [
-        ("warga3@smart-rt.id",  "kepala_keluarga", "B", "05", "3578010101010013", "L"),
-        ("warga4@smart-rt.id",  "istri",            "B", "05", "3578010101010014", "P"),
-    ],
-    "3578010101010003": [
-        ("warga5@smart-rt.id",  "kepala_keluarga", "C", "08", "3578010101010015", "L"),
-    ],
-}
+def _nik(idx: int) -> str:
+    """Generate 16-digit NIK unik."""
+    return f"35780101010{idx:05d}"
+
+
+def _tanggal_lahir(seed: int) -> date:
+    random.seed(seed)
+    offset = random.randint(8000, 22000)
+    return date(1970, 1, 1) + timedelta(days=offset)
 
 
 class Command(BaseCommand):
-    help = "Buat sample data untuk semua modul Smart-RT"
+    help = "Seed sample data 100 warga / 50 KK untuk Smart-RT"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--reset",
-            action="store_true",
-            help="Hapus semua data sample sebelum seed ulang (hati-hati!)",
-        )
+        parser.add_argument("--reset", action="store_true",
+                            help="Hapus user sample dan seed ulang")
 
     def handle(self, *args, **options):
         if options["reset"]:
@@ -75,37 +103,41 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.MIGRATE_HEADING("=== Seed Data Smart-RT ===\n"))
 
-        admin_user = self._seed_users()
-        self._seed_permissions(admin_user)
-        kk_map, user_map, profile_map = self._seed_warga()
+        admin_user = self._seed_login_users()
+        self._seed_permissions()
+        profile_map, user_warga = self._seed_warga_100(admin_user)
+        self._seed_pengaturan_rt(admin_user)
         self._seed_keuangan(admin_user)
         self._seed_iuran(admin_user, profile_map)
         self._seed_pengumuman(admin_user)
-        self._seed_kegiatan(admin_user, user_map)
-        self._seed_polling(admin_user, user_map)
-        self._seed_forum(admin_user, user_map)
-        self._seed_pengaduan(user_map)
-        self._seed_surat(user_map, admin_user)
+        self._seed_kegiatan(admin_user, user_warga)
+        self._seed_polling(admin_user, user_warga)
+        self._seed_forum(admin_user, user_warga)
+        self._seed_pengaduan(user_warga)
+        self._seed_surat(user_warga, admin_user)
 
         self.stdout.write(self.style.SUCCESS("\n✓ Seed data selesai!\n"))
         self.stdout.write("Akun login:")
-        for email, pw, role, *_ in USERS:
+        for email, pw, role, *_ in LOGIN_USERS:
             self.stdout.write(f"  {role:<12} {email} / {pw}")
 
-    # ── Reset ──────────────────────────────────────────────────────────────────
+    # ── Reset ─────────────────────────────────────────────────────────────────
 
     def _reset(self):
         self.stdout.write(self.style.WARNING("Menghapus data sample lama..."))
-        emails = [u[0] for u in USERS]
+        emails = [u[0] for u in LOGIN_USERS]
         User.objects.filter(email__in=emails).delete()
-        self.stdout.write("  Data user dan relasinya dihapus.")
+        # Hapus WargaProfile yang di-seed (yang tidak punya user)
+        from accounts.models import WargaProfile
+        WargaProfile.objects.filter(nik__startswith="357801010").delete()
+        self.stdout.write("  Data lama dihapus.")
 
-    # ── Users ──────────────────────────────────────────────────────────────────
+    # ── Login Users ───────────────────────────────────────────────────────────
 
-    def _seed_users(self):
-        self.stdout.write("→ Users & Profil...")
+    def _seed_login_users(self):
+        self.stdout.write("→ Login users (pengurus + 5 warga)...")
         admin_user = None
-        for email, pw, role, phone, _ in USERS:
+        for email, pw, role, phone, _ in LOGIN_USERS:
             user, created = User.objects.get_or_create(
                 email=email,
                 defaults={
@@ -119,16 +151,14 @@ class Command(BaseCommand):
             if created:
                 user.set_password(pw)
                 user.save()
-                self.stdout.write(f"  + {email} ({role})")
-            else:
-                self.stdout.write(f"  ~ {email} sudah ada")
             if role == "admin":
                 admin_user = user
+        self.stdout.write(f"  {len(LOGIN_USERS)} user siap")
         return admin_user
 
-    # ── Permissions ────────────────────────────────────────────────────────────
+    # ── Permissions ───────────────────────────────────────────────────────────
 
-    def _seed_permissions(self, admin_user):
+    def _seed_permissions(self):
         from accounts.permissions import DEFAULT_PERMISSIONS
         from accounts.models import PermissionConfig
 
@@ -146,192 +176,261 @@ class Command(BaseCommand):
             )
             if is_new:
                 created += 1
-        self.stdout.write(f"  + {created} permission baru")
+        self.stdout.write(f"  + {created} permission")
 
-    # ── Warga & KK ────────────────────────────────────────────────────────────
+    # ── 100 Warga / 50 KK ────────────────────────────────────────────────────
 
-    def _seed_warga(self):
+    def _seed_warga_100(self, admin_user):
         from kartu_keluarga.models import KartuKeluarga
         from accounts.models import WargaProfile
 
-        self.stdout.write("→ Kartu Keluarga & Warga Profile...")
+        self.stdout.write("→ 100 Warga / 50 KK...")
 
-        admin_user = User.objects.get(email="admin@smart-rt.id")
-        user_map = {u.email: u for u in User.objects.filter(email__in=[u[0] for u in USERS])}
+        all_login_users = {u[0]: u for u in LOGIN_USERS}
+        user_map = {u.email: u for u in User.objects.filter(
+            email__in=[u[0] for u in LOGIN_USERS]
+        )}
 
-        # Buat KK
-        kk_map = {}
-        for no_kk, alamat in KK_LIST:
-            kk, created = KartuKeluarga.objects.get_or_create(
-                no_kk=no_kk,
-                defaults={"alamat": alamat, "created_by": admin_user},
-            )
-            kk_map[no_kk] = kk
-            if created:
-                self.stdout.write(f"  + KK {no_kk}")
+        # KK structure: 50 KK, total 100 anggota
+        # 10 KK × 3 anggota = 30, 30 KK × 2 anggota = 60, 10 KK × 1 anggota = 10
+        kk_sizes = [3] * 10 + [2] * 30 + [1] * 10  # total = 100 anggota
+        assert sum(kk_sizes) == 100
 
-        # Buat WargaProfile
+        nama_laki_cycle = cycle(NAMA_LAKI)
+        nama_perempuan_cycle = cycle(NAMA_PEREMPUAN)
+
+        # Warga login yang sudah punya profil
+        WARGA_LOGIN = [
+            ("warga1@smart-rt.id", "Budi Santoso",    "L"),
+            ("warga2@smart-rt.id", "Sri Wahyuni",     "P"),
+            ("warga3@smart-rt.id", "Andi Pratama",    "L"),
+            ("warga4@smart-rt.id", "Dewi Lestari",    "P"),
+            ("warga5@smart-rt.id", "Riko Firmansyah", "L"),
+        ]
+        warga_login_cycle = cycle(WARGA_LOGIN)
+
         profile_map = {}
-        for no_kk, anggota_list in KK_ANGGOTA.items():
-            kk = kk_map[no_kk]
-            for email, hubungan, blok, no_rumah, nik, jk in anggota_list:
-                user = user_map.get(email)
-                if not user:
-                    continue
-                # Cari nama dari USERS
-                nama = next((u[4] for u in USERS if u[0] == email), email.split("@")[0])
+        user_warga = []
+        nik_counter = 1
+
+        for kk_idx, size in enumerate(kk_sizes, start=1):
+            no_kk = f"35780101010{kk_idx:05d}"
+            blok = BLOK[kk_idx % len(BLOK)]
+            no_rumah = str((kk_idx % 30) + 1)
+            alamat_kk = f"Jl. Lingkungan Blok {blok} No. {no_rumah}"
+
+            kk, _ = KartuKeluarga.objects.get_or_create(
+                no_kk=no_kk,
+                defaults={"alamat": alamat_kk, "created_by": admin_user},
+            )
+
+            for anggota_idx in range(size):
+                hubungan = (
+                    "kepala_keluarga" if anggota_idx == 0 else
+                    "istri" if anggota_idx == 1 else
+                    "anak"
+                )
+
+                # Tentukan jenis kelamin
+                if hubungan == "kepala_keluarga":
+                    jk = "L"
+                elif hubungan == "istri":
+                    jk = "P"
+                else:
+                    jk = random.choice(["L", "P"])
+
+                # Pilih nama
+                nama = next(nama_laki_cycle) if jk == "L" else next(nama_perempuan_cycle)
+
+                # Cek apakah ini slot untuk warga login (5 warga pertama)
+                linked_user = None
+                if kk_idx <= 3 and anggota_idx == 0:
+                    try:
+                        email, nama_override, jk_override = next(warga_login_cycle)
+                        linked_user = user_map.get(email)
+                        nama = nama_override
+                        jk = jk_override
+                    except StopIteration:
+                        pass
+                elif kk_idx == 3 and anggota_idx == 1:
+                    # warga2 adalah istri di KK ke-3
+                    try:
+                        email, nama_override, jk_override = next(warga_login_cycle)
+                        linked_user = user_map.get(email)
+                        nama = nama_override
+                        jk = jk_override
+                    except StopIteration:
+                        pass
+
+                nik = _nik(nik_counter)
+                nik_counter += 1
+                tgl_lahir = _tanggal_lahir(nik_counter * 7)
+                random.seed(nik_counter)
+
+                status_perkawinan = (
+                    "kawin" if hubungan in ("kepala_keluarga", "istri") else
+                    "belum_kawin" if (date.today().year - tgl_lahir.year) < 22 else
+                    random.choice(["belum_kawin", "kawin"])
+                )
+
                 profile, created = WargaProfile.objects.get_or_create(
                     nik=nik,
                     defaults={
-                        "user": user,
+                        "user": linked_user,
                         "nama_lengkap": nama,
-                        "tempat_lahir": "Surabaya",
-                        "tanggal_lahir": date(1990, 1, 15),
+                        "tempat_lahir": random.choice(["Surabaya", "Malang", "Sidoarjo", "Gresik", "Lamongan"]),
+                        "tanggal_lahir": tgl_lahir,
                         "jenis_kelamin": jk,
-                        "agama": "Islam",
-                        "status_perkawinan": "kawin" if hubungan in ("kepala_keluarga", "istri") else "belum_kawin",
-                        "pekerjaan": "Karyawan Swasta",
+                        "agama": random.choice(AGAMA),
+                        "status_perkawinan": status_perkawinan,
+                        "pekerjaan": random.choice(PEKERJAAN),
                         "kartu_keluarga": kk,
                         "hubungan_keluarga": hubungan,
-                        "alamat": kk.alamat,
+                        "alamat": alamat_kk,
                         "blok": blok,
                         "no_rumah": no_rumah,
                         "status": "aktif",
                     },
                 )
-                profile_map[email] = profile
-                if created:
-                    self.stdout.write(f"  + Profil {nama} ({hubungan})")
+                profile_map[nik] = profile
 
-        return kk_map, user_map, profile_map
+                # Warga yang punya user account
+                if linked_user:
+                    user_warga.append(linked_user)
 
-    # ── Keuangan ──────────────────────────────────────────────────────────────
+        # Tambahkan warga4 dan warga5 ke user_warga secara manual
+        for email in ("warga4@smart-rt.id", "warga5@smart-rt.id"):
+            u = user_map.get(email)
+            if u and u not in user_warga:
+                user_warga.append(u)
+
+        self.stdout.write(f"  + {WargaProfile.objects.count()} profil warga, "
+                          f"50 KK, {len(user_warga)} akun warga aktif")
+        return profile_map, user_warga
+
+    # ── Pengaturan RT ─────────────────────────────────────────────────────────
+
+    def _seed_pengaturan_rt(self, admin_user):
+        from surat.models import PengaturanRT
+
+        self.stdout.write("→ Pengaturan RT...")
+        obj = PengaturanRT.get_instance()
+        if not obj.nama_ketua_rt:
+            obj.nama_rt = "RT 04"
+            obj.nama_rw = "RW 03"
+            obj.kelurahan = "Kel. Keputran"
+            obj.kecamatan = "Kec. Tegalsari"
+            obj.kota = "Kota Surabaya"
+            obj.provinsi = "Jawa Timur"
+            obj.kode_pos = "60265"
+            obj.nama_ketua_rt = "Suharto Wibowo"
+            obj.nik_ketua_rt = "3578010101010002"
+            obj.updated_by = admin_user
+            obj.save()
+            self.stdout.write("  + Pengaturan RT dikonfigurasi")
+        else:
+            self.stdout.write("  ~ Pengaturan RT sudah ada")
+
+    # ── Keuangan ─────────────────────────────────────────────────────────────
 
     def _seed_keuangan(self, admin_user):
         from keuangan.models import KategoriTransaksi, Transaksi, JenisIuran, PengaturanIuran
 
         self.stdout.write("→ Keuangan...")
 
-        # Kategori
         KATEGORI = [
-            ("Iuran Warga", "pemasukan"),
-            ("Kas Masuk", "pemasukan"),
-            ("Sumbangan / Donasi", "pemasukan"),
-            ("Dana Hibah", "pemasukan"),
-            ("Pendapatan Lain", "pemasukan"),
-            ("Operasional RT", "pengeluaran"),
-            ("Kegiatan Warga", "pengeluaran"),
-            ("Kebersihan & Lingkungan", "pengeluaran"),
-            ("Keamanan", "pengeluaran"),
-            ("Perbaikan Fasilitas", "pengeluaran"),
-            ("Administrasi", "pengeluaran"),
-            ("Pengeluaran Lain", "pengeluaran"),
+            ("Iuran Warga", "pemasukan"), ("Kas Masuk", "pemasukan"),
+            ("Sumbangan / Donasi", "pemasukan"), ("Dana Hibah", "pemasukan"),
+            ("Pendapatan Lain", "pemasukan"), ("Operasional RT", "pengeluaran"),
+            ("Kegiatan Warga", "pengeluaran"), ("Kebersihan & Lingkungan", "pengeluaran"),
+            ("Keamanan", "pengeluaran"), ("Perbaikan Fasilitas", "pengeluaran"),
+            ("Administrasi", "pengeluaran"), ("Pengeluaran Lain", "pengeluaran"),
         ]
         kat_map = {}
         for nama, tipe in KATEGORI:
             kat, _ = KategoriTransaksi.objects.get_or_create(nama=nama, tipe=tipe)
             kat_map[(nama, tipe)] = kat
 
-        # Jenis Iuran
-        JenisIuran.objects.get_or_create(
-            slug="iuran-bulanan",
-            defaults={
-                "nama": "Iuran Bulanan",
-                "tipe": "wajib",
-                "unit": "per_kk",
-                "nominal": 50000,
-                "keterangan": "Iuran wajib bulanan per KK",
-                "is_active": True,
-                "urutan": 1,
-            },
-        )
-        JenisIuran.objects.get_or_create(
-            slug="iuran-kebersihan",
-            defaults={
-                "nama": "Iuran Kebersihan",
-                "tipe": "wajib",
-                "unit": "per_kk",
-                "nominal": 20000,
-                "keterangan": "Iuran kebersihan lingkungan per KK",
-                "is_active": True,
-                "urutan": 2,
-            },
-        )
-        self.stdout.write("  + Kategori transaksi & jenis iuran")
+        JenisIuran.objects.get_or_create(slug="iuran-bulanan", defaults={
+            "nama": "Iuran Bulanan", "tipe": "wajib", "unit": "per_kk",
+            "nominal": 50000, "keterangan": "Iuran wajib bulanan per KK",
+            "is_active": True, "urutan": 1,
+        })
+        JenisIuran.objects.get_or_create(slug="iuran-kebersihan", defaults={
+            "nama": "Iuran Kebersihan", "tipe": "wajib", "unit": "per_kk",
+            "nominal": 20000, "keterangan": "Iuran kebersihan per KK",
+            "is_active": True, "urutan": 2,
+        })
 
-        # Pengaturan iuran
         PengaturanIuran.get_instance()
 
-        # Transaksi 6 bulan terakhir
-        pemasukan_kat = kat_map.get(("Iuran Warga", "pemasukan"))
-        kegiatan_kat = kat_map.get(("Kegiatan Warga", "pengeluaran"))
-        kebersihan_kat = kat_map.get(("Kebersihan & Lingkungan", "pengeluaran"))
-        operasional_kat = kat_map.get(("Operasional RT", "pengeluaran"))
-
+        # 6 bulan transaksi
+        pemasukan_kat = kat_map[("Iuran Warga", "pemasukan")]
         created = 0
+        pengeluaran_kategori = [
+            kat_map[("Kegiatan Warga", "pengeluaran")],
+            kat_map[("Kebersihan & Lingkungan", "pengeluaran")],
+            kat_map[("Operasional RT", "pengeluaran")],
+            kat_map[("Keamanan", "pengeluaran")],
+        ]
         for i in range(6):
-            tgl_offset = date.today().replace(day=15) - timedelta(days=30 * i)
-            bulan = tgl_offset.month
-            tahun = tgl_offset.year
+            tgl = date.today().replace(day=10)
+            bln = BULAN - i
+            thn = TAHUN
+            if bln <= 0:
+                bln += 12
+                thn -= 1
+            tgl = date(thn, bln, 10)
 
-            # Pemasukan iuran
             _, is_new = Transaksi.objects.get_or_create(
-                kategori=pemasukan_kat,
-                tanggal=date(tahun, bulan, 10),
-                tipe="pemasukan",
-                keterangan=f"Iuran warga bulan {bulan}/{tahun}",
-                defaults={
-                    "jumlah": 350000,
-                    "status": "confirmed",
-                    "created_by": admin_user,
-                },
+                kategori=pemasukan_kat, tanggal=tgl, tipe="pemasukan",
+                keterangan=f"Iuran warga bulan {bln}/{thn}",
+                defaults={"jumlah": 50000 * 50, "status": "confirmed", "created_by": admin_user},
             )
             if is_new:
                 created += 1
 
-            # Pengeluaran
+            kat_keluar = pengeluaran_kategori[i % len(pengeluaran_kategori)]
             _, is_new = Transaksi.objects.get_or_create(
-                kategori=kegiatan_kat if i % 2 == 0 else kebersihan_kat,
-                tanggal=date(tahun, bulan, 20),
-                tipe="pengeluaran",
-                keterangan=f"Pengeluaran rutin bulan {bulan}/{tahun}",
-                defaults={
-                    "jumlah": random.choice([150000, 200000, 175000, 120000]),
-                    "status": "confirmed",
-                    "created_by": admin_user,
-                },
+                kategori=kat_keluar, tanggal=date(thn, bln, 25), tipe="pengeluaran",
+                keterangan=f"Pengeluaran rutin bulan {bln}/{thn}",
+                defaults={"jumlah": random.randint(3, 8) * 100000, "status": "confirmed", "created_by": admin_user},
             )
             if is_new:
                 created += 1
 
-        self.stdout.write(f"  + {created} transaksi sample")
+        self.stdout.write(f"  + {created} transaksi")
 
-    # ── Iuran Warga ───────────────────────────────────────────────────────────
+    # ── Iuran ─────────────────────────────────────────────────────────────────
 
     def _seed_iuran(self, admin_user, profile_map):
         from keuangan.models import IuranWarga, JenisIuran
+        from accounts.models import WargaProfile
 
-        self.stdout.write("→ Iuran Warga...")
+        self.stdout.write("→ Iuran warga (kepala keluarga 50 KK × 3 bulan)...")
 
         jenis = JenisIuran.objects.filter(slug="iuran-bulanan").first()
         if not jenis:
             return
 
-        warga_emails = [u[0] for u in USERS if u[2] == "warga"]
+        # Ambil 1 profil per KK (kepala keluarga)
+        kepala_kk_profiles = WargaProfile.objects.filter(
+            hubungan_keluarga="kepala_keluarga",
+            is_deleted=False,
+        ).select_related("kartu_keluarga")[:50]
+
         created = 0
-        for email in warga_emails:
-            profile = profile_map.get(email)
-            if not profile:
-                continue
-            for i in range(3):
-                bln = BULAN - i if BULAN - i >= 1 else BULAN - i + 12
-                thn = TAHUN if BULAN - i >= 1 else TAHUN - 1
-                status = "lunas" if i > 0 else ("pending" if email == warga_emails[-1] else "lunas")
+        for i, profile in enumerate(kepala_kk_profiles):
+            for bulan_offset in range(3):
+                bln = BULAN - bulan_offset
+                thn = TAHUN
+                if bln <= 0:
+                    bln += 12
+                    thn -= 1
+                # Sebagian pending, sebagian lunas
+                status = "pending" if (bulan_offset == 0 and i % 5 == 0) else "lunas"
                 _, is_new = IuranWarga.objects.get_or_create(
-                    warga=profile,
-                    jenis=jenis,
-                    bulan=bln,
-                    tahun=thn,
+                    warga=profile, jenis=jenis, bulan=bln, tahun=thn,
                     defaults={
                         "jumlah": 50000,
                         "status": status,
@@ -350,253 +449,179 @@ class Command(BaseCommand):
         from pengumuman.models import Pengumuman
 
         self.stdout.write("→ Pengumuman...")
-
         DATA = [
-            ("Rapat Warga Bulanan", "Diinformasikan kepada seluruh warga RT bahwa akan diadakan rapat warga bulanan pada Sabtu, 21 Juni 2025 pukul 19.00 WIB bertempat di Balai RT.", "acara"),
-            ("Peringatan Keamanan Lingkungan", "Kepada seluruh warga, harap waspada terhadap tindak kejahatan di malam hari. Pastikan rumah terkunci dengan baik dan laporkan hal mencurigakan ke ketua RT.", "keamanan"),
-            ("Jadwal Pengangkutan Sampah", "Mulai bulan ini, jadwal pengangkutan sampah berubah menjadi setiap Senin, Rabu, dan Jumat pagi pukul 06.00 WIB.", "info"),
-            ("Gotong Royong RT", "Agenda gotong royong membersihkan saluran air dan taman lingkungan dijadwalkan pada hari Minggu, 22 Juni 2025 pukul 07.00 WIB.", "acara"),
-            ("Pembayaran Iuran Bulan Juni", "Reminder pembayaran iuran RT bulan Juni 2025. Harap segera melakukan pembayaran melalui aplikasi atau langsung ke bendahara RT.", "penting"),
+            ("Rapat Warga Bulanan", "Diinformasikan kepada seluruh warga RT bahwa akan diadakan rapat warga bulanan pada Sabtu mendatang pukul 19.00 WIB bertempat di Balai RT. Kehadiran seluruh kepala keluarga sangat diharapkan.", "acara"),
+            ("Peringatan Keamanan Lingkungan", "Kepada seluruh warga, harap waspada terhadap tindak kejahatan di malam hari. Pastikan rumah terkunci dengan baik. Segera laporkan hal mencurigakan ke ketua RT.", "keamanan"),
+            ("Jadwal Pengangkutan Sampah", "Mulai bulan ini jadwal pengangkutan sampah berubah menjadi setiap Senin, Rabu, dan Jumat pagi pukul 06.00 WIB. Harap letakkan sampah di depan rumah sebelum jam tersebut.", "info"),
+            ("Gotong Royong RT", "Agenda gotong royong membersihkan saluran air dan taman lingkungan dijadwalkan Minggu pagi pukul 07.00 WIB. Setiap rumah tangga diharapkan mengirimkan minimal 1 perwakilan.", "acara"),
+            ("Pembayaran Iuran Bulanan", "Reminder pembayaran iuran RT. Harap segera melakukan pembayaran melalui aplikasi Smart-RT atau langsung ke bendahara RT paling lambat tanggal 20 setiap bulannya.", "penting"),
         ]
-        created = 0
-        for judul, isi, kategori in DATA:
-            _, is_new = Pengumuman.objects.get_or_create(
-                judul=judul,
-                defaults={
-                    "isi": isi,
-                    "kategori": kategori,
-                    "is_published": True,
-                    "created_by": admin_user,
-                },
-            )
-            if is_new:
-                created += 1
-
+        created = sum(
+            1 for judul, isi, kat in DATA
+            if Pengumuman.objects.get_or_create(judul=judul, defaults={
+                "isi": isi, "kategori": kat, "is_published": True, "created_by": admin_user,
+            })[1]
+        )
         self.stdout.write(f"  + {created} pengumuman")
 
     # ── Kegiatan ──────────────────────────────────────────────────────────────
 
-    def _seed_kegiatan(self, admin_user, user_map):
+    def _seed_kegiatan(self, admin_user, user_warga):
         from kegiatan.models import Kegiatan, RSVP
 
         self.stdout.write("→ Kegiatan...")
-
         now = timezone.now()
         DATA = [
-            ("Rapat Warga Bulanan",          now + timedelta(days=5),  "Balai RT",          20),
-            ("Gotong Royong Bersih Saluran",  now + timedelta(days=10), "Lingkungan RT",     None),
-            ("Peringatan 17 Agustus",         now + timedelta(days=62), "Lapangan RT",       None),
-            ("Pemilihan Ketua RT",            now + timedelta(days=90), "Balai Desa",        50),
-            ("Senam Pagi Warga",              now - timedelta(days=7),  "Depan Pos Ronda",   None),
+            ("Rapat Warga Bulanan",         now + timedelta(days=5),   "Balai RT",         20),
+            ("Gotong Royong Saluran Air",    now + timedelta(days=10),  "Lingkungan RT",    None),
+            ("Peringatan HUT RI ke-80",      now + timedelta(days=62),  "Lapangan RT",      None),
+            ("Pemilihan Ketua RT Periode Baru", now + timedelta(days=90), "Balai Desa",     50),
+            ("Senam Pagi Warga",             now - timedelta(days=7),   "Depan Pos Ronda",  None),
+            ("Bazar Ramadhan",               now + timedelta(days=30),  "Jl. Lingkungan",   None),
         ]
         created = 0
         for nama, tgl, lokasi, kuota in DATA:
-            _, is_new = Kegiatan.objects.get_or_create(
+            keg, is_new = Kegiatan.objects.get_or_create(
                 nama=nama,
-                defaults={
-                    "tanggal": tgl,
-                    "lokasi": lokasi,
-                    "kuota_peserta": kuota,
-                    "created_by": admin_user,
-                },
+                defaults={"tanggal": tgl, "lokasi": lokasi, "kuota_peserta": kuota, "created_by": admin_user},
             )
             if is_new:
                 created += 1
-
-        # RSVP dari warga
-        kegiatan = Kegiatan.objects.first()
-        if kegiatan:
-            warga_users = [u for u in user_map.values() if u.role == "warga"]
-            for warga in warga_users:
-                RSVP.objects.get_or_create(
-                    kegiatan=kegiatan,
-                    user=warga,
-                    defaults={"status": "hadir"},
-                )
-
+                for i, u in enumerate(user_warga[:5]):
+                    RSVP.objects.get_or_create(
+                        kegiatan=keg, user=u,
+                        defaults={"status": "hadir" if i < 3 else "masih_ragu"},
+                    )
         self.stdout.write(f"  + {created} kegiatan")
 
     # ── Polling ───────────────────────────────────────────────────────────────
 
-    def _seed_polling(self, admin_user, user_map):
+    def _seed_polling(self, admin_user, user_warga):
         from polling.models import Poll, Vote
 
         self.stdout.write("→ Polling...")
-
         now = timezone.now()
         DATA = [
-            (
-                "Kapan waktu yang tepat untuk rapat warga bulanan?",
-                ["Sabtu pagi (08.00-10.00)", "Sabtu malam (19.00-21.00)", "Minggu pagi (08.00-10.00)"],
-                now + timedelta(days=7),
-            ),
-            (
-                "Jenis kegiatan apa yang ingin diadakan untuk HUT RI ke-80?",
-                ["Lomba 17-an klasik", "Pentas seni warga", "Turnamen olahraga", "Kerja bakti + tasyakuran"],
-                now + timedelta(days=30),
-            ),
-            (
-                "Bagaimana pendapat Anda tentang fasilitas taman RT saat ini?",
-                ["Sudah baik", "Perlu sedikit perbaikan", "Perlu renovasi total"],
-                now - timedelta(days=3),
-            ),
+            ("Kapan waktu tepat rapat warga bulanan?",
+             ["Sabtu pagi (08.00-10.00)", "Sabtu malam (19.00-21.00)", "Minggu pagi (08.00-10.00)"],
+             now + timedelta(days=7)),
+            ("Jenis kegiatan HUT RI ke-80?",
+             ["Lomba 17-an klasik", "Pentas seni warga", "Turnamen olahraga", "Kerja bakti + tasyakuran"],
+             now + timedelta(days=30)),
+            ("Bagaimana kondisi fasilitas taman RT saat ini?",
+             ["Sudah baik", "Perlu sedikit perbaikan", "Perlu renovasi total"],
+             now - timedelta(days=3)),
         ]
-        warga_users = [u for u in user_map.values() if u.role == "warga"]
-        created_poll = 0
+        created = 0
         for pertanyaan, opsi, deadline in DATA:
             poll, is_new = Poll.objects.get_or_create(
                 pertanyaan=pertanyaan,
-                defaults={
-                    "opsi": opsi,
-                    "deadline": deadline,
-                    "created_by": admin_user,
-                },
+                defaults={"opsi": opsi, "deadline": deadline, "created_by": admin_user},
             )
             if is_new:
-                created_poll += 1
-                # Tambah beberapa vote
-                for i, warga in enumerate(warga_users):
+                created += 1
+                for i, u in enumerate(user_warga):
                     Vote.objects.get_or_create(
-                        poll=poll,
-                        user=warga,
+                        poll=poll, user=u,
                         defaults={"opsi_index": i % len(opsi)},
                     )
-
-        self.stdout.write(f"  + {created_poll} polling")
+        self.stdout.write(f"  + {created} polling")
 
     # ── Forum ─────────────────────────────────────────────────────────────────
 
-    def _seed_forum(self, admin_user, user_map):
+    def _seed_forum(self, admin_user, user_warga):
         from forum.models import Thread, Comment
 
         self.stdout.write("→ Forum Diskusi...")
-
-        warga_users = list(user_map.values())
         DATA = [
-            (
-                "Usul pemasangan CCTV di gerbang RT",
-                "Menurut saya, perlu dipasang CCTV di gerbang masuk RT untuk meningkatkan keamanan. Bagaimana pendapat warga lain?",
-                "keamanan",
-                [
-                    ("Saya setuju sekali! Kejadian kemarin bikin was-was.", 1),
-                    ("Perlu dibahas dulu soal anggaran dan siapa yang mengelola.", 2),
-                ],
-            ),
-            (
-                "Jadwal piket jaga malam",
-                "Apakah kita perlu mengaktifkan kembali jadwal ronda malam? Kondisi keamanan lingkungan belakangan ini cukup mengkhawatirkan.",
-                "keamanan",
-                [
-                    ("Setuju, saya siap ikut ronda setiap Senin.", 3),
-                ],
-            ),
-            (
-                "Usul pengadaan tempat sampah pilah di tiap blok",
-                "Bagaimana kalau kita usulkan pengadaan tempat sampah pilah (organik dan anorganik) di tiap blok? Ini bisa membantu program lingkungan bersih.",
-                "usul",
-                [],
-            ),
+            ("Usul pemasangan CCTV di gerbang RT",
+             "Menurut saya perlu dipasang CCTV di gerbang masuk RT untuk meningkatkan keamanan. Bagaimana pendapat warga lain?",
+             "keamanan",
+             [("Saya setuju! Kejadian kemarin bikin was-was.", 0),
+              ("Perlu dibahas soal anggaran dan siapa yang mengelola.", 1)]),
+            ("Jadwal piket jaga malam perlu diaktifkan?",
+             "Apakah kita perlu mengaktifkan kembali ronda malam? Kondisi keamanan belakangan ini cukup mengkhawatirkan.",
+             "keamanan",
+             [("Setuju, saya siap ikut ronda setiap Senin.", 2)]),
+            ("Usul tempat sampah pilah di tiap blok",
+             "Bagaimana kalau kita usulkan tempat sampah pilah (organik/anorganik) di tiap blok? Lebih ramah lingkungan.",
+             "usul", []),
         ]
         created = 0
-        for judul, isi, kategori, comments in DATA:
+        for judul, isi, kat, comments in DATA:
             thread, is_new = Thread.objects.get_or_create(
                 judul=judul,
-                defaults={
-                    "isi": isi,
-                    "kategori": kategori,
-                    "created_by": admin_user,
-                },
+                defaults={"isi": isi, "kategori": kat, "created_by": admin_user},
             )
             if is_new:
                 created += 1
-                for komentar_isi, user_idx in comments:
-                    commenter = warga_users[user_idx % len(warga_users)]
-                    Comment.objects.create(thread=thread, isi=komentar_isi, created_by=commenter)
-
-        self.stdout.write(f"  + {created} thread forum")
+                for komentar, uid in comments:
+                    if uid < len(user_warga):
+                        Comment.objects.create(thread=thread, isi=komentar, created_by=user_warga[uid])
+        self.stdout.write(f"  + {created} thread")
 
     # ── Pengaduan ─────────────────────────────────────────────────────────────
 
-    def _seed_pengaduan(self, user_map):
+    def _seed_pengaduan(self, user_warga):
         from pengaduan.models import Pengaduan
 
         self.stdout.write("→ Pengaduan...")
-
-        warga_users = [u for u in user_map.values() if u.role == "warga"]
-        if not warga_users:
+        if not user_warga:
             return
-
         DATA = [
-            (warga_users[0], "Jalan berlubang di depan Blok A",
-             "Terdapat lubang besar di jalan depan Blok A nomor 10-12 yang membahayakan pengendara sepeda motor, terutama saat malam hari.",
-             "infrastruktur", "diajukan"),
-            (warga_users[1], "Lampu jalan mati di Blok B",
-             "Lampu jalan di dekat pos ronda Blok B sudah mati sejak 2 minggu lalu dan belum diperbaiki.",
-             "infrastruktur", "diproses"),
-            (warga_users[2] if len(warga_users) > 2 else warga_users[0],
-             "Sampah menumpuk di dekat saluran air",
-             "Ada tumpukan sampah yang tidak diangkut selama beberapa hari di dekat saluran air Blok C, menimbulkan bau tidak sedap.",
-             "kebersihan", "selesai"),
+            (0, "Jalan berlubang di depan Blok A", "Ada lubang besar di jalan depan Blok A No. 10-12 yang membahayakan pengendara.", "infrastruktur", "diajukan"),
+            (1, "Lampu jalan mati di Blok B", "Lampu jalan di dekat pos ronda Blok B sudah mati sejak 2 minggu lalu.", "infrastruktur", "diproses"),
+            (2, "Sampah menumpuk dekat saluran air", "Tumpukan sampah di Blok C tidak diangkut selama beberapa hari, menimbulkan bau.", "kebersihan", "selesai"),
+            (3, "Air PDAM keruh sejak kemarin", "Air PDAM di blok D mengalami kekeruhan sejak kemarin sore. Mohon segera ditindaklanjuti.", "infrastruktur", "diajukan"),
         ]
         created = 0
-        for warga, judul, deskripsi, kategori, status in DATA:
+        for uid, judul, deskripsi, kat, status in DATA:
+            u = user_warga[uid % len(user_warga)]
             _, is_new = Pengaduan.objects.get_or_create(
-                warga=warga,
-                judul=judul,
+                warga=u, judul=judul,
                 defaults={
-                    "deskripsi": deskripsi,
-                    "kategori": kategori,
-                    "status": status,
-                    "status_history": [
-                        {"status": "diajukan", "keterangan": "Pengaduan diterima", "updatedBy": warga.email, "updatedAt": timezone.now().isoformat()},
-                    ],
+                    "deskripsi": deskripsi, "kategori": kat, "status": status,
+                    "status_history": [{"status": "diajukan", "keterangan": "Masuk",
+                                        "updatedBy": u.email, "updatedAt": timezone.now().isoformat()}],
                 },
             )
             if is_new:
                 created += 1
-
         self.stdout.write(f"  + {created} pengaduan")
 
-    # ── Surat Menyurat ────────────────────────────────────────────────────────
+    # ── Surat ─────────────────────────────────────────────────────────────────
 
-    def _seed_surat(self, user_map, admin_user):
+    def _seed_surat(self, user_warga, admin_user):
         try:
             from surat.models import JenisSurat, PermohonanSurat
         except ImportError:
-            self.stdout.write(self.style.WARNING("  ! Modul surat belum ter-install, skip."))
             return
 
         self.stdout.write("→ Permohonan Surat...")
-
-        warga_users = [u for u in user_map.values() if u.role == "warga"]
-        if not warga_users:
-            return
-
         jenis_domisili = JenisSurat.objects.filter(kode="domisili").first()
         jenis_pengantar = JenisSurat.objects.filter(kode="pengantar").first()
-        if not jenis_domisili or not jenis_pengantar:
-            self.stdout.write(self.style.WARNING("  ! JenisSurat belum di-seed, jalankan migrate dulu."))
+        jenis_sktm = JenisSurat.objects.filter(kode="tidak_mampu").first()
+        if not jenis_domisili or not user_warga:
             return
 
         DATA = [
-            (warga_users[0], jenis_domisili, "Keperluan melamar pekerjaan di perusahaan swasta.", "disetujui", "001/RT04/VI/2025"),
-            (warga_users[1] if len(warga_users) > 1 else warga_users[0], jenis_pengantar, "Mengurus surat pindah domisili ke kelurahan.", "diajukan", None),
+            (user_warga[0], jenis_domisili, "Keperluan melamar pekerjaan.", "disetujui", "001/RT04/VI/2025"),
+            (user_warga[1] if len(user_warga) > 1 else user_warga[0], jenis_pengantar, "Mengurus surat pindah ke kelurahan.", "diajukan", None),
+            (user_warga[2] if len(user_warga) > 2 else user_warga[0], jenis_sktm or jenis_domisili, "Untuk beasiswa pendidikan anak.", "diproses", None),
         ]
         created = 0
         for pemohon, jenis, keperluan, status, no_surat in DATA:
+            if not jenis:
+                continue
             _, is_new = PermohonanSurat.objects.get_or_create(
-                pemohon=pemohon,
-                jenis=jenis,
+                pemohon=pemohon, jenis=jenis,
                 defaults={
-                    "keperluan": keperluan,
-                    "status": status,
-                    "no_surat": no_surat,
-                    "reviewed_by": admin_user if status != "diajukan" else None,
-                    "reviewed_at": timezone.now() if status != "diajukan" else None,
+                    "keperluan": keperluan, "status": status, "no_surat": no_surat,
+                    "reviewed_by": admin_user if status not in ("diajukan", "diproses") else None,
+                    "reviewed_at": timezone.now() if status not in ("diajukan", "diproses") else None,
                     "data_form": {},
                 },
             )
             if is_new:
                 created += 1
-
         self.stdout.write(f"  + {created} permohonan surat")

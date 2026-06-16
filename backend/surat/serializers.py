@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import JenisSurat, PermohonanSurat
+from .models import JenisSurat, PermohonanSurat, PengaturanRT
 
 
 class JenisSuratSerializer(serializers.ModelSerializer):
@@ -48,3 +48,23 @@ class PermohonanSuratSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["pemohon"] = self.context["request"].user
         return super().create(validated_data)
+
+
+class PengaturanRTSerializer(serializers.ModelSerializer):
+    namaRT = serializers.CharField(source="nama_rt")  # noqa: N815
+    namaRW = serializers.CharField(source="nama_rw")  # noqa: N815
+    namaKetuaRT = serializers.CharField(source="nama_ketua_rt", allow_blank=True)  # noqa: N815
+    nikKetuaRT = serializers.CharField(source="nik_ketua_rt", allow_blank=True, required=False)  # noqa: N815
+    kodePOS = serializers.CharField(source="kode_pos", allow_blank=True, required=False)  # noqa: N815
+    hasTTD = serializers.SerializerMethodField()  # noqa: N815
+    updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)  # noqa: N815
+
+    class Meta:
+        model = PengaturanRT
+        fields = [
+            "namaRT", "namaRW", "kelurahan", "kecamatan", "kota", "provinsi",
+            "kodePOS", "namaKetuaRT", "nikKetuaRT", "hasTTD", "updatedAt",
+        ]
+
+    def get_hasTTD(self, obj):  # noqa: N802
+        return bool(obj.tanda_tangan)
