@@ -38,11 +38,6 @@ def _revoke_all_sessions(refresh_token_str):
     """Blacklist seluruh outstanding token milik pemilik token yang di-reuse —
     mitigasi potensi pencurian refresh token, lihat kode `AUTH_REFRESH_TOKEN_REUSED`
     di docs/06-API-CONTRACT.md §1.7 ("semua sesi di-revoke")."""
-    from rest_framework_simplejwt.token_blacklist.models import (
-        BlacklistedToken,
-        OutstandingToken,
-    )
-
     try:
         unverified = RefreshToken(refresh_token_str, verify=False)
         user_id = unverified.payload.get("user_id")
@@ -50,11 +45,31 @@ def _revoke_all_sessions(refresh_token_str):
         return
     if user_id is None:
         return
+    _revoke_other_sessions(user_id)
+
+
+def _revoke_other_sessions(user_id, keep_refresh_token_str=None):
+    """Blacklist outstanding refresh token milik user, kecuali sesi `keep_refresh_token_str`
+    (sesi yang sedang dipakai). Dipanggil saat ganti password agar sesi/refresh token lain
+    (mis. milik penyerang yang mencuri akun) langsung mati — lihat docs/11-SECURITY.md §4."""
+    from rest_framework_simplejwt.token_blacklist.models import (
+        BlacklistedToken,
+        OutstandingToken,
+    )
+
+    keep_jti = None
+    if keep_refresh_token_str:
+        try:
+            keep_jti = RefreshToken(keep_refresh_token_str, verify=False).payload.get("jti")
+        except TokenError:
+            keep_jti = None
 
     already_blacklisted = BlacklistedToken.objects.values_list("token_id", flat=True)
     outstanding = OutstandingToken.objects.filter(user_id=user_id).exclude(
         id__in=already_blacklisted
     )
+    if keep_jti:
+        outstanding = outstanding.exclude(jti=keep_jti)
     BlacklistedToken.objects.bulk_create(
         [BlacklistedToken(token=token) for token in outstanding],
         ignore_conflicts=True,
@@ -261,6 +276,8 @@ class ChangePasswordView(APIView):
     throttle_scope = "user"
 
     def put(self, request):
+        from django.conf import settings
+
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         if not serializer.is_valid():
             errors = _serializer_errors(serializer)
@@ -278,6 +295,8 @@ class ChangePasswordView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
         serializer.save()
+        current_refresh_token = request.COOKIES.get(settings.REFRESH_TOKEN_COOKIE_NAME)
+        _revoke_other_sessions(request.user.id, keep_refresh_token_str=current_refresh_token)
         return success_response(message="Password berhasil diubah")
 
 

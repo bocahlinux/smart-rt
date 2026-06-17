@@ -19,6 +19,15 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
 }
 
+// 401 dari endpoint ini berarti kredensial/password salah, bukan access
+// token expired — jangan dialihkan ke logika refresh-token (lihat
+// docs/08-CODING-STANDART.md §4.3 catatan perbaikan).
+const AUTH_REFRESH_EXCLUDED_PATHS = ['/auth/login', '/auth/password']
+
+function isRefreshExcluded(url?: string): boolean {
+  return !!url && AUTH_REFRESH_EXCLUDED_PATHS.some((path) => url.includes(path))
+}
+
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
   if (token) {
@@ -48,7 +57,12 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined
 
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isRefreshExcluded(originalRequest.url)
+    ) {
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject })

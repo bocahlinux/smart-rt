@@ -22,6 +22,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         extra_kwargs = {"password": {"write_only": True}}
 
     def validate_email(self, value):
+        value = value.lower()
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError(
                 "Email sudah terdaftar", code="email_already_registered"
@@ -42,7 +43,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"passwordConfirmation": "Konfirmasi password tidak cocok"}
             )
-        password_validation.validate_password(password)
+        temp_user = User(
+            username=attrs.get("email", ""),
+            email=attrs.get("email", ""),
+            phone=attrs.get("phone", ""),
+        )
+        password_validation.validate_password(password, user=temp_user)
         return attrs
 
     def create(self, validated_data):
@@ -102,6 +108,7 @@ class UserManagementSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "warga", "createdAt"]
 
     def validate_email(self, value):
+        value = value.lower()
         qs = User.objects.filter(email__iexact=value)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
@@ -154,6 +161,7 @@ class AdminCreateUserSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=User.Status.choices, default=User.Status.ACTIVE)
 
     def validate_email(self, value):
+        value = value.lower()
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("Email sudah terdaftar")
         return value
@@ -164,7 +172,12 @@ class AdminCreateUserSerializer(serializers.Serializer):
         return value
 
     def validate_password(self, value):
-        password_validation.validate_password(value)
+        temp_user = User(
+            username=self.initial_data.get("email", ""),
+            email=self.initial_data.get("email", ""),
+            phone=self.initial_data.get("phone", ""),
+        )
+        password_validation.validate_password(value, user=temp_user)
         return value
 
     def create(self, validated_data):

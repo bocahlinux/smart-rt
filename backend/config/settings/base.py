@@ -97,6 +97,12 @@ DATABASES = {
 }
 
 
+# Auth backend — login by email, case-insensitive (lihat accounts/backends.py).
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.CaseInsensitiveEmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
